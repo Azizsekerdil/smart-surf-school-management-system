@@ -41,7 +41,7 @@ python-dateutil>=2.9                   # Apache-2.0 / BSD-3-Clause
 
 # --- HTTP / integrations -----------------------------------------------------
 httpx>=0.27                            # BSD-3-Clause
-requests>=2.32                         # Apache-2.0
+requests>=2.34.2                         # Apache-2.0
 tenacity>=9.0                          # Apache-2.0
 
 # --- Security ----------------------------------------------------------------
