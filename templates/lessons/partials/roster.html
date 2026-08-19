@@ -1,0 +1,213 @@
+{% load i18n surf_tags %}
+{% can "lessons.change" as may_change %}
+<div id="roster-panel" class="card">
+  <div class="card-header flex flex-wrap items-center justify-between gap-2">
+    <h2 class="card-title">{% translate "Roster" %}</h2>
+    <span class="text-sm text-slate-500 dark:text-slate-400 tabular-nums">
+      {% blocktranslate with booked=lesson.booked_count capacity=lesson.capacity %}{{ booked }} of {{ capacity }} seats{% endblocktranslate %}
+      {% if lesson.available_seats %}
+        · {% blocktranslate count counter=lesson.available_seats %}{{ counter }} free{% plural %}{{ counter }} free{% endblocktranslate %}
+      {% else %}
+        · <span class="badge-amber">{% translate "Full" %}</span>
+      {% endif %}
+    </span>
+  </div>
+
+  {% if roster_error %}
+    <div class="border-b border-rose-200 bg-rose-50 px-5 py-3 text-sm text-rose-800 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200"
+         role="alert">
+      {% icon "triangle-alert" "inline h-4 w-4" %} {{ roster_error }}
+    </div>
+  {% endif %}
+
+  <div class="card-body space-y-4">
+    {% if attendances %}
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">{% translate "Student" %}</th>
+              <th scope="col">{% translate "Status" %}</th>
+              <th scope="col">{% translate "Equipment" %}</th>
+              <th scope="col" class="text-end">{% translate "Actions" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for attendance in attendances %}
+              <tr id="attendance-{{ attendance.pk }}">
+                <td>
+                  <div class="font-medium text-slate-900 dark:text-slate-100">{{ attendance.student }}</div>
+                  <p class="mt-0.5 flex flex-wrap items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
+                    <span>{{ attendance.level }}</span>
+                    {% if attendance.is_minor %}
+                      <span class="badge-violet">{% translate "Minor" %}</span>
+                    {% endif %}
+                    {% if attendance.booking %}
+                      <span class="badge-slate">{{ attendance.booking }}</span>
+                    {% else %}
+                      <span class="badge-slate">{% translate "Walk-in" %}</span>
+                    {% endif %}
+                  </p>
+                  {% if attendance.rating %}
+                    <p class="mt-1 inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
+                      {% icon "star" "h-3 w-3" %} {{ attendance.rating }}/5
+                    </p>
+                  {% endif %}
+                </td>
+
+                <td>
+                  {% include "lessons/partials/attendance_badge.html" with attendance=attendance %}
+                  {% if attendance.checked_in_at %}
+                    <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ attendance.checked_in_at|date:"H:i" }}</p>
+                  {% endif %}
+                </td>
+
+                <td>
+                  {% if attendance.status == "cancelled" %}
+                    <span class="text-xs text-slate-400">—</span>
+                  {% elif may_change and lesson.is_editable %}
+                    {% with eq_form=equipment_forms|get_item:attendance.pk %}
+                      {% if eq_form %}
+                        <form method="post"
+                              action="{% url 'lessons:attendance_equipment' lesson.pk attendance.pk %}"
+                              hx-post="{% url 'lessons:attendance_equipment' lesson.pk attendance.pk %}"
+                              hx-target="#roster-panel"
+                              hx-swap="outerHTML"
+                              class="flex flex-wrap items-end gap-2">
+                          {% csrf_token %}
+                          <div>
+                            <label class="form-label text-xs" for="{{ eq_form.board.id_for_label }}">{% translate "Board" %}</label>
+                            {{ eq_form.board }}
+                          </div>
+                          <div>
+                            <label class="form-label text-xs" for="{{ eq_form.wetsuit.id_for_label }}">{% translate "Wetsuit" %}</label>
+                            {{ eq_form.wetsuit }}
+                          </div>
+                          <button type="submit" class="btn-secondary btn-sm">
+                            {% icon "package" "h-4 w-4" %} {% translate "Assign" %}
+                          </button>
+                        </form>
+                      {% endif %}
+                    {% endwith %}
+                  {% else %}
+                    <p class="text-xs text-slate-600 dark:text-slate-300">
+                      {{ attendance.assigned_board|default:"—" }} · {{ attendance.assigned_wetsuit|default:"—" }}
+                    </p>
+                  {% endif %}
+                  {% if not attendance.equipment_ready and attendance.status != "cancelled" %}
+                    <p class="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                      {% icon "triangle-alert" "inline h-3 w-3" %} {% translate "Required kit not issued" %}
+                    </p>
+                  {% endif %}
+                </td>
+
+                <td class="text-end">
+                  {% if may_change and lesson.is_editable %}
+                    <div class="flex flex-wrap justify-end gap-1">
+                      {% if attendance.status == "registered" %}
+                        <button type="button" class="btn-success btn-sm"
+                                hx-post="{% url 'lessons:attendance_check_in' lesson.pk attendance.pk %}"
+                                hx-target="#roster-panel" hx-swap="outerHTML">
+                          {% icon "check" "h-4 w-4" %} {% translate "Check in" %}
+                        </button>
+                        <button type="button" class="btn-secondary btn-sm"
+                                hx-post="{% url 'lessons:attendance_no_show' lesson.pk attendance.pk %}"
+                                hx-target="#roster-panel" hx-swap="outerHTML"
+                                hx-confirm="{% translate 'Mark this student as a no-show?' %}">
+                          {% translate "No show" %}
+                        </button>
+                      {% elif attendance.status == "checked_in" %}
+                        <span class="badge-emerald">{% translate "In the water" %}</span>
+                      {% endif %}
+                      {% if attendance.status != "cancelled" and attendance.status != "attended" %}
+                        <button type="button" class="btn-ghost btn-sm text-rose-600 dark:text-rose-400"
+                                hx-post="{% url 'lessons:attendance_remove' lesson.pk attendance.pk %}"
+                                hx-target="#roster-panel" hx-swap="outerHTML"
+                                hx-confirm="{% translate 'Remove this student from the lesson?' %}"
+                                aria-label="{% translate 'Remove student' %}">
+                          {% icon "x" "h-4 w-4" %}
+                        </button>
+                      {% endif %}
+                    </div>
+                  {% endif %}
+
+                  {% if may_change and attendance.status == "attended" %}
+                    {% with fb_form=feedback_forms|get_item:attendance.pk %}
+                      {% if fb_form %}
+                        <details class="mt-2 text-start">
+                          <summary class="cursor-pointer text-xs text-slate-500 hover:underline dark:text-slate-400">
+                            {% translate "Rating & notes" %}
+                          </summary>
+                          <form method="post"
+                                action="{% url 'lessons:attendance_feedback' lesson.pk attendance.pk %}"
+                                hx-post="{% url 'lessons:attendance_feedback' lesson.pk attendance.pk %}"
+                                hx-target="#roster-panel"
+                                hx-swap="outerHTML"
+                                class="mt-2 space-y-2">
+                            {% csrf_token %}
+                            <div>
+                              <label class="form-label text-xs" for="{{ fb_form.rating.id_for_label }}">{% translate "Rating" %}</label>
+                              {{ fb_form.rating }}
+                            </div>
+                            <div>
+                              <label class="form-label text-xs" for="{{ fb_form.student_feedback.id_for_label }}">{% translate "Student feedback" %}</label>
+                              {{ fb_form.student_feedback }}
+                            </div>
+                            <div>
+                              <label class="form-label text-xs" for="{{ fb_form.instructor_notes.id_for_label }}">{% translate "Instructor notes" %}</label>
+                              {{ fb_form.instructor_notes }}
+                            </div>
+                            <button type="submit" class="btn-secondary btn-sm">{% translate "Save" %}</button>
+                          </form>
+                        </details>
+                      {% endif %}
+                    {% endwith %}
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      {% include "partials/empty_state.html" with icon_name="users" title=_("Nobody on this lesson yet") subtitle=_("Add a student below, or link a booking.") %}
+    {% endif %}
+
+    {# ------------------------------------------------------- add student #}
+    {% if may_change and lesson.is_editable %}
+      <form method="post"
+            action="{% url 'lessons:attendance_add' lesson.pk %}"
+            hx-post="{% url 'lessons:attendance_add' lesson.pk %}"
+            hx-target="#roster-panel"
+            hx-swap="outerHTML"
+            class="flex flex-wrap items-end gap-3 rounded-lg border border-dashed border-slate-300 p-4 dark:border-slate-600">
+        {% csrf_token %}
+        <div class="min-w-[12rem] flex-1">
+          <label class="form-label" for="{{ add_form.student.id_for_label }}">{% translate "Student" %}</label>
+          {{ add_form.student }}
+        </div>
+        <div class="min-w-[12rem] flex-1">
+          <label class="form-label" for="{{ add_form.booking.id_for_label }}">{% translate "Booking" %}</label>
+          {{ add_form.booking }}
+        </div>
+        <button type="submit" class="btn-primary">
+          {% icon "user-plus" "h-4 w-4" %} {% translate "Add to lesson" %}
+        </button>
+      </form>
+
+      {# ---------------------------------------------------- finish lesson #}
+      <form method="post" action="{% url 'lessons:complete' lesson.pk %}"
+            class="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-slate-50 p-4 dark:bg-slate-800/60">
+        {% csrf_token %}
+        <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
+          <input type="checkbox" name="mark_unchecked_as_no_show" value="1"
+                 class="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500 dark:border-slate-600">
+          {% translate "Mark students who never checked in as no-shows" %}
+        </label>
+        <button type="submit" class="btn-success">
+          {% icon "circle-check" "h-4 w-4" %} {% translate "Finish lesson" %}
+        </button>
+      </form>
+    {% endif %}
+  </div>
+</div>

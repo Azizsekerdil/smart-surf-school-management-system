@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ form_title }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ form_title }}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "Records one row in the stock ledger. Nothing is overwritten, so last month's figures still reconcile after today's correction." %}
+  </p>
+{% endblock %}
+
+{% block content %}
+  <div class="grid gap-4 lg:grid-cols-3">
+    <form method="post" novalidate class="lg:col-span-2">
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="alert-error mb-4">
+          {% icon "circle-alert" "h-5 w-5 shrink-0" %}
+          <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+        </div>
+      {% endif %}
+
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">
+            {% icon "arrow-left-right" "inline h-4 w-4 text-brand-500" %} {% translate "Stock movement" %}
+          </h2>
+        </div>
+        <div class="card-body grid gap-4 sm:grid-cols-2">
+          {% include "pos/partials/field.html" with field=form.product wrapper_class="sm:col-span-2" %}
+          {% include "pos/partials/field.html" with field=form.movement_type %}
+          {% include "pos/partials/field.html" with field=form.direction %}
+          {% include "pos/partials/field.html" with field=form.quantity %}
+          {% include "pos/partials/field.html" with field=form.reference %}
+          {% include "pos/partials/field.html" with field=form.reason wrapper_class="sm:col-span-2" %}
+        </div>
+        <div class="flex flex-wrap items-center justify-end gap-2 border-t border-slate-200 px-5 py-4 dark:border-slate-700">
+          <a href="{{ cancel_url }}" class="btn-secondary">{% translate "Cancel" %}</a>
+          <button type="submit" class="btn-primary">
+            {% icon "save" "h-4 w-4" %} {% translate "Record movement" %}
+          </button>
+        </div>
+      </section>
+    </form>
+
+    <aside class="space-y-4">
+      <div class="alert-info">
+        {% icon "info" "h-5 w-5 shrink-0" %}
+        <div>
+          <p class="font-medium">{% translate "Sales are not entered here" %}</p>
+          <p class="mt-1">
+            {% translate "Everything sold at the till writes its own movement. Use this screen for deliveries, breakages, transfers and stock takes." %}
+          </p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">{% icon "triangle-alert" "inline h-4 w-4 text-amber-500" %} {% translate "Low on the shelf" %}</h2>
+        </div>
+        <div class="card-body">
+          {% if low_stock %}
+            <ul class="space-y-2 text-sm">
+              {% for product in low_stock %}
+                <li class="flex items-center justify-between gap-2">
+                  <a href="{% url 'pos:stock_adjust' %}?product={{ product.pk }}"
+                     class="min-w-0 truncate text-brand-600 hover:underline dark:text-brand-300">{{ product.name }}</a>
+                  <span class="shrink-0">
+                    {% if product.is_out_of_stock %}
+                      <span class="badge-rose">{% translate "Out" %}</span>
+                    {% else %}
+                      <span class="badge-amber">{{ product.stock_display }}</span>
+                    {% endif %}
+                  </span>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="text-sm text-slate-500 dark:text-slate-400">
+              {% translate "Nothing needs reordering right now." %}
+            </p>
+          {% endif %}
+        </div>
+      </div>
+    </aside>
+  </div>
+{% endblock %}

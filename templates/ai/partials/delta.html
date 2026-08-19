@@ -1,0 +1,26 @@
+{% load i18n surf_tags %}
+{# Period-over-period change. Include with value=<percent or None>, and invert=True when a rise is bad. #}
+{% if value is not None %}
+  {% if value > 0 %}
+    <span class="{% if invert %}stat-delta-down{% else %}stat-delta-up{% endif %} inline-flex items-center gap-1">
+      {% icon "trending-up" "h-3 w-3" %}
+      <span>+{{ value|floatformat:1 }}%</span>
+      <span>{% translate "vs previous period" %}</span>
+    </span>
+  {% elif value < 0 %}
+    <span class="{% if invert %}stat-delta-up{% else %}stat-delta-down{% endif %} inline-flex items-center gap-1">
+      {% icon "trending-down" "h-3 w-3" %}
+      <span>{{ value|floatformat:1 }}%</span>
+      <span>{% translate "vs previous period" %}</span>
+    </span>
+  {% else %}
+    <span class="inline-flex items-center gap-1 text-xs font-medium text-slate-500 dark:text-slate-400">
+      {% icon "minus" "h-3 w-3" %}
+      {% translate "No change vs previous period" %}
+    </span>
+  {% endif %}
+{% else %}
+  <span class="text-xs text-slate-400 dark:text-slate-500">
+    {% translate "No comparable previous period" %}
+  </span>
+{% endif %}

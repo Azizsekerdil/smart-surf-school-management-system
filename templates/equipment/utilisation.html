@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Equipment utilisation" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Equipment utilisation" %}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {{ range_label }} · {% translate "utilisation is measured against 8 operating hours a day" %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'equipment:list' %}" class="btn-secondary">
+    {% icon "package" "h-4 w-4" %} {% translate "Inventory" %}
+  </a>
+{% endblock %}
+
+{% block content %}
+  {% if is_lifetime %}
+    <div class="alert-info mb-4" role="status">
+      {% icon "info" "h-4 w-4 shrink-0" %}
+      <span>{% translate "No per-rental records are available yet, so these figures are the items' lifetime counters rather than this period." %}</span>
+    </div>
+  {% endif %}
+
+  <form class="card mb-4 p-4" method="get" action="{% url 'equipment:utilisation' %}">
+    <div class="grid gap-3 sm:grid-cols-4">
+      <div>
+        <label class="form-label" for="range">{% translate "Period" %}</label>
+        <select id="range" name="range" class="form-select">
+          <option value="today" {% if range_key == "today" %}selected{% endif %}>{% translate "Today" %}</option>
+          <option value="7" {% if range_key == "7" %}selected{% endif %}>{% translate "Last 7 days" %}</option>
+          <option value="30" {% if range_key == "30" %}selected{% endif %}>{% translate "Last 30 days" %}</option>
+          <option value="90" {% if range_key == "90" %}selected{% endif %}>{% translate "Last 3 months" %}</option>
+          <option value="365" {% if range_key == "365" %}selected{% endif %}>{% translate "Last year" %}</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label" for="category">{% translate "Category" %}</label>
+        <select id="category" name="category" class="form-select">
+          <option value="">{% translate "All categories" %}</option>
+          {% for category in categories %}
+            <option value="{{ category.pk }}" {% if current_category == category.pk|stringformat:"s" %}selected{% endif %}>
+              {{ category.full_path }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="flex items-end">
+        <button type="submit" class="btn-secondary">
+          {% icon "filter" "h-4 w-4" %} {% translate "Apply" %}
+        </button>
+      </div>
+    </div>
+  </form>
+
+  <div class="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Items" %}</p>
+      <p class="stat-value">{{ rows|length }}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Hours out" %}</p>
+      <p class="stat-value">{{ total_hours }}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Never used in period" %}</p>
+      <p class="stat-value {% if idle_items %}text-amber-600 dark:text-amber-400{% endif %}">{{ idle_items|length }}</p>
+    </div>
+  </div>
+
+  {% if rows %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">{% translate "Asset code" %}</th>
+            <th scope="col">{% translate "Item" %}</th>
+            <th scope="col">{% translate "Category" %}</th>
+            <th scope="col">{% translate "Status" %}</th>
+            <th scope="col" class="text-end">{% translate "Rentals" %}</th>
+            <th scope="col" class="text-end">{% translate "Hours" %}</th>
+            <th scope="col" class="text-end">{% translate "Day rate" %}</th>
+            <th scope="col">{% translate "Utilisation" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+            <tr>
+              <td class="font-mono text-xs">
+                <a href="{% url 'equipment:detail' row.equipment.pk %}" class="text-brand-600 hover:underline">{{ row.asset_code }}</a>
+              </td>
+              <td class="font-medium text-slate-900 dark:text-slate-100">{{ row.name }}</td>
+              <td>{{ row.category }}</td>
+              <td>{% status_badge row.status row.equipment.get_status_display status_colors %}</td>
+              <td class="text-end tabular-nums">{{ row.rentals }}</td>
+              <td class="text-end tabular-nums">{{ row.hours }}</td>
+              <td class="text-end tabular-nums">{{ row.revenue_per_day|money }}</td>
+              <td>
+                <div class="flex items-center gap-2">
+                  <div class="h-2 w-24 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+                    <div class="h-full rounded-full bg-brand-600" style="width: {{ row.utilisation_percent|default:0 }}%"></div>
+                  </div>
+                  <span class="text-xs tabular-nums text-slate-600 dark:text-slate-300">{{ row.utilisation_percent|pct }}</span>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    {% include "partials/empty_state.html" with icon_name="chart-line" title=_("Nothing to report") subtitle=_("Add equipment to the fleet, or widen the period.") %}
+  {% endif %}
+{% endblock %}

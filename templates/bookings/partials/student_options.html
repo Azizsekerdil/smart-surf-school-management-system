@@ -1,0 +1,24 @@
+{% load i18n surf_tags %}
+{% if students %}
+  <div class="flex flex-wrap gap-2">
+    {% for student in students %}
+      <button type="button"
+              class="rounded-lg border px-3 py-2 text-sm transition"
+              :class="studentId === '{{ student.pk }}'
+                      ? 'border-brand-500 bg-brand-50 text-brand-800 dark:bg-brand-500/10 dark:text-brand-200'
+                      : 'border-slate-200 text-slate-600 hover:border-brand-300 dark:border-slate-700 dark:text-slate-300'"
+              @click="pickStudent('{{ student.pk }}', '{{ student|escapejs }}')">
+        {{ student }}
+        {% if student.level %}
+          <span class="ms-1 text-xs text-slate-400">{{ student.get_level_display|default:student.level }}</span>
+        {% endif %}
+      </button>
+    {% endfor %}
+  </div>
+{% elif customer %}
+  <p class="text-sm text-slate-500 dark:text-slate-400">
+    {% blocktranslate with name=customer %}{{ name }} has no student profile yet. Add one in the Students module, then come back.{% endblocktranslate %}
+  </p>
+{% else %}
+  <p class="text-sm text-slate-500 dark:text-slate-400">{% translate "Choose a customer first." %}</p>
+{% endif %}

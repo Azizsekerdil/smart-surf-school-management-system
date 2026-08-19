@@ -1,0 +1,39 @@
+{% load i18n surf_tags %}
+{% if upcoming %}
+  <h3 class="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-300">{% translate "Upcoming" %}</h3>
+  <ul class="mb-5 divide-y divide-slate-100 dark:divide-slate-800">
+    {% for row in upcoming %}
+      <li class="flex flex-wrap items-center justify-between gap-3 py-2">
+        <span class="min-w-0 truncate text-sm text-slate-700 dark:text-slate-300">{{ row.lesson|default:row }}</span>
+        {% if row.status %}{% status_badge row.status row.get_status_display %}{% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+{% endif %}
+
+{% if rows %}
+  <ul class="divide-y divide-slate-100 dark:divide-slate-800">
+    {% for row in rows %}
+      <li class="flex flex-wrap items-center justify-between gap-3 py-3">
+        <div class="min-w-0">
+          <p class="truncate font-medium text-slate-900 dark:text-slate-100">{{ row.lesson|default:row }}</p>
+          <p class="text-xs text-slate-500 dark:text-slate-400">{{ row.created_at|date:"d.m.Y" }}</p>
+        </div>
+        <div class="flex items-center gap-2">
+          {% if row.status %}{% status_badge row.status row.get_status_display %}{% endif %}
+        </div>
+      </li>
+    {% endfor %}
+  </ul>
+  {% can "lessons.view" as may_view_lessons %}
+  {% url 'lessons:list' as lessons_url %}
+  {% if may_view_lessons and lessons_url %}
+    <p class="mt-4 text-sm">
+      <a href="{{ lessons_url }}?student={{ student.pk }}" class="text-brand-700 hover:underline dark:text-brand-300">
+        {% translate "Open all lessons for this student" %}
+      </a>
+    </p>
+  {% endif %}
+{% elif not upcoming %}
+  {% include "partials/empty_state.html" with icon_name="book-open" title=_("No lessons recorded") subtitle=_("Completed lessons appear here as soon as attendance is taken.") %}
+{% endif %}

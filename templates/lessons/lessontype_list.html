@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Lesson types" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Lesson types" %}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "What the school teaches, to which levels and ages, for how long and at what price." %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'lessons:list' %}" class="btn-secondary">
+    {% icon "calendar-days" "h-4 w-4" %} {% translate "Timetable" %}
+  </a>
+  {% can "lessons.manage" as may_manage %}
+  {% if may_manage %}
+    <a href="{% url 'lessons:type_create' %}" class="btn-primary">
+      {% icon "plus" "h-4 w-4" %} {% translate "New lesson type" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <div class="card mb-5">
+    <div class="card-body">
+      <form method="get"
+            hx-get="{% url 'lessons:type_list' %}"
+            hx-target="#lessontype-table"
+            hx-swap="outerHTML"
+            hx-trigger="submit, change from:select"
+            class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="lg:col-span-2">
+          <label class="form-label" for="lessontype-q">{% translate "Search" %}</label>
+          <input id="lessontype-q" type="search" name="q" value="{{ search_term|default:'' }}"
+                 class="form-input" placeholder="{% translate 'Code, name or description' %}">
+        </div>
+        <div>
+          <label class="form-label" for="lessontype-category">{% translate "Category" %}</label>
+          <select id="lessontype-category" name="category" class="form-select">
+            <option value="">{% translate "All categories" %}</option>
+            {% for value, label in categories %}
+              <option value="{{ value }}" {% if current_category == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="form-label" for="lessontype-state">{% translate "State" %}</label>
+          <select id="lessontype-state" name="state" class="form-select">
+            <option value="">{% translate "All" %}</option>
+            <option value="active" {% if current_state == "active" %}selected{% endif %}>{% translate "Active" %}</option>
+            <option value="archived" {% if current_state == "archived" %}selected{% endif %}>{% translate "Archived" %}</option>
+          </select>
+        </div>
+        <div class="flex items-end gap-2 lg:col-span-4">
+          <button type="submit" class="btn-primary">{% icon "filter" "h-4 w-4" %} {% translate "Apply filters" %}</button>
+          <a href="{% url 'lessons:type_list' %}" class="btn-ghost">{% translate "Reset" %}</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {% include "lessons/partials/lessontype_table.html" %}
+{% endblock %}

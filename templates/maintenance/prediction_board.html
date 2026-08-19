@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Predicted maintenance" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Predicted maintenance" %}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "Which items the school's own records say are closest to needing work." %}
+  </p>
+{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-3 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'maintenance:list' %}" class="hover:underline">{% translate "Maintenance" %}</a>
+    <span class="mx-1" aria-hidden="true">/</span>
+    <span>{% translate "Predicted maintenance" %}</span>
+  </nav>
+{% endblock %}
+
+{% block page_actions %}
+  <a href="{% query_string refresh=1 %}" class="btn-secondary">
+    {% icon "refresh-cw" "h-4 w-4" %} {% translate "Recalculate" %}
+  </a>
+  <a href="{% url 'maintenance:schedule_list' %}" class="btn-secondary">
+    {% icon "calendar-days" "h-4 w-4" %} {% translate "Service plans" %}
+  </a>
+{% endblock %}
+
+{% block content %}
+
+  {# --- how the numbers are produced ---------------------------------- #}
+  <div class="alert-info mb-5">
+    <span class="mt-0.5 shrink-0">{% icon "info" "h-5 w-5" %}</span>
+    <div>
+      <p class="font-medium">{% translate "These scores are calculated, not generated." %}</p>
+      <p class="mt-1 text-xs">
+        {% translate "Every number below comes from this school's own maintenance and rental records, combined by a fixed formula. No language model is involved, and a signal with no data lowers the confidence rather than being guessed." %}
+        {% if generated_at %}
+          <span class="block mt-1">
+            {% blocktranslate with moment=generated_at %}Last calculated: {{ moment }}{% endblocktranslate %}
+          </span>
+        {% endif %}
+      </p>
+    </div>
+  </div>
+
+  {# --- filters -------------------------------------------------------- #}
+  <form method="get" class="card mb-5 p-4">
+    <div class="grid gap-3 sm:grid-cols-3">
+      <div>
+        <label for="min-score" class="form-label">{% translate "Minimum risk score" %}</label>
+        <select id="min-score" name="min" class="form-select">
+          <option value="">{% translate "Show everything" %}</option>
+          <option value="40" {% if threshold == 40.0 %}selected{% endif %}>{% translate "40 and above" %}</option>
+          <option value="60" {% if threshold == 60.0 %}selected{% endif %}>{% translate "60 and above" %}</option>
+          <option value="80" {% if threshold == 80.0 %}selected{% endif %}>{% translate "80 and above" %}</option>
+        </select>
+      </div>
+      <div>
+        <label for="board-category" class="form-label">{% translate "Equipment category" %}</label>
+        <select id="board-category" name="category" class="form-select">
+          <option value="">{% translate "Any category" %}</option>
+          {% for value, label in categories %}
+            <option value="{{ value }}" {% if current_category == value|stringformat:"s" %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="flex items-end gap-2">
+        <button type="submit" class="btn-primary">{% icon "filter" "h-4 w-4" %} {% translate "Apply" %}</button>
+        <a href="{% url 'maintenance:predictions' %}" class="btn-ghost">{% translate "Clear" %}</a>
+      </div>
+    </div>
+  </form>
+
+  {% if predictions %}
+    <div class="mb-4 flex flex-wrap items-center gap-4 text-sm text-slate-600 dark:text-slate-300">
+      <span>
+        {% blocktranslate count counter=predictions|length %}{{ counter }} item scored{% plural %}{{ counter }} items scored{% endblocktranslate %}
+      </span>
+      <span class="text-amber-700 dark:text-amber-400">
+        {% blocktranslate with n=high_risk_count %}{{ n }} at 60 or above{% endblocktranslate %}
+      </span>
+    </div>
+
+    <div class="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
+      {% for prediction in predictions %}
+        {% include "maintenance/partials/risk_card.html" with p=prediction %}
+      {% endfor %}
+    </div>
+
+    {# --- the formula, stated openly ---------------------------------- #}
+    <section class="card mt-6">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "How the score is built" %}</h2>
+      </div>
+      <div class="card-body">
+        <p class="mb-3 text-sm text-slate-600 dark:text-slate-300">
+          {% translate "Each measurable signal contributes the share below. Signals that cannot be measured for an item are dropped and the rest are re-weighted, which is why two items can carry the same score with different confidence." %}
+        </p>
+        <dl class="grid gap-3 sm:grid-cols-3">
+          <div><dt class="stat-label">{% translate "Time since last service vs its interval" %}</dt><dd class="text-sm tabular-nums">{{ signal_weights.schedule }}</dd></div>
+          <div><dt class="stat-label">{% translate "Rentals since last service vs mean rentals between failures" %}</dt><dd class="text-sm tabular-nums">{{ signal_weights.rentals }}</dd></div>
+          <div><dt class="stat-label">{% translate "Age vs expected service life" %}</dt><dd class="text-sm tabular-nums">{{ signal_weights.age }}</dd></div>
+          <div><dt class="stat-label">{% translate "Failure history over 12 months, severity-weighted" %}</dt><dd class="text-sm tabular-nums">{{ signal_weights.history }}</dd></div>
+          <div><dt class="stat-label">{% translate "Cumulative rental hours vs comparable items" %}</dt><dd class="text-sm tabular-nums">{{ signal_weights.hours }}</dd></div>
+          <div><dt class="stat-label">{% translate "Last recorded condition grade" %}</dt><dd class="text-sm tabular-nums">{{ signal_weights.condition }}</dd></div>
+        </dl>
+      </div>
+    </section>
+  {% else %}
+    {% translate "Nothing to predict yet" as empty_title %}
+    {% translate "Once the fleet has equipment in service, this board ranks each item by the risk that it needs work." as empty_subtitle %}
+    {% include "partials/empty_state.html" with icon_name="trending-up" title=empty_title subtitle=empty_subtitle %}
+  {% endif %}
+{% endblock %}

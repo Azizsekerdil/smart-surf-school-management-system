@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Search" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Search" %}{% endblock %}
+
+{% block page_subtitle %}
+  {% if results.term %}
+    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+      {% blocktranslate with term=results.term count counter=results.total %}{{ counter }} result for “{{ term }}”{% plural %}{{ counter }} results for “{{ term }}”{% endblocktranslate %}
+    </p>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+
+  {# ------------------------------------------------------------ the box #}
+  <form method="get" action="{% url 'dashboard:search' %}" class="card mb-5">
+    <div class="card-body">
+      <label class="form-label" for="global-search-input">{% translate "Search the whole school" %}</label>
+      <div class="flex flex-wrap gap-2">
+        <div class="relative min-w-0 flex-1">
+          <span class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3 text-slate-400">
+            {% icon "search" "h-4 w-4" %}
+          </span>
+          <input type="search" id="global-search-input" name="q" value="{{ search_term }}" autofocus
+                 class="form-input ps-9"
+                 placeholder="{% translate 'Name, phone, e-mail, or a code such as EQP00042' %}">
+        </div>
+        <button type="submit" class="btn-primary">{% translate "Search" %}</button>
+      </div>
+      <p class="form-help">
+        {% blocktranslate with minimum=min_length limit=results.limit %}At least {{ minimum }} characters. Each group shows up to {{ limit }} matches; an exact code opens the record directly.{% endblocktranslate %}
+      </p>
+    </div>
+  </form>
+
+  {# ------------------------------------------------------------ results #}
+  {% if results.too_short %}
+    <div class="alert-info">
+      {% icon "info" "h-5 w-5 shrink-0" %}
+      <p>{% blocktranslate with minimum=min_length %}Type at least {{ minimum }} characters to search.{% endblocktranslate %}</p>
+    </div>
+
+  {% elif not results.term %}
+    {% include "partials/empty_state.html" with icon_name="search" title=_("Search students, customers, bookings, equipment and more") subtitle=_("Only the modules your role can open are searched.") %}
+
+  {% elif results.groups %}
+    <div class="space-y-5">
+      {% for group in results.groups %}
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title flex items-center gap-2">
+              {% icon group.icon "h-4 w-4 text-brand-500" %} {{ group.label }}
+            </h2>
+            <span class="badge-slate tabular-nums">{{ group.rows|length }}</span>
+          </div>
+          <ul class="divide-y divide-slate-100 dark:divide-slate-800">
+            {% for row in group.rows %}
+              <li>
+                {% if row.url %}
+                  <a href="{{ row.url }}" class="flex items-center justify-between gap-3 px-5 py-3 transition hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                {% else %}
+                  <div class="flex items-center justify-between gap-3 px-5 py-3">
+                {% endif %}
+                  <div class="min-w-0">
+                    <p class="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{{ row.title }}</p>
+                    {% if row.subtitle %}
+                      <p class="truncate text-xs text-slate-500 dark:text-slate-400">{{ row.subtitle }}</p>
+                    {% endif %}
+                  </div>
+                  <div class="flex shrink-0 items-center gap-2">
+                    {% if row.meta %}<span class="badge-slate">{{ row.meta }}</span>{% endif %}
+                    {% if row.url %}{% icon "chevron-right" "h-4 w-4 text-slate-400" %}{% endif %}
+                  </div>
+                {% if row.url %}</a>{% else %}</div>{% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endfor %}
+    </div>
+
+  {% else %}
+    {% include "partials/empty_state.html" with icon_name="search" title=_("No matches") subtitle=_("Check the spelling, or try a code, phone number or e-mail address.") %}
+  {% endif %}
+{% endblock %}

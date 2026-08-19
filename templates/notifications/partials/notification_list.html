@@ -1,0 +1,20 @@
+{% load i18n surf_tags %}
+<div id="notification-list">
+  {% if notifications %}
+    <ul class="card divide-y divide-slate-100 dark:divide-slate-800">
+      {% for notification in notifications %}
+        {% include "notifications/partials/notification_row.html" %}
+      {% endfor %}
+    </ul>
+    {% include "partials/pagination.html" %}
+  {% else %}
+    {% if filters.q or filters.category or filters.level or filters.unread %}
+      {% translate "No notifications match these filters" as empty_title %}
+      {% translate "Clear the filters to see everything in your inbox." as empty_subtitle %}
+    {% else %}
+      {% translate "No notifications yet" as empty_title %}
+      {% translate "Lesson reminders, booking changes, overdue rentals and safety alerts arrive here." as empty_subtitle %}
+    {% endif %}
+    {% include "partials/empty_state.html" with icon_name="bell" title=empty_title subtitle=empty_subtitle %}
+  {% endif %}
+</div>

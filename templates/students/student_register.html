@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ title }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "Creates the customer record and the student profile together." %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'students:list' %}" class="btn-ghost">
+    {% icon "chevron-left" "h-4 w-4" %} {% translate "Back to list" %}
+  </a>
+{% endblock %}
+
+{% block content %}
+  <form method="post" class="space-y-5" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="alert-error">
+        {% icon "circle-alert" "h-5 w-5 shrink-0" %}
+        <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+      </div>
+    {% endif %}
+
+    <section class="card">
+      <div class="card-header"><h2 class="card-title">{% translate "Person" %}</h2></div>
+      <div class="card-body grid gap-4 sm:grid-cols-2">
+        {% for field in form %}
+          {% if field.name == "first_name" or field.name == "last_name" or field.name == "email" or field.name == "phone" or field.name == "birth_date" %}
+            <div>
+              <label class="form-label" for="{{ field.id_for_label }}">
+                {{ field.label }}{% if field.field.required %} <span class="text-rose-500">*</span>{% endif %}
+              </label>
+              {{ field }}
+              {% for error in field.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+            </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Emergency contact" %}</h2>
+        <span class="text-xs text-slate-500 dark:text-slate-400">{% translate "Required for students under 18" %}</span>
+      </div>
+      <div class="card-body grid gap-4 sm:grid-cols-3">
+        {% for field in form %}
+          {% if field.name == "emergency_contact_name" or field.name == "emergency_contact_phone" or field.name == "emergency_contact_relation" %}
+            <div>
+              <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field }}
+              {% for error in field.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+            </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header"><h2 class="card-title">{% translate "Surfing" %}</h2></div>
+      <div class="card-body grid gap-4 sm:grid-cols-2">
+        <div>
+          <label class="form-label" for="{{ form.surf_level.id_for_label }}">{{ form.surf_level.label }}</label>
+          {{ form.surf_level }}
+          {% for error in form.surf_level.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        </div>
+        <div>
+          <label class="form-label" for="{{ form.swim_distance_m.id_for_label }}">{{ form.swim_distance_m.label }}</label>
+          {{ form.swim_distance_m }}
+          {% for error in form.swim_distance_m.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="sm:col-span-2">
+          <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+            {{ form.can_swim }} {{ form.can_swim.label }}
+          </label>
+          {% for error in form.can_swim.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="sm:col-span-2">
+          <label class="form-label" for="{{ form.goals.id_for_label }}">{{ form.goals.label }}</label>
+          {{ form.goals }}
+        </div>
+        <div class="sm:col-span-2">
+          <label class="form-label" for="{{ form.medical_conditions.id_for_label }}">{{ form.medical_conditions.label }}</label>
+          {{ form.medical_conditions }}
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-body flex flex-wrap items-center justify-between gap-3">
+        <label class="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+          {{ form.allow_duplicate }} {{ form.allow_duplicate.label }}
+        </label>
+        <div class="flex items-center gap-2">
+          <a href="{% url 'students:list' %}" class="btn-secondary">{% translate "Cancel" %}</a>
+          <button type="submit" class="btn-primary">
+            {% icon "graduation-cap" "h-4 w-4" %} {% translate "Register student" %}
+          </button>
+        </div>
+      </div>
+    </section>
+  </form>
+{% endblock %}

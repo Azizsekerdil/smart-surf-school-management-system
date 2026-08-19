@@ -1,0 +1,74 @@
+{% load i18n surf_tags %}
+
+{% if expenses %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">{% translate "Code" %}</th>
+          <th scope="col">{% translate "Date" %}</th>
+          <th scope="col">{% translate "Category" %}</th>
+          <th scope="col">{% translate "Description" %}</th>
+          <th scope="col">{% translate "Supplier" %}</th>
+          <th scope="col" class="text-end">{% translate "Net" %}</th>
+          <th scope="col" class="text-end">{% translate "Tax" %}</th>
+          <th scope="col" class="text-end">{% translate "Total" %}</th>
+          <th scope="col"><span class="sr-only">{% translate "Actions" %}</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for expense in expenses %}
+          <tr>
+            <td class="font-medium text-slate-900 dark:text-slate-100">{{ expense.expense_code }}</td>
+            <td class="whitespace-nowrap">{{ expense.spent_on|date:"d.m.Y" }}</td>
+            <td>{{ expense.category.name }}</td>
+            <td class="truncate">
+              {{ expense.description }}
+              {% if expense.is_recurring %}
+                <span class="badge-sky ms-1" title="{% translate 'Recurring cost' %}">
+                  {% icon "refresh-cw" "h-3 w-3" %}
+                  {% blocktranslate with months=expense.recurrence_months %}every {{ months }} mo{% endblocktranslate %}
+                </span>
+              {% endif %}
+              {% if expense.equipment_id %}
+                <span class="block text-xs text-slate-400">{{ expense.equipment }}</span>
+              {% endif %}
+            </td>
+            <td class="text-slate-500 dark:text-slate-400">{{ expense.supplier|default:"—" }}</td>
+            <td class="text-end tabular-nums">{{ expense.amount|money }}</td>
+            <td class="text-end tabular-nums text-slate-500 dark:text-slate-400">
+              {{ expense.tax_amount|money }}
+            </td>
+            <td class="text-end font-semibold tabular-nums">{{ expense.total_amount|money }}</td>
+            <td class="text-end">
+              <div class="flex items-center justify-end gap-1">
+                {% if expense.receipt %}
+                  <a href="{{ expense.receipt.url }}" class="btn-ghost btn-sm" target="_blank" rel="noopener"
+                     title="{% translate 'Open receipt' %}">
+                    {% icon "paperclip" "h-3.5 w-3.5" %}
+                  </a>
+                {% endif %}
+                {% can "finance.change" as may_change %}
+                {% if may_change %}
+                  <a href="{% url 'finance:expense_update' expense.pk %}" class="btn-ghost btn-sm">
+                    {% icon "pencil" "h-3.5 w-3.5" %} {% translate "Edit" %}
+                  </a>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% include "partials/pagination.html" %}
+{% else %}
+  {% can "finance.add" as may_add %}
+  {% if may_add %}
+    {% url 'finance:expense_create' as create_url %}
+    {% include "partials/empty_state.html" with icon_name="receipt" title=_("No expenses here") subtitle=_("Nothing matches this period or filter.") action_url=create_url action_label=_("Record an expense") %}
+  {% else %}
+    {% include "partials/empty_state.html" with icon_name="receipt" title=_("No expenses here") subtitle=_("Nothing matches this period or filter.") %}
+  {% endif %}
+{% endif %}

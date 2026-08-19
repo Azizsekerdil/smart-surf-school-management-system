@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ step.title }} · {{ course.title }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ step.title }}{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-4 flex flex-wrap items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400"
+       aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'training:home' %}" class="hover:text-brand-600 dark:hover:text-brand-400">
+      {% translate "Training Center" %}
+    </a>
+    {% icon "chevron-right" "h-4 w-4" %}
+    <a href="{{ course.get_absolute_url }}" class="hover:text-brand-600 dark:hover:text-brand-400">
+      {{ course.title }}
+    </a>
+    {% icon "chevron-right" "h-4 w-4" %}
+    <span class="truncate text-slate-700 dark:text-slate-300">{{ lesson.title }}</span>
+  </nav>
+{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% blocktranslate with position=step_position total=step_total %}Step {{ position }} of {{ total }}{% endblocktranslate %}
+    · {{ lesson.title }}
+  </p>
+{% endblock %}
+
+{% block content %}
+  {# --- course progress bar --------------------------------------------- #}
+  <div class="card mb-5">
+    <div class="card-body flex flex-wrap items-center gap-4 py-4">
+      {% include "training/partials/progress_ring.html" with percent=summary.percent ring_class="h-12 w-12" %}
+      <div class="min-w-0 flex-1">
+        <p class="text-sm font-medium text-slate-900 dark:text-slate-100">{{ course.title }}</p>
+        <div class="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+          <div class="h-full rounded-full {% if summary.percent >= 100 %}bg-emerald-500{% else %}bg-brand-500{% endif %}"
+               style="width: {{ summary.percent }}%"></div>
+        </div>
+        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          {% blocktranslate with done=summary.completed_steps total=summary.total_steps %}{{ done }} of {{ total }} steps{% endblocktranslate %}
+        </p>
+      </div>
+      <a href="{{ course.get_absolute_url }}" class="btn-secondary btn-sm">
+        {% icon "list-checks" "h-4 w-4" %} {% translate "Outline" %}
+      </a>
+    </div>
+  </div>
+
+  <div class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_18rem]">
+    <article class="card min-w-0">
+      <div class="card-body">
+        {% if step.image %}
+          <img src="{{ step.image.url }}" alt="{{ step.title }}"
+               class="mb-5 w-full max-w-full rounded-lg border border-slate-200 dark:border-slate-700"
+               loading="lazy">
+        {% endif %}
+
+        <div class="prose prose-slate max-w-none dark:prose-invert prose-a:text-brand-600 dark:prose-a:text-brand-400">
+          {{ step.rendered_body }}
+        </div>
+
+        {% if step.action_hint or target_link %}
+          <div class="alert-info mt-5">
+            {% icon "compass" "h-5 w-5 shrink-0" %}
+            <div class="min-w-0 flex-1">
+              {% if step.action_hint %}
+                <p class="font-medium">{{ step.action_hint }}</p>
+              {% endif %}
+              {% if target_link %}
+                <a href="{{ target_link }}" target="_blank" rel="noopener noreferrer"
+                   class="btn-primary btn-sm mt-2">
+                  {% icon "external-link" "h-4 w-4" %} {% translate "Open the screen" %}
+                </a>
+                <p class="mt-1.5 text-xs opacity-80">
+                  {% translate "Opens in a new tab so this step stays where it is." %}
+                </p>
+              {% endif %}
+            </div>
+          </div>
+        {% elif step.target_url %}
+          <div class="alert-warning mt-5">
+            {% icon "triangle-alert" "h-5 w-5 shrink-0" %}
+            <p>{% translate "The screen this step refers to is not available in this installation." %}</p>
+          </div>
+        {% endif %}
+      </div>
+
+      {# --- complete / next --------------------------------------------- #}
+      <div id="step-status" class="border-t border-slate-200 dark:border-slate-700">
+        {% include "training/partials/step_status.html" %}
+      </div>
+    </article>
+
+    {# --- side rail ------------------------------------------------------ #}
+    <aside class="space-y-4 lg:sticky lg:top-6 lg:self-start">
+      <nav class="card" aria-label="{% translate 'Step navigation' %}">
+        <div class="card-header">
+          <h2 class="card-title">{% translate "Move around" %}</h2>
+        </div>
+        <div class="card-body space-y-2">
+          {% if previous_step %}
+            <a href="{% url 'training:step' previous_step.pk %}" class="btn-secondary w-full justify-start">
+              {% icon "chevron-left" "h-4 w-4" %}
+              <span class="min-w-0 truncate">{{ previous_step.title }}</span>
+            </a>
+          {% endif %}
+          {% if next_step %}
+            <a href="{% url 'training:step' next_step.pk %}" class="btn-secondary w-full justify-start">
+              {% icon "chevron-right" "h-4 w-4" %}
+              <span class="min-w-0 truncate">{{ next_step.title }}</span>
+            </a>
+          {% endif %}
+          <a href="{{ course.get_absolute_url }}" class="btn-ghost w-full justify-start">
+            {% icon "book-open" "h-4 w-4" %} {% translate "Back to the outline" %}
+          </a>
+        </div>
+      </nav>
+
+      <div class="card">
+        <div class="card-body space-y-3 text-sm">
+          <div class="flex items-center justify-between gap-3">
+            <span class="text-slate-500 dark:text-slate-400">{% translate "Lesson" %}</span>
+            <span class="min-w-0 truncate font-medium text-slate-800 dark:text-slate-200">{{ lesson.title }}</span>
+          </div>
+          <div class="flex items-center justify-between gap-3">
+            <span class="text-slate-500 dark:text-slate-400">{% translate "Difficulty" %}</span>
+            <span class="badge-{{ course.difficulty_color }}">{{ course.get_difficulty_display }}</span>
+          </div>
+          <div class="flex items-center justify-between gap-3">
+            <span class="text-slate-500 dark:text-slate-400">{% translate "Estimated time" %}</span>
+            <span class="font-medium text-slate-800 dark:text-slate-200">{{ lesson.estimated_minutes|duration_hm }}</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+{% endblock %}

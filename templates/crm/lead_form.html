@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ title }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-3 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'crm:dashboard' %}" class="hover:text-brand-600">{% translate "CRM" %}</a>
+    <span class="mx-1">/</span>
+    <a href="{% url 'crm:lead_list' %}" class="hover:text-brand-600">{% translate "Leads" %}</a>
+    {% if lead %}
+      <span class="mx-1">/</span>
+      <a href="{% url 'crm:lead_detail' lead.pk %}" class="hover:text-brand-600">{{ lead.full_name }}</a>
+    {% endif %}
+  </nav>
+{% endblock %}
+
+{% block content %}
+  <form method="post" novalidate class="max-w-3xl">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="alert-error mb-5">
+        {% icon "circle-x" "h-5 w-5" %}
+        <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+      </div>
+    {% endif %}
+
+    <section class="card">
+      <div class="card-header"><h2 class="card-title">{% translate "Who is it?" %}</h2></div>
+      <div class="card-body grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {% include "crm/partials/field.html" with field=form.first_name %}
+        {% include "crm/partials/field.html" with field=form.last_name %}
+        {% include "crm/partials/field.html" with field=form.email %}
+        {% include "crm/partials/field.html" with field=form.phone %}
+      </div>
+    </section>
+
+    <section class="card mt-5">
+      <div class="card-header"><h2 class="card-title">{% translate "What do they want?" %}</h2></div>
+      <div class="card-body grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {% include "crm/partials/field.html" with field=form.source %}
+        {% include "crm/partials/field.html" with field=form.status %}
+        <div class="sm:col-span-2">{% include "crm/partials/field.html" with field=form.interest %}</div>
+        {% include "crm/partials/field.html" with field=form.expected_value %}
+        {% include "crm/partials/field.html" with field=form.probability %}
+      </div>
+    </section>
+
+    <section class="card mt-5">
+      <div class="card-header"><h2 class="card-title">{% translate "Who does what next?" %}</h2></div>
+      <div class="card-body grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {% include "crm/partials/field.html" with field=form.assigned_to %}
+        {% include "crm/partials/field.html" with field=form.next_action_at %}
+        <div class="sm:col-span-2">{% include "crm/partials/field.html" with field=form.next_action %}</div>
+        <div class="sm:col-span-2">{% include "crm/partials/field.html" with field=form.lost_reason %}</div>
+      </div>
+    </section>
+
+    <div class="mt-5 flex items-center gap-3">
+      <button type="submit" class="btn-primary">
+        {% icon "save" "h-4 w-4" %} {% translate "Save" %}
+      </button>
+      <a href="{% if lead %}{% url 'crm:lead_detail' lead.pk %}{% else %}{% url 'crm:lead_list' %}{% endif %}"
+         class="btn-secondary">{% translate "Cancel" %}</a>
+    </div>
+  </form>
+{% endblock %}

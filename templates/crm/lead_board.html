@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Lead board" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Lead board" %}{% endblock %}
+{% block page_subtitle %}
+  <p class="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "Drag a card between columns, or use the arrows on each card." %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <form method="get" class="flex items-center gap-2">
+    <label for="board-owner" class="sr-only">{% translate "Owner" %}</label>
+    <select id="board-owner" name="owner" class="form-select w-auto" onchange="this.form.submit()">
+      <option value="">{% translate "Everyone" %}</option>
+      <option value="me" {% if current_owner == "me" %}selected{% endif %}>{% translate "Assigned to me" %}</option>
+    </select>
+    <noscript><button type="submit" class="btn-secondary btn-sm">{% translate "Apply" %}</button></noscript>
+  </form>
+  <a href="{% url 'crm:lead_list' %}" class="btn-secondary">
+    {% icon "file-text" "h-4 w-4" %} {% translate "Table view" %}
+  </a>
+  {% can "crm.add" as may_add %}
+  {% if may_add %}
+    <a href="{% url 'crm:lead_create' %}" class="btn-primary">
+      {% icon "plus" "h-4 w-4" %} {% translate "New lead" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  {% include "crm/partials/lead_board.html" %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  /* Kanban drag-and-drop.
+     The card carries its own move URL as a data attribute, so no path is ever
+     built in JavaScript. Every drop goes through the same POST endpoint as the
+     arrow buttons, which is the accessible, no-JS fallback. */
+  (function () {
+    'use strict';
+    var draggedUrl = null;
+
+    document.addEventListener('dragstart', function (event) {
+      var card = event.target.closest('[data-lead-move-url]');
+      if (!card) return;
+      draggedUrl = card.getAttribute('data-lead-move-url');
+      event.dataTransfer.effectAllowed = 'move';
+      // Some browsers require payload data for the drag to start at all.
+      try { event.dataTransfer.setData('text/plain', card.getAttribute('data-lead-id') || ''); } catch (e) {}
+      card.classList.add('opacity-50');
+    });
+
+    document.addEventListener('dragend', function (event) {
+      var card = event.target.closest('[data-lead-move-url]');
+      if (card) card.classList.remove('opacity-50');
+      draggedUrl = null;
+    });
+
+    document.addEventListener('dragover', function (event) {
+      var column = event.target.closest('[data-lead-column]');
+      if (!column || !draggedUrl) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'move';
+      column.classList.add('ring-2', 'ring-brand-400');
+    });
+
+    document.addEventListener('dragleave', function (event) {
+      var column = event.target.closest('[data-lead-column]');
+      if (column) column.classList.remove('ring-2', 'ring-brand-400');
+    });
+
+    document.addEventListener('drop', function (event) {
+      var column = event.target.closest('[data-lead-column]');
+      if (!column || !draggedUrl) return;
+      event.preventDefault();
+      column.classList.remove('ring-2', 'ring-brand-400');
+
+      var status = column.getAttribute('data-lead-column');
+      var values = { status: status };
+      if (status === 'lost') {
+        var reason = window.prompt(column.getAttribute('data-lost-prompt') || 'Reason?');
+        if (!reason) { draggedUrl = null; return; }
+        values.lost_reason = reason;
+      }
+      window.htmx.ajax('POST', draggedUrl, {
+        source: document.body,          /* inherits hx-headers, i.e. the CSRF token */
+        values: values,
+        target: '#lead-board',
+        swap: 'outerHTML'
+      });
+      draggedUrl = null;
+    });
+  })();
+</script>
+{% endblock %}

@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "My surf school" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}
+  {% if customer %}
+    {% blocktranslate with name=customer.first_name %}Hello, {{ name }}{% endblocktranslate %}
+  {% else %}
+    {% translate "My surf school" %}
+  {% endif %}
+{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ today|date:"l, d F Y" }}</p>
+{% endblock %}
+
+{% block page_actions %}
+  {% can "bookings.add" as may_book %}
+  {% if may_book and links.bookings_create %}
+    <a href="{{ links.bookings_create }}" class="btn-primary">
+      {% icon "plus" "h-4 w-4" %} {% translate "Book a lesson" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+
+  {% if profile_missing %}
+    <div class="alert-info">
+      {% icon "info" "h-5 w-5 shrink-0" %}
+      <div>
+        <p class="font-medium">{% translate "Your account is not linked to a customer record yet." %}</p>
+        <p class="mt-1">{% translate "Reception can link it for you — then your bookings, rentals and balance appear here." %}</p>
+      </div>
+    </div>
+  {% else %}
+    {% include "dashboard/partials/tiles.html" %}
+  {% endif %}
+
+  <div class="mt-5 grid gap-5 lg:grid-cols-3">
+
+    {# ---- my bookings --------------------------------------------------- #}
+    <div class="space-y-5 lg:col-span-2">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">{% translate "Upcoming bookings" %}</h2>
+          {% if links.bookings_list %}
+            <a href="{{ links.bookings_list }}" class="btn-ghost btn-sm">
+              {% translate "All bookings" %} {% icon "chevron-right" "h-4 w-4" %}
+            </a>
+          {% endif %}
+        </div>
+
+        {% if upcoming_bookings %}
+          <ul class="divide-y divide-slate-100 dark:divide-slate-800">
+            {% for booking in upcoming_bookings %}
+              <li class="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+                <div class="min-w-0">
+                  <p class="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
+                    {{ booking.activity_label }}
+                  </p>
+                  <p class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
+                    <span class="inline-flex items-center gap-1">{% icon "hash" "h-3.5 w-3.5" %} {{ booking.booking_code }}</span>
+                    {% if booking.lesson %}
+                      <span class="inline-flex items-center gap-1">
+                        {% icon "clock" "h-3.5 w-3.5" %} {{ booking.lesson.date|date:"d.m.Y" }} {{ booking.lesson.time_label }}
+                      </span>
+                      <span class="inline-flex items-center gap-1">{% icon "map-pin" "h-3.5 w-3.5" %} {{ booking.lesson.spot }}</span>
+                    {% endif %}
+                    <span class="inline-flex items-center gap-1">{% icon "users" "h-3.5 w-3.5" %} {{ booking.participants }}</span>
+                  </p>
+                </div>
+                <div class="flex shrink-0 flex-col items-end gap-1.5">
+                  {% status_badge booking.status booking.get_status_display %}
+                  {% can "finance.view" as may_see_money %}
+                  {% if may_see_money and booking.balance_due > 0 %}
+                    <span class="text-xs font-medium tabular-nums text-amber-600 dark:text-amber-400">
+                      {% blocktranslate with amount=booking.balance_due|money %}{{ amount }} to pay{% endblocktranslate %}
+                    </span>
+                  {% endif %}
+                </div>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <div class="card-body">
+            {% include "partials/empty_state.html" with icon_name="calendar-days" title=_("No upcoming bookings") subtitle=_("Once you book a lesson or a camp it appears here.") action_url=links.bookings_create action_label=_("Book a lesson") %}
+          </div>
+        {% endif %}
+      </div>
+
+      {% if my_rentals %}
+        <div class="card">
+          <div class="card-header"><h2 class="card-title">{% translate "My rentals" %}</h2></div>
+          <ul class="divide-y divide-slate-100 dark:divide-slate-800">
+            {% for rental in my_rentals %}
+              <li class="flex items-center justify-between gap-3 px-5 py-3">
+                <div class="min-w-0">
+                  <p class="truncate text-sm text-slate-800 dark:text-slate-200">{{ rental.rental_code }}</p>
+                  <p class="truncate text-xs text-slate-500 dark:text-slate-400">
+                    {% blocktranslate with due=rental.expected_return_at|date:"d.m.Y H:i" %}Due back {{ due }}{% endblocktranslate %}
+                  </p>
+                </div>
+                {% status_badge rental.status rental.get_status_display %}
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+    </div>
+
+    {# ---- conditions ---------------------------------------------------- #}
+    <div class="space-y-5">
+      {% can "surf_conditions.view" as may_see_surf %}
+      {% if may_see_surf %}
+        {% include "dashboard/partials/surf_panel.html" %}
+      {% endif %}
+
+      {% if student %}
+        <div class="card">
+          <div class="card-header"><h2 class="card-title">{% translate "My surfing" %}</h2></div>
+          <div class="card-body space-y-2 text-sm">
+            <div class="flex justify-between gap-3">
+              <span class="text-slate-500 dark:text-slate-400">{% translate "Level" %}</span>
+              <span class="font-medium text-slate-900 dark:text-slate-100">{{ student.get_surf_level_display }}</span>
+            </div>
+            <div class="flex justify-between gap-3">
+              <span class="text-slate-500 dark:text-slate-400">{% translate "Lessons taken" %}</span>
+              <span class="font-medium tabular-nums text-slate-900 dark:text-slate-100">{{ student.total_lessons }}</span>
+            </div>
+            {% if student.last_lesson_date %}
+              <div class="flex justify-between gap-3">
+                <span class="text-slate-500 dark:text-slate-400">{% translate "Last lesson" %}</span>
+                <span class="font-medium tabular-nums text-slate-900 dark:text-slate-100">{{ student.last_lesson_date|date:"d.m.Y" }}</span>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      {% endif %}
+
+      {% if recent_bookings %}
+        <div class="card">
+          <div class="card-header"><h2 class="card-title">{% translate "Recent bookings" %}</h2></div>
+          <ul class="divide-y divide-slate-100 dark:divide-slate-800">
+            {% for booking in recent_bookings %}
+              <li class="flex items-center justify-between gap-3 px-5 py-3">
+                <p class="min-w-0 truncate text-sm text-slate-800 dark:text-slate-200">{{ booking.activity_label }}</p>
+                {% status_badge booking.status booking.get_status_display %}
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}

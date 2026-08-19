@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "New assessment" %} · {{ student.full_name }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "New assessment" %}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {{ student.full_name }} · {{ student.student_code }} · {{ student.get_surf_level_display }}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'students:detail' student.pk %}" class="btn-ghost">
+    {% icon "chevron-left" "h-4 w-4" %} {% translate "Back to student" %}
+  </a>
+{% endblock %}
+
+{% block content %}
+  {% if previous %}
+    <div class="alert-info mb-5">
+      {% icon "history" "h-5 w-5 shrink-0" %}
+      <div>
+        <p class="font-medium">
+          {% blocktranslate with date=previous.assessed_on score=previous.average_score %}Previous assessment {{ date }} — average {{ score }} / 5{% endblocktranslate %}
+        </p>
+        {% if previous.next_focus %}
+          <p>{% translate "Focus set last time" %}: {{ previous.next_focus }}</p>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+  <form method="post" class="space-y-5" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="alert-error">
+        {% icon "circle-alert" "h-5 w-5 shrink-0" %}
+        <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+      </div>
+    {% endif %}
+
+    <section class="card">
+      <div class="card-header"><h2 class="card-title">{% translate "Session" %}</h2></div>
+      <div class="card-body grid gap-4 sm:grid-cols-3">
+        <div>
+          <label class="form-label" for="{{ form.assessed_on.id_for_label }}">{{ form.assessed_on.label }}</label>
+          {{ form.assessed_on }}
+          {% for error in form.assessed_on.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        </div>
+        <div>
+          <label class="form-label" for="{{ form.instructor.id_for_label }}">{{ form.instructor.label }}</label>
+          {{ form.instructor }}
+          {% for error in form.instructor.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        </div>
+        <div>
+          <label class="form-label" for="{{ form.level_after.id_for_label }}">{{ form.level_after.label }}</label>
+          {{ form.level_after }}
+          {% if form.level_after.help_text %}<p class="form-help">{{ form.level_after.help_text }}</p>{% endif %}
+          {% for error in form.level_after.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Competencies" %}</h2>
+        <span class="text-xs text-slate-500 dark:text-slate-400">
+          {% translate "1 = struggling · 5 = strong" %}
+        </span>
+      </div>
+      <div class="card-body grid gap-4 sm:grid-cols-5">
+        <div>
+          <label class="form-label" for="{{ form.paddling.id_for_label }}">{{ form.paddling.label }}</label>
+          {{ form.paddling }}
+          {% for error in form.paddling.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        </div>
+        <div>
+          <label class="form-label" for="{{ form.popup.id_for_label }}">{{ form.popup.label }}</label>
+          {{ form.popup }}
+          {% for error in form.popup.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        </div>
+        <div>
+          <label class="form-label" for="{{ form.positioning.id_for_label }}">{{ form.positioning.label }}</label>
+          {{ form.positioning }}
+          {% for error in form.positioning.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        </div>
+        <div>
+          <label class="form-label" for="{{ form.wave_reading.id_for_label }}">{{ form.wave_reading.label }}</label>
+          {{ form.wave_reading }}
+          {% for error in form.wave_reading.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        </div>
+        <div>
+          <label class="form-label" for="{{ form.safety.id_for_label }}">{{ form.safety.label }}</label>
+          {{ form.safety }}
+          <p class="form-help">{{ form.safety.help_text }}</p>
+          {% for error in form.safety.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header"><h2 class="card-title">{% translate "Coaching notes" %}</h2></div>
+      <div class="card-body grid gap-4">
+        <div>
+          <label class="form-label" for="{{ form.next_focus.id_for_label }}">{{ form.next_focus.label }}</label>
+          {{ form.next_focus }}
+          <p class="form-help">{{ form.next_focus.help_text }}</p>
+        </div>
+        <div>
+          <label class="form-label" for="{{ form.notes.id_for_label }}">{{ form.notes.label }}</label>
+          {{ form.notes }}
+        </div>
+      </div>
+    </section>
+
+    <div class="flex items-center justify-end gap-2">
+      <a href="{% url 'students:detail' student.pk %}" class="btn-secondary">{% translate "Cancel" %}</a>
+      <button type="submit" class="btn-primary">
+        {% icon "clipboard-check" "h-4 w-4" %} {% translate "Save assessment" %}
+      </button>
+    </div>
+  </form>
+{% endblock %}

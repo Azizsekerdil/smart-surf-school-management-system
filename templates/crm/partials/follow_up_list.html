@@ -1,0 +1,42 @@
+{% load i18n surf_tags %}
+<div id="follow-up-list">
+  {% if follow_ups %}
+    <ul class="divide-y divide-slate-100 dark:divide-slate-800">
+      {% for interaction in follow_ups %}
+        <li class="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
+          <span class="mt-0.5 shrink-0 {% if interaction.is_follow_up_overdue %}text-rose-500{% else %}text-slate-400{% endif %}">
+            {% if interaction.is_negative %}
+              {% icon "triangle-alert" "h-4 w-4" %}
+            {% else %}
+              {% icon "bell" "h-4 w-4" %}
+            {% endif %}
+          </span>
+          <div class="min-w-0 flex-1">
+            <p class="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{{ interaction.subject }}</p>
+            <p class="truncate text-xs text-slate-500 dark:text-slate-400">
+              {{ interaction.get_kind_display }} · {{ interaction.contact_display }}
+            </p>
+          </div>
+          <div class="flex shrink-0 items-center gap-2">
+            <span class="text-xs {% if interaction.is_follow_up_overdue %}font-medium text-rose-600 dark:text-rose-400{% else %}text-slate-500 dark:text-slate-400{% endif %}">
+              {{ interaction.follow_up_at|date:"d.m H:i" }}
+            </span>
+            {% can "crm.change" as may_change %}
+            {% if may_change %}
+              <button type="button"
+                      class="btn-secondary btn-sm"
+                      hx-post="{% url 'crm:follow_up_complete' interaction.pk %}"
+                      hx-swap="none"
+                      title="{% translate 'Mark this follow-up as handled' %}">
+                {% icon "check" "h-4 w-4" %}
+                <span class="sr-only">{% translate "Mark done" %}</span>
+              </button>
+            {% endif %}
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    {% include "partials/empty_state.html" with icon_name="circle-check" title=_("Nothing to chase") subtitle=_("No follow-up is due in the next seven days.") %}
+  {% endif %}
+</div>

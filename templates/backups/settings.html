@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Retention policy" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Retention policy" %}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "How many scheduled copies to keep before the sweep removes the rest." %}
+  </p>
+{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-3 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'backups:list' %}" class="hover:underline">{% translate "Backup & Restore" %}</a>
+    <span class="mx-1">/</span>
+    <span class="text-slate-700 dark:text-slate-300">{% translate "Retention policy" %}</span>
+  </nav>
+{% endblock %}
+
+{% block content %}
+  <div class="grid gap-5 lg:grid-cols-2">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Keep this many copies" %}</h2>
+        {% icon "clock" "h-4 w-4 text-slate-400" %}
+      </div>
+      <div class="card-body">
+        <form method="post">
+          {% csrf_token %}
+          <div class="space-y-4">
+            {% include "backups/partials/field.html" with field=form.daily %}
+            {% include "backups/partials/field.html" with field=form.weekly %}
+            {% include "backups/partials/field.html" with field=form.monthly %}
+          </div>
+          <div class="mt-5 flex justify-end">
+            <button type="submit" class="btn-primary">
+              {% icon "save" "h-4 w-4" %} {% translate "Save policy" %}
+            </button>
+          </div>
+        </form>
+
+        <div class="alert-info mt-5">
+          {% icon "shield-check" "h-5 w-5 shrink-0" %}
+          <p class="text-xs">
+            {% translate "Manual backups and the safety copies taken before a restore are never removed automatically, and the most recent successful backup is always kept — whatever these numbers say." %}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "The next sweep would remove" %}</h2>
+        {% icon "trash-2" "h-4 w-4 text-slate-400" %}
+      </div>
+      <div class="card-body">
+        {% if preview %}
+          <p class="mb-3 text-sm text-slate-600 dark:text-slate-300">
+            {% blocktranslate with count=preview|length size=preview_display %}{{ count }} backup(s), reclaiming {{ size }}.{% endblocktranslate %}
+          </p>
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th scope="col">{% translate "Code" %}</th>
+                  <th scope="col">{% translate "Type" %}</th>
+                  <th scope="col">{% translate "Age" %}</th>
+                  <th scope="col" class="text-end">{% translate "Size" %}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in preview %}
+                  <tr>
+                    <td class="whitespace-nowrap font-mono text-xs">
+                      <a href="{% url 'backups:detail' row.pk %}" class="hover:underline">{{ row.backup_code }}</a>
+                    </td>
+                    <td class="whitespace-nowrap">{{ row.get_backup_type_display }}</td>
+                    <td class="whitespace-nowrap">
+                      {% blocktranslate with days=row.age_days %}{{ days }} d{% endblocktranslate %}
+                    </td>
+                    <td class="whitespace-nowrap text-end tabular-nums">{{ row.size_display }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <form method="post" action="{% url 'backups:retention_run' %}" class="mt-4 flex justify-end">
+            {% csrf_token %}
+            <button type="submit" class="btn-danger">
+              {% icon "trash-2" "h-4 w-4" %} {% translate "Apply the policy now" %}
+            </button>
+          </form>
+        {% else %}
+          {% translate "Everything is within policy" as empty_title %}
+          {% translate "No backup is old enough or numerous enough to be swept away." as empty_subtitle %}
+          {% include "partials/empty_state.html" with icon_name="circle-check" title=empty_title subtitle=empty_subtitle %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="card mt-5">
+    <div class="card-header">
+      <h2 class="card-title">{% translate "Where backups are written" %}</h2>
+      {% icon "hard-drive" "h-4 w-4 text-slate-400" %}
+    </div>
+    <div class="card-body">
+      <dl class="grid gap-x-6 gap-y-4 sm:grid-cols-3">
+        <div>
+          <dt class="stat-label">{% translate "Backup volume" %}</dt>
+          <dd class="mt-0.5 break-all font-mono text-xs text-slate-700 dark:text-slate-300">{{ stats.backup_root }}</dd>
+        </div>
+        <div>
+          <dt class="stat-label">{% translate "Used by backups" %}</dt>
+          <dd class="mt-0.5 text-sm tabular-nums text-slate-900 dark:text-slate-100">{{ stats.total_display }}</dd>
+        </div>
+        <div>
+          <dt class="stat-label">{% translate "Free space" %}</dt>
+          <dd class="mt-0.5 text-sm tabular-nums text-slate-900 dark:text-slate-100">{{ stats.free_display }}</dd>
+        </div>
+      </dl>
+      <p class="mt-4 text-xs text-slate-500 dark:text-slate-400">
+        {% translate "Change the location with BACKUP_ROOT in .env. Point it at a different physical disk — a backup on the same drive as the database does not survive that drive failing." %}
+      </p>
+    </div>
+  </div>
+{% endblock %}

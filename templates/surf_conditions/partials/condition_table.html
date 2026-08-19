@@ -1,0 +1,63 @@
+{% load i18n surf_tags %}
+{% if conditions %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">{% translate "Recorded" %}</th>
+          <th scope="col">{% translate "Spot" %}</th>
+          <th scope="col" class="text-end">{% translate "Wave" %}</th>
+          <th scope="col" class="text-end">{% translate "Period" %}</th>
+          <th scope="col">{% translate "Wind" %}</th>
+          <th scope="col">{% translate "Tide" %}</th>
+          <th scope="col" class="text-end">{% translate "Water" %}</th>
+          <th scope="col">{% translate "Source" %}</th>
+          <th scope="col"><span class="sr-only">{% translate "Actions" %}</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in conditions %}
+          <tr>
+            <td class="whitespace-nowrap tabular-nums">
+              <a href="{% url 'surf_conditions:detail' item.pk %}" class="font-medium hover:underline">
+                {{ item.recorded_at|date:"d.m.Y H:i" }}
+              </a>
+            </td>
+            <td>{{ item.spot.name }}</td>
+            <td class="text-end tabular-nums">
+              {% if item.wave_height_m is not None %}{{ item.wave_height_m|floatformat:1 }} m{% else %}—{% endif %}
+            </td>
+            <td class="text-end tabular-nums">
+              {% if item.effective_period_s is not None %}{{ item.effective_period_s|floatformat:1 }} s{% else %}—{% endif %}
+            </td>
+            <td class="whitespace-nowrap">
+              {% if item.wind_speed_kmh is not None %}
+                <span class="tabular-nums">{{ item.wind_speed_kmh|floatformat:0 }} km/h</span>
+                <span class="text-xs text-slate-500 dark:text-slate-400">{{ item.wind_compass }}</span>
+              {% else %}—{% endif %}
+            </td>
+            <td>{{ item.get_tide_state_display }}</td>
+            <td class="text-end tabular-nums">
+              {% if item.water_temperature_c is not None %}{{ item.water_temperature_c|floatformat:1 }} °C{% else %}—{% endif %}
+            </td>
+            <td>
+              {% if item.source == "manual" %}
+                <span class="badge-violet">{% translate "Staff" %}</span>
+              {% else %}
+                <span class="badge-slate">{{ item.provider|default:item.get_source_display }}</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <a href="{% url 'surf_conditions:detail' item.pk %}" class="btn-ghost btn-sm">
+                {% icon "eye" "h-4 w-4" %}<span class="sr-only">{% translate "View" %}</span>
+              </a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include "partials/pagination.html" %}
+{% else %}
+  {% include "partials/empty_state.html" with icon_name="waves" title=_("No readings match") subtitle=_("Change the filters, or refresh the conditions from the dashboard to store the first reading.") %}
+{% endif %}

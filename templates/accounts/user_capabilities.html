@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Permissions" %} · {{ user_obj.get_display_name }}{% endblock %}
+{% block page_title %}{% translate "Permissions" %}{% endblock %}
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {{ user_obj.get_display_name }} · <span class="badge-sky">{{ user_obj.get_role_display }}</span>
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'accounts:user_detail' user_obj.pk %}" class="btn-ghost">{% translate "Cancel" %}</a>
+{% endblock %}
+
+{% block content %}
+  <div class="alert-info mb-5">
+    <span class="mt-0.5 shrink-0">{% icon "info" "h-5 w-5" %}</span>
+    <div>
+      {% blocktranslate %}The role already grants a set of permissions. Use this screen only for
+      exceptions: <strong>Grant</strong> adds something the role does not include,
+      <strong>Deny</strong> removes something it does. A denial always wins.{% endblocktranslate %}
+    </div>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="space-y-4">
+      {% for module, label, capabilities in form.grouped_fields %}
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">{{ label }}</h2>
+            <span class="badge-slate font-mono text-[0.68rem]">{{ module }}</span>
+          </div>
+          <div class="card-body">
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>{% translate "Capability" %}</th>
+                    <th class="w-24 text-center">{% translate "Grant" %}</th>
+                    <th class="w-24 text-center">{% translate "Deny" %}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for capability in capabilities %}
+                    <tr>
+                      <td class="font-mono text-xs">{{ capability }}</td>
+                      <td class="text-center">
+                        {% with grant_field="grant__"|add:capability %}
+                          {{ form|get_item:grant_field }}
+                        {% endwith %}
+                      </td>
+                      <td class="text-center">
+                        {% with deny_field="deny__"|add:capability %}
+                          {{ form|get_item:deny_field }}
+                        {% endwith %}
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="sticky bottom-4 mt-5 flex justify-end gap-2">
+      <a href="{% url 'accounts:user_detail' user_obj.pk %}" class="btn-secondary">{% translate "Cancel" %}</a>
+      <button type="submit" class="btn-primary shadow-lg">
+        {% icon "save" "h-4 w-4" %} {% translate "Save permissions" %}
+      </button>
+    </div>
+  </form>
+{% endblock %}

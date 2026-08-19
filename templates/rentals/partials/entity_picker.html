@@ -1,0 +1,40 @@
+{% load i18n surf_tags %}
+{% comment %} Search-and-pick control for a related record.
+   Usage: {% include "rentals/partials/entity_picker.html" with target="customer" field=form.customer label_field=form.customer_label picker_label=_("Customer") required=True hint=... %} {% endcomment %}
+
+<div>
+  <label class="form-label" for="{{ target }}_search">
+    {{ picker_label }}{% if required %} <span class="text-rose-600">*</span>{% endif %}
+  </label>
+
+  {{ field }}
+  {{ label_field }}
+
+  <div class="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800/60">
+    {% icon "user-round" "h-4 w-4 text-slate-400" %}
+    <span id="{{ target }}_display" class="flex-1 truncate text-slate-700 dark:text-slate-200">
+      {% if label_field.value %}{{ label_field.value }}{% else %}{% translate "Nothing selected" %}{% endif %}
+    </span>
+    <button type="button" class="btn-ghost btn-sm"
+            onclick="surfClearEntity('{{ target }}', '{% translate "Nothing selected" %}')">
+      {% icon "x" "h-3.5 w-3.5" %}<span class="sr-only">{% translate "Clear" %}</span>
+    </button>
+  </div>
+
+  <div class="relative mt-2">
+    <span class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3 text-slate-400">
+      {% icon "search" "h-4 w-4" %}
+    </span>
+    <input type="search" name="q" id="{{ target }}_search" autocomplete="off"
+           class="form-input ps-9"
+           placeholder="{% translate 'Type to search' %}"
+           hx-get="{% url 'rentals:search' %}?kind={{ target }}&target={{ target }}"
+           hx-trigger="input changed delay:300ms, search"
+           hx-target="#{{ target }}_results"
+           hx-swap="innerHTML">
+  </div>
+  <div id="{{ target }}_results"></div>
+
+  {% if hint %}<p class="form-help">{{ hint }}</p>{% endif %}
+  {% for error in field.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+</div>

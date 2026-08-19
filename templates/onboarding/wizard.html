@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+{% load i18n static surf_tags %}
+
+{% block title %}{% translate "Setup" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Set up your surf school" %}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% blocktranslate with label=step_label %}Step: {{ label }}{% endblocktranslate %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <form method="post" action="{% url 'onboarding:skip' %}">
+    {% csrf_token %}
+    <button type="submit" class="btn-ghost">{% translate "Skip for now" %}</button>
+  </form>
+{% endblock %}
+
+{% block content %}
+<div class="grid gap-6 lg:grid-cols-[260px_1fr]">
+
+  {# ------------------------------------------------------------ progress #}
+  <aside class="card h-fit">
+    <div class="card-body">
+      <div class="mb-4">
+        <div class="mb-1.5 flex items-center justify-between text-xs font-medium text-slate-500 dark:text-slate-400">
+          <span>{% translate "Progress" %}</span>
+          <span class="tabular-nums">{{ percent }}%</span>
+        </div>
+        <div class="h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+          <div class="h-full rounded-full bg-brand-600 transition-all duration-300"
+               style="width: {{ percent }}%"></div>
+        </div>
+      </div>
+
+      <ol class="space-y-1">
+        {% for item in steps %}
+          <li>
+            <a href="{{ item.url }}"
+               class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-colors
+                      {% if item.is_current %}bg-brand-50 font-medium text-brand-700 dark:bg-brand-500/10 dark:text-brand-300
+                      {% else %}text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800{% endif %}">
+              <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full
+                           {% if item.is_done %}bg-emerald-500 text-white
+                           {% elif item.is_current %}bg-brand-600 text-white
+                           {% else %}bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400{% endif %}">
+                {% if item.is_done %}{% icon "check" "h-3 w-3" %}{% else %}<span class="text-[0.6rem]">{{ forloop.counter }}</span>{% endif %}
+              </span>
+              <span class="truncate">{{ item.label }}</span>
+            </a>
+          </li>
+        {% endfor %}
+      </ol>
+    </div>
+  </aside>
+
+  {# --------------------------------------------------------------- step #}
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">{{ step_label }}</h2>
+    </div>
+    <div class="card-body">
+
+      {# --- welcome ------------------------------------------------ #}
+      {% if step == "welcome" %}
+        <div class="max-w-prose space-y-4 text-sm text-slate-600 dark:text-slate-300">
+          <p class="text-base text-slate-900 dark:text-slate-100">
+            {% blocktranslate %}This wizard sets up the handful of things the system cannot guess.{% endblocktranslate %}
+          </p>
+          <p>
+            {% blocktranslate %}It takes about five minutes. You can skip it and come back later —
+            nothing here is irreversible, and every answer can be changed in Settings afterwards.{% endblocktranslate %}
+          </p>
+          <ul class="space-y-2">
+            <li class="flex gap-2">{% icon "building-2" "h-4 w-4 mt-0.5 shrink-0 text-brand-600" %} {% translate "Your school's name and contact details" %}</li>
+            <li class="flex gap-2">{% icon "languages" "h-4 w-4 mt-0.5 shrink-0 text-brand-600" %} {% translate "Default language and currency" %}</li>
+            <li class="flex gap-2">{% icon "map-pin" "h-4 w-4 mt-0.5 shrink-0 text-brand-600" %} {% translate "Your main surf spot — this is what fetches live conditions" %}</li>
+            <li class="flex gap-2">{% icon "sparkles" "h-4 w-4 mt-0.5 shrink-0 text-brand-600" %} {% translate "Which AI providers are reachable" %}</li>
+            <li class="flex gap-2">{% icon "database-backup" "h-4 w-4 mt-0.5 shrink-0 text-brand-600" %} {% translate "Your first backup" %}</li>
+          </ul>
+        </div>
+
+      {# --- staff -------------------------------------------------- #}
+      {% elif step == "staff" %}
+        <div class="max-w-prose space-y-4 text-sm text-slate-600 dark:text-slate-300">
+          <p>
+            {% blocktranslate %}Add your team now or later. Each person gets a role, and the role
+            decides what they can see — a rental clerk does not see revenue, an instructor's
+            dashboard leads with their own lessons.{% endblocktranslate %}
+          </p>
+          {% can "accounts.add" as may_add_users %}
+          {% if may_add_users %}
+            <a href="{% url 'accounts:user_create' %}" class="btn-secondary">
+              {% icon "user-plus" "h-4 w-4" %} {% translate "Add a user" %}
+            </a>
+            <a href="{% url 'accounts:role_matrix' %}" class="btn-ghost">
+              {% icon "shield-check" "h-4 w-4" %} {% translate "See what each role can do" %}
+            </a>
+          {% else %}
+            <p class="alert-info">{% translate "Your role cannot add users. Ask a manager to do this step." %}</p>
+          {% endif %}
+        </div>
+
+      {# --- AI ----------------------------------------------------- #}
+      {% elif step == "ai" %}
+        <div class="max-w-prose space-y-4 text-sm text-slate-600 dark:text-slate-300">
+          <p>
+            {% blocktranslate %}The system works fully without AI. Everything below is optional.{% endblocktranslate %}
+          </p>
+          <div class="alert-info">
+            <span class="mt-0.5 shrink-0">{% icon "lock" "h-5 w-5" %}</span>
+            <div>
+              {% blocktranslate %}API keys are read from the <code>.env</code> file only — never stored in
+              the database. That way a database backup can never leak a credential.{% endblocktranslate %}
+            </div>
+          </div>
+
+          {% if ai_status.available %}
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>{% translate "Provider" %}</th>
+                    <th>{% translate "Type" %}</th>
+                    <th>{% translate "Status" %}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for provider in ai_status.providers %}
+                    <tr>
+                      <td class="font-medium">{{ provider.label }}</td>
+                      <td>
+                        {% if provider.is_cloud %}<span class="badge-violet">{% translate "Cloud" %}</span>
+                        {% else %}<span class="badge-emerald">{% translate "Local" %}</span>{% endif %}
+                      </td>
+                      <td>
+                        {% if provider.configured %}
+                          <span class="badge-emerald">{% translate "Configured" %}</span>
+                        {% else %}
+                          <span class="badge-slate">{% translate "Not configured" %}</span>
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% endif %}
+
+          <p>
+            {% blocktranslate %}For free, private, offline AI: install LM Studio, download a model and
+            start its local server. Nothing else to configure.{% endblocktranslate %}
+          </p>
+          {% can "ai.manage" as may_manage_ai %}
+          {% if may_manage_ai %}
+            <a href="{% url 'ai:control_center' %}" class="btn-secondary">
+              {% icon "cpu" "h-4 w-4" %} {% translate "Open the AI Control Center" %}
+            </a>
+          {% endif %}
+        </div>
+
+      {# --- finish ------------------------------------------------- #}
+      {% elif step == "finish" %}
+        <div class="max-w-prose space-y-5">
+          <p class="text-sm text-slate-600 dark:text-slate-300">
+            {% blocktranslate %}Here is what will be saved. Confirm to create your surf spot and apply
+            these settings.{% endblocktranslate %}
+          </p>
+
+          <dl class="divide-y divide-slate-200 rounded-lg border border-slate-200 dark:divide-slate-700 dark:border-slate-700">
+            {% for label, value in summary.items %}
+              <div class="flex justify-between gap-4 px-4 py-2.5 text-sm">
+                <dt class="text-slate-500 dark:text-slate-400">{{ label }}</dt>
+                <dd class="font-medium text-slate-900 dark:text-slate-100">{{ value|default:"—" }}</dd>
+              </div>
+            {% endfor %}
+          </dl>
+
+          <form method="post" action="{% url 'onboarding:finish' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn-primary">
+              {% icon "check" "h-4 w-4" %} {% translate "Finish setup" %}
+            </button>
+          </form>
+        </div>
+
+      {# --- form steps --------------------------------------------- #}
+      {% else %}
+        <form method="post" class="max-w-xl space-y-4">
+          {% csrf_token %}
+          {% if form.non_field_errors %}
+            <div class="alert-error" role="alert">
+              <span class="mt-0.5 shrink-0">{% icon "circle-x" "h-5 w-5" %}</span>
+              <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+            </div>
+          {% endif %}
+
+          {% for field in form %}
+            <div>
+              <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+              {{ field }}
+              {% if field.help_text %}<p class="form-help">{{ field.help_text }}</p>{% endif %}
+              {% for error in field.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+            </div>
+          {% endfor %}
+
+          <div class="flex items-center gap-2 pt-2">
+            <button type="submit" class="btn-primary">
+              {% translate "Save and continue" %} {% icon "chevron-right" "h-4 w-4" %}
+            </button>
+            {% if previous_step %}
+              <a href="{% url 'onboarding:step' step=previous_step %}" class="btn-secondary">
+                {% translate "Back" %}
+              </a>
+            {% endif %}
+          </div>
+        </form>
+      {% endif %}
+
+      {# --- navigation for the non-form steps ---------------------- #}
+      {% if step == "welcome" or step == "staff" %}
+        <form method="post" class="mt-6 flex items-center gap-2">
+          {% csrf_token %}
+          <button type="submit" class="btn-primary">
+            {% translate "Continue" %} {% icon "chevron-right" "h-4 w-4" %}
+          </button>
+          {% if previous_step %}
+            <a href="{% url 'onboarding:step' step=previous_step %}" class="btn-secondary">
+              {% translate "Back" %}
+            </a>
+          {% endif %}
+        </form>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+{% endblock %}

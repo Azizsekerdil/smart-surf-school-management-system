@@ -1,0 +1,30 @@
+{% load i18n surf_tags %}
+{% comment %}
+  The shared period picker. A plain GET form, so the chosen range survives
+  pagination, search and a page reload. Custom dates only appear when needed.
+{% endcomment %}
+<form method="get" action="{{ range_form_action }}" class="flex flex-wrap items-end gap-2"
+      x-data="{ custom: '{{ range_key }}' === 'custom' }">
+  <div>
+    <label class="form-label" for="range-select">{% translate "Period" %}</label>
+    <select name="range" id="range-select" class="form-select"
+            x-on:change="custom = $event.target.value === 'custom'">
+      {% for value, label in range_choices %}
+        <option value="{{ value }}" {% if range_key == value %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div x-show="custom" x-cloak>
+    <label class="form-label" for="range-start">{% translate "From" %}</label>
+    <input type="date" name="start" id="range-start" value="{{ range_start_value }}" class="form-input">
+  </div>
+  <div x-show="custom" x-cloak>
+    <label class="form-label" for="range-end">{% translate "To" %}</label>
+    <input type="date" name="end" id="range-end" value="{{ range_end_value }}" class="form-input">
+  </div>
+
+  <button type="submit" class="btn-secondary">
+    {% icon "filter" "h-4 w-4" %} {% translate "Apply" %}
+  </button>
+</form>

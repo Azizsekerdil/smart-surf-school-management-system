@@ -1,0 +1,24 @@
+{% load i18n surf_tags %}
+{% if results %}
+  <ul class="max-h-56 divide-y divide-slate-100 overflow-y-auto rounded-lg border border-slate-200 dark:divide-slate-800 dark:border-slate-700">
+    {% for customer in results %}
+      <li>
+        <button type="button"
+                class="flex w-full items-center gap-2 px-3 py-2 text-start text-sm hover:bg-slate-50 dark:hover:bg-slate-800"
+                @click="pickCustomer('{{ customer.pk }}', '{{ customer|escapejs }}')">
+          {% icon "user-round" "h-4 w-4 text-slate-400" %}
+          <span class="min-w-0">
+            <span class="block truncate font-medium text-slate-800 dark:text-slate-100">{{ customer }}</span>
+            <span class="block truncate text-xs text-slate-500 dark:text-slate-400">
+              {{ customer.email|default:"" }}{% if customer.email and customer.phone %} · {% endif %}{{ customer.phone|default:"" }}
+            </span>
+          </span>
+        </button>
+      </li>
+    {% endfor %}
+  </ul>
+{% elif term %}
+  <p class="rounded-lg border border-dashed border-slate-300 px-3 py-2 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+    {% blocktranslate %}No customer matches “{{ term }}”. Create them in the Customers module first.{% endblocktranslate %}
+  </p>
+{% endif %}

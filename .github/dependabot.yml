@@ -1,0 +1,41 @@
+version: 2
+
+updates:
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    labels: ["dependencies", "python"]
+    groups:
+      django:
+        patterns:
+          - "Django"
+          - "django-*"
+          - "djangorestframework*"
+          - "drf-*"
+      dev-tooling:
+        patterns:
+          - "pytest*"
+          - "ruff"
+          - "bandit"
+          - "pip-audit"
+          - "factory-boy"
+          - "Faker"
+          - "freezegun"
+          - "responses"
+
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    labels: ["dependencies", "javascript"]
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly
+    labels: ["dependencies", "ci"]

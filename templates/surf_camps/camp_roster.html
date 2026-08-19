@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Day roster" %} · {{ camp.name }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Day roster" %}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="text-sm text-slate-500 dark:text-slate-400">
+    <a href="{% url 'surf_camps:detail' camp.pk %}" class="hover:text-brand-600">{{ camp.name }}</a>
+    <span class="font-mono">· {{ camp.code }}</span> · {{ roster_date|date:"l, d.m.Y" }}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <form method="get" class="no-print flex items-end gap-2">
+    <div>
+      <label class="form-label" for="roster-date">{% translate "Day" %}</label>
+      <select id="roster-date" name="date" class="form-select" onchange="this.form.submit()">
+        {% for day in camp_dates %}
+          <option value="{{ day|date:'Y-m-d' }}" {% if day == roster_date %}selected{% endif %}>
+            {{ day|date:"d.m.Y" }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <noscript>
+      <button type="submit" class="btn-secondary">{% translate "Show" %}</button>
+    </noscript>
+  </form>
+  <button type="button" class="no-print btn-primary" onclick="window.print()">
+    {% icon "printer" "h-4 w-4" %} {% translate "Print" %}
+  </button>
+{% endblock %}
+
+{% block content %}
+  <div class="space-y-4">
+
+    <section class="card">
+      <div class="card-body grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div>
+          <p class="stat-label">{% translate "On site" %}</p>
+          <p class="stat-value">{{ roster.present_count }}</p>
+        </div>
+        <div>
+          <p class="stat-label">{% translate "Spot" %}</p>
+          <p class="stat-value text-lg">{{ roster.spot|default:"—" }}</p>
+        </div>
+        <div>
+          <p class="stat-label">{% translate "Instructor ratio" %}</p>
+          <p class="stat-value text-lg {% if roster.staffing.is_understaffed %}text-rose-600 dark:text-rose-400{% endif %}">
+            {{ roster.staffing.assigned_instructors }} / {{ roster.staffing.required_instructors }}
+            <span class="text-sm font-normal text-slate-500 dark:text-slate-400">
+              ({{ roster.staffing.ratio }}:1)
+            </span>
+          </p>
+        </div>
+        <div>
+          <p class="stat-label">{% translate "Under 18" %}</p>
+          <p class="stat-value text-lg">{{ roster.minors|length }}</p>
+        </div>
+      </div>
+      {% if roster.day.weather_note %}
+        <div class="border-t border-slate-200 px-5 py-3 text-sm text-slate-600 dark:border-slate-700 dark:text-slate-300">
+          {% icon "cloud" "inline h-4 w-4" %} {{ roster.day.weather_note }}
+        </div>
+      {% endif %}
+    </section>
+
+    {% if roster.staffing.is_understaffed %}
+      <div class="alert-error">
+        {% icon "shield-alert" "h-5 w-5 shrink-0" %}
+        <span>
+          {% blocktranslate with shortfall=roster.staffing.shortfall ratio=roster.staffing.ratio %}
+            {{ shortfall }} more instructors are needed to keep the {{ ratio }}:1 ratio in the water.
+          {% endblocktranslate %}
+        </span>
+      </div>
+    {% endif %}
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Programme" %}</h2>
+        {% if roster.day %}<span class="badge-sky">{{ roster.day.display_title }}</span>{% endif %}
+      </div>
+      <div class="card-body">
+        {% if roster.activities %}
+          <table class="table">
+            <thead>
+              <tr>
+                <th>{% translate "Time" %}</th>
+                <th>{% translate "Activity" %}</th>
+                <th>{% translate "Type" %}</th>
+                <th>{% translate "Instructor" %}</th>
+                <th>{% translate "Location" %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for activity in roster.activities %}
+                <tr>
+                  <td class="whitespace-nowrap font-mono">{{ activity.time_label }}</td>
+                  <td class="font-medium text-slate-900 dark:text-slate-100">{{ activity.title }}</td>
+                  <td>{{ activity.get_activity_type_display }}</td>
+                  <td>{{ activity.instructor|default:"—" }}</td>
+                  <td>{{ activity.location|default:"—" }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p class="text-sm text-slate-500 dark:text-slate-400">
+            {% translate "No programme recorded for this day." %}
+          </p>
+        {% endif %}
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Participants on site" %}</h2>
+        <span class="badge-slate">{{ roster.present_count }}</span>
+      </div>
+      <div class="card-body">
+        {% if roster.participants %}
+          <table class="table">
+            <thead>
+              <tr>
+                <th>{% translate "Student" %}</th>
+                <th>{% translate "Room" %}</th>
+                <th>{% translate "Status" %}</th>
+                <th>{% translate "Dietary" %}</th>
+                <th>{% translate "Medical" %}</th>
+                <th>{% translate "Present" %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for participant in roster.participants %}
+                <tr>
+                  <td class="font-medium text-slate-900 dark:text-slate-100">{{ participant.student }}</td>
+                  <td>{{ participant.room_number|default:"—" }}</td>
+                  <td>{% status_badge participant.status participant.get_status_display participant_status_colors %}</td>
+                  <td>{{ participant.dietary_requirements|default:"—" }}</td>
+                  <td class="{% if participant.has_medical_flag %}font-medium text-rose-700 dark:text-rose-400{% endif %}">
+                    {{ participant.medical_notes|default:"—"|truncatechars:60 }}
+                  </td>
+                  <td class="w-20">
+                    <span class="inline-block h-5 w-10 rounded border border-slate-400 print:border-black"></span>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p class="text-sm text-slate-500 dark:text-slate-400">
+            {% translate "Nobody is on site on this date." %}
+          </p>
+        {% endif %}
+      </div>
+    </section>
+
+    {% if roster.arrivals or roster.departures %}
+      <section class="card">
+        <div class="card-header"><h2 class="card-title">{% translate "Arrivals and departures" %}</h2></div>
+        <div class="card-body grid gap-4 sm:grid-cols-2 text-sm">
+          <div>
+            <p class="mb-2 font-medium text-slate-900 dark:text-slate-100">{% translate "Arriving" %}</p>
+            {% if roster.arrivals %}
+              <ul class="space-y-1.5">
+                {% for participant in roster.arrivals %}
+                  <li class="flex flex-wrap items-center justify-between gap-2">
+                    <span>{{ participant.student }}</span>
+                    <span class="text-slate-500 dark:text-slate-400">
+                      {{ participant.arrival_datetime|date:"H:i" }} {{ participant.arrival_flight }}
+                      {% if participant.needs_transfer %}<span class="badge-sky">{% translate "Transfer" %}</span>{% endif %}
+                    </span>
+                  </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p class="text-slate-500 dark:text-slate-400">{% translate "Nobody." %}</p>
+            {% endif %}
+          </div>
+          <div>
+            <p class="mb-2 font-medium text-slate-900 dark:text-slate-100">{% translate "Departing" %}</p>
+            {% if roster.departures %}
+              <ul class="space-y-1.5">
+                {% for participant in roster.departures %}
+                  <li class="flex flex-wrap items-center justify-between gap-2">
+                    <span>{{ participant.student }}</span>
+                    <span class="text-slate-500 dark:text-slate-400">
+                      {{ participant.departure_datetime|date:"H:i" }} {{ participant.departure_flight }}
+                      {% if participant.needs_transfer %}<span class="badge-sky">{% translate "Transfer" %}</span>{% endif %}
+                    </span>
+                  </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p class="text-slate-500 dark:text-slate-400">{% translate "Nobody." %}</p>
+            {% endif %}
+          </div>
+        </div>
+      </section>
+    {% endif %}
+
+    {% if roster.dietary or roster.medical %}
+      <section class="card">
+        <div class="card-header"><h2 class="card-title">{% translate "Kitchen and first aid" %}</h2></div>
+        <div class="card-body grid gap-4 sm:grid-cols-2 text-sm">
+          <div>
+            <p class="mb-2 font-medium text-slate-900 dark:text-slate-100">{% translate "Dietary requirements" %}</p>
+            <ul class="space-y-1">
+              {% for participant in roster.dietary %}
+                <li>{{ participant.student }} — {{ participant.dietary_requirements }}</li>
+              {% empty %}
+                <li class="text-slate-500 dark:text-slate-400">{% translate "None." %}</li>
+              {% endfor %}
+            </ul>
+          </div>
+          <div>
+            <p class="mb-2 font-medium text-slate-900 dark:text-slate-100">{% translate "Medical notes" %}</p>
+            <ul class="space-y-1">
+              {% for participant in roster.medical %}
+                <li>{{ participant.student }} — {{ participant.medical_notes }}</li>
+              {% empty %}
+                <li class="text-slate-500 dark:text-slate-400">{% translate "None." %}</li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </section>
+    {% endif %}
+  </div>
+{% endblock %}

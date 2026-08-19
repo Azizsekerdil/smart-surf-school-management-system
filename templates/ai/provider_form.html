@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% load i18n static surf_tags %}
+
+{% block title %}{{ provider.label }} · {% translate "AI provider settings" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% blocktranslate with name=provider.label %}{{ name }} settings{% endblocktranslate %}{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-3 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'ai:control_center' %}" class="hover:underline">{% translate "AI Control Center" %}</a>
+    <span class="mx-1">/</span>
+    <span class="text-slate-700 dark:text-slate-300">{{ provider.label }}</span>
+  </nav>
+{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "Operational settings only. Credentials stay in the environment and are never written to the database." %}
+  </p>
+{% endblock %}
+
+{% block content %}
+  <div class="mx-auto max-w-3xl space-y-5">
+
+    {# --- what the environment already provides --------------------------- #}
+    <section class="card">
+      <div class="card-header flex-wrap">
+        <h2 class="card-title">{% translate "Connection" %}</h2>
+        <div class="flex flex-wrap items-center gap-2">
+          {% if provider.is_cloud %}
+            <span class="badge-sky">{% icon "globe" "h-3 w-3" %} {% translate "Cloud" %}</span>
+          {% else %}
+            <span class="badge-emerald">{% icon "hard-drive" "h-3 w-3" %} {% translate "Local" %}</span>
+          {% endif %}
+          <span class="font-mono text-xs text-slate-400 dark:text-slate-500">{{ config.provider }}</span>
+        </div>
+      </div>
+      <div class="card-body grid gap-4 sm:grid-cols-2">
+        <div>
+          <p class="text-xs font-medium text-slate-500 dark:text-slate-400">{% translate "Base URL in use" %}</p>
+          <p class="mt-0.5 break-all font-mono text-xs text-slate-800 dark:text-slate-200">
+            {{ provider.base_url|default:"—" }}
+          </p>
+        </div>
+        <div>
+          <p class="text-xs font-medium text-slate-500 dark:text-slate-400">{% translate "API key" %}</p>
+          <p class="mt-0.5">
+            {% if provider.api_key %}
+              <span class="badge-emerald">{% icon "lock" "h-3 w-3" %} {% translate "Configured" %}</span>
+            {% elif provider.is_cloud %}
+              <span class="badge-rose">{% icon "lock-open" "h-3 w-3" %} {% translate "Not configured" %}</span>
+            {% else %}
+              <span class="badge-slate">{% translate "Not required" %}</span>
+            {% endif %}
+          </p>
+          <p class="mt-1 text-[0.7rem] text-slate-400 dark:text-slate-500">
+            {% translate "The key is read from the environment on every request. It is never displayed, logged or stored here." %}
+          </p>
+        </div>
+      </div>
+    </section>
+
+    {# --- editable settings ----------------------------------------------- #}
+    <form method="post" novalidate class="space-y-5">
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="alert-error">
+          {% icon "circle-alert" "h-5 w-5 shrink-0" %}
+          <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+        </div>
+      {% endif %}
+
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">{% icon "settings" "inline h-4 w-4 text-brand-500" %} {% translate "Operational settings" %}</h2>
+        </div>
+        <div class="card-body space-y-4">
+          {% include "ai/partials/field.html" with field=form.is_enabled %}
+          {% include "ai/partials/field.html" with field=form.base_url_override %}
+          {% include "ai/partials/field.html" with field=form.monthly_budget_usd %}
+          {% include "ai/partials/field.html" with field=form.model_overrides %}
+        </div>
+      </section>
+
+      <div class="flex flex-wrap items-center justify-end gap-2">
+        <a href="{% url 'ai:control_center' %}" class="btn-secondary">{% translate "Cancel" %}</a>
+        <button type="submit" class="btn-primary">
+          {% icon "save" "h-4 w-4" %} {% translate "Save settings" %}
+        </button>
+      </div>
+    </form>
+
+    {# --- role reference --------------------------------------------------- #}
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Roles you can override" %}</h2>
+      </div>
+      {% if roles %}
+        <div class="table-wrap rounded-none border-0">
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col">{% translate "Role key" %}</th>
+                <th scope="col">{% translate "Current model" %}</th>
+                <th scope="col">{% translate "Fallbacks" %}</th>
+                <th scope="col">{% translate "Use" %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for role, spec in roles.items %}
+                <tr>
+                  <td class="font-mono text-xs font-medium text-slate-900 dark:text-slate-100">{{ role }}</td>
+                  <td class="font-mono text-xs">{{ spec.model_id }}</td>
+                  <td class="font-mono text-xs text-slate-500 dark:text-slate-400">
+                    {% if spec.fallbacks %}{{ spec.fallbacks|join:", " }}{% else %}—{% endif %}
+                  </td>
+                  <td>
+                    {% if spec.interactive %}
+                      <span class="badge-emerald">{% translate "Interactive" %}</span>
+                    {% else %}
+                      <span class="badge-amber">{% translate "Batch only" %}</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="card-body">
+          <p class="text-sm text-slate-500 dark:text-slate-400">
+            {% translate "This provider has no catalogued roles, so there is nothing to override." %}
+          </p>
+        </div>
+      {% endif %}
+    </section>
+  </div>
+{% endblock %}

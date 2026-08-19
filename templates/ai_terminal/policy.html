@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+{% load i18n static surf_tags %}
+
+{% block title %}{% translate "Terminal security policy" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Terminal security policy" %}{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-3 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'ai_terminal:console' %}" class="hover:underline">{% translate "AI Development Terminal" %}</a>
+    <span class="mx-1">/</span>
+    <span class="text-slate-700 dark:text-slate-300">{% translate "Security policy" %}</span>
+  </nav>
+{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "The complete, current rule set. What a command is allowed to do is decided here — never by the model." %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'ai_terminal:console' %}" class="btn-secondary">
+    {% icon "terminal" "h-4 w-4" %} {% translate "Back to the console" %}
+  </a>
+{% endblock %}
+
+{% block content %}
+  <div class="space-y-5">
+
+    {% if not policy.enabled %}
+      <div class="alert-error" role="alert">
+        {% icon "circle-x" "h-5 w-5 shrink-0" %}
+        <div>
+          <p class="font-semibold">{% translate "The terminal is disabled." %}</p>
+          <p class="mt-1">{% translate "Every command is refused, whatever the rules below say. This is the safe default." %}</p>
+        </div>
+      </div>
+    {% endif %}
+
+    {# ============================================================ summary #}
+    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div class="stat-card">
+        <p class="stat-label">{% translate "Workspace" %}</p>
+        <p class="mt-1 break-all font-mono text-xs text-slate-800 dark:text-slate-200">{{ policy.workspace }}</p>
+        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          {% translate "Nothing outside this folder can be read, written or executed." %}
+        </p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">{% translate "Shell" %}</p>
+        <p class="stat-value text-emerald-600 dark:text-emerald-400">{% translate "None" %}</p>
+        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          {% translate "Commands are executed as an argument vector, so there is no shell to interpret metacharacters." %}
+        </p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">{% translate "Timeout" %}</p>
+        <p class="stat-value">{% blocktranslate with seconds=policy.timeout_seconds %}{{ seconds }} s{% endblocktranslate %}</p>
+        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          {% translate "A command that runs longer is killed and recorded as timed out." %}
+        </p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">{% translate "Captured output" %}</p>
+        <p class="stat-value">{{ policy.max_output_bytes }}</p>
+        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          {% translate "Bytes kept per stream. Anything beyond that is truncated and flagged." %}
+        </p>
+      </div>
+    </div>
+
+    {# ======================================================== how it works #}
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title flex items-center gap-2">
+          {% icon "shield-check" "h-4 w-4 text-emerald-600 dark:text-emerald-400" %}
+          {% translate "How every command is judged" %}
+        </h2>
+      </div>
+      <div class="card-body">
+        <ol class="list-decimal space-y-2 ps-5 text-sm text-slate-700 dark:text-slate-300">
+          <li>
+            <span class="font-medium">{% translate "Lexical check." %}</span>
+            {% translate "Text that only makes sense when reaching for a shell — chaining, piping, redirection, command substitution, newlines, null bytes — is refused before anything is parsed. Known break-out sequences such as remote downloads and script hosts are refused by name." %}
+          </li>
+          <li>
+            <span class="font-medium">{% translate "Executable allowlist." %}</span>
+            {% translate "The program name is normalised (a full path to an interpreter still resolves to its plain name) and must be one of the tools listed below. Anything else is refused outright — never “allowed with a warning”." %}
+          </li>
+          <li>
+            <span class="font-medium">{% translate "Sub-command rules." %}</span>
+            {% translate "Reading is safe; changing state needs approval; destroying data or publishing it is never permitted. The tables below list each case." %}
+          </li>
+          <li>
+            <span class="font-medium">{% translate "Workspace jail." %}</span>
+            {% translate "Every argument that looks like a path is resolved and must land inside the workspace. Parent traversal, symlinks, junctions, UNC network paths, drive-relative paths, short 8.3 names, reserved device names and NTFS alternate data streams are all refused. Secrets and the database file are protected even inside the workspace." %}
+          </li>
+          <li>
+            <span class="font-medium">{% translate "Human approval." %}</span>
+            {% translate "A command needing approval does nothing until a named person with the approval right allows it. Editing a command before approval re-runs the whole check — approval never buys a bypass." %}
+          </li>
+          <li>
+            <span class="font-medium">{% translate "Audit." %}</span>
+            {% translate "Proposals, approvals, rejections, refusals and executions are all written to the audit log with the person responsible." %}
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    {# ======================================================= per-executable #}
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Allowed programs" %}</h2>
+        <p class="text-xs text-slate-500 dark:text-slate-400">
+          {% blocktranslate count counter=policy.allowed_executables|length %}{{ counter }} program{% plural %}{{ counter }} programs{% endblocktranslate %}
+        </p>
+      </div>
+      <div class="table-wrap rounded-none border-0">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">{% translate "Program" %}</th>
+              <th scope="col">{% translate "Purpose" %}</th>
+              <th scope="col">{% translate "Runs immediately" %}</th>
+              <th scope="col">{% translate "Needs approval" %}</th>
+              <th scope="col">{% translate "Never permitted" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for name, rule in rules.items %}
+              <tr>
+                <td class="font-mono text-xs font-semibold text-slate-900 dark:text-slate-100">{{ name }}</td>
+                <td class="text-xs">{{ rule.description }}</td>
+                <td class="max-w-xs font-mono text-xs text-emerald-700 dark:text-emerald-300">
+                  {% if rule.safe_subcommands %}
+                    {{ rule.safe_subcommands|join:" · " }}
+                  {% elif rule.bare_is_safe %}
+                    {% translate "any invocation of this tool" %}
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td class="max-w-xs font-mono text-xs text-amber-700 dark:text-amber-300">
+                  {% if rule.approval_subcommands %}
+                    {{ rule.approval_subcommands|join:" · " }}
+                  {% elif not rule.bare_is_safe %}
+                    {% translate "anything not listed as safe" %}
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td class="max-w-xs font-mono text-xs text-rose-700 dark:text-rose-300">
+                  {% if rule.blocked_subcommands %}{{ rule.blocked_subcommands|join:" · " }}{% else %}—{% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="card-body border-t border-slate-200 dark:border-slate-700">
+        <p class="text-xs text-slate-500 dark:text-slate-400">
+          {% translate "The Python interpreter is treated as a special case: an interactive session, inline code with -c, and running an arbitrary script file are all arbitrary code execution and are refused. Only manage.py and a fixed list of modules may be run with it." %}
+        </p>
+      </div>
+    </section>
+
+    {# ============================================================== blocked #}
+    <div class="grid gap-5 md:grid-cols-2">
+      <section class="card border-amber-300 dark:border-amber-500/40">
+        <div class="card-header">
+          <h2 class="card-title flex items-center gap-2">
+            {% icon "lock" "h-4 w-4 text-amber-600 dark:text-amber-400" %}
+            {% translate "Always needs a human approval" %}
+          </h2>
+        </div>
+        <div class="card-body">
+          <dl class="space-y-3">
+            {% for group, entries in policy.needs_approval.items %}
+              <div>
+                <dt class="font-mono text-xs font-semibold text-slate-900 dark:text-slate-100">{{ group }}</dt>
+                <dd class="mt-0.5 font-mono text-xs text-amber-700 dark:text-amber-300">{{ entries|join:" · " }}</dd>
+              </div>
+            {% endfor %}
+          </dl>
+          <p class="mt-3 text-xs text-slate-500 dark:text-slate-400">
+            {% translate "These change files, history or the database schema. They wait until a person with the approval right says yes." %}
+          </p>
+        </div>
+      </section>
+
+      <section class="card border-rose-300 dark:border-rose-500/40">
+        <div class="card-header">
+          <h2 class="card-title flex items-center gap-2">
+            {% icon "shield-alert" "h-4 w-4 text-rose-600 dark:text-rose-400" %}
+            {% translate "Never runs, with no override" %}
+          </h2>
+        </div>
+        <div class="card-body">
+          <dl class="space-y-3">
+            {% for group, entries in policy.always_blocked.items %}
+              <div>
+                <dt class="font-mono text-xs font-semibold text-slate-900 dark:text-slate-100">{{ group }}</dt>
+                <dd class="mt-0.5 font-mono text-xs text-rose-700 dark:text-rose-300">{{ entries|join:" · " }}</dd>
+              </div>
+            {% endfor %}
+          </dl>
+          <p class="mt-3 text-xs text-slate-500 dark:text-slate-400">
+            {% translate "These destroy data, rewrite history, publish code or open an interactive session. No screen in this application offers a way to force them through." %}
+          </p>
+        </div>
+      </section>
+    </div>
+
+    <div class="alert-info">
+      {% icon "info" "h-5 w-5 shrink-0" %}
+      <p>
+        {% translate "The agent reads source files, database rows and customer notes, any of which could contain text crafted to make it run something harmful. That is exactly why safety is decided by this policy and by a named human, not by the model's own judgement." %}
+      </p>
+    </div>
+  </div>
+{% endblock %}

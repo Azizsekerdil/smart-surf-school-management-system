@@ -1,0 +1,44 @@
+{% load i18n surf_tags %}
+{# Usage: {% include "locations/partials/hazard_list.html" with hazards=open_hazards spot=spot cleared=False %} #}
+{% can "locations.change" as may_change_hazards %}
+<ul class="divide-y divide-slate-100 dark:divide-slate-800">
+  {% for hazard in hazards %}
+    <li class="flex flex-wrap items-start gap-3 px-5 py-3">
+      <div class="mt-0.5 shrink-0">
+        {% include "locations/partials/severity_badge.html" with severity=hazard.severity label=hazard.get_severity_display %}
+      </div>
+      <div class="min-w-0 flex-1">
+        <p class="text-sm font-medium text-slate-900 dark:text-slate-100">
+          {{ hazard.name }}
+          {% if hazard.has_tide_window %}
+            <span class="badge-slate ms-1">{% icon "droplets" "h-3 w-3" %}{{ hazard.tide_window_display }}</span>
+          {% endif %}
+        </p>
+        {% if hazard.description %}
+          <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">{{ hazard.description }}</p>
+        {% endif %}
+        <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">
+          {% blocktranslate with when=hazard.updated_at|date:"d.m.Y H:i" %}Updated {{ when }}{% endblocktranslate %}
+        </p>
+      </div>
+      {% if may_change_hazards %}
+        <div class="flex shrink-0 items-center gap-1">
+          <a href="{% url 'locations:hazard_update' hazard.pk %}" class="btn-ghost btn-sm"
+             aria-label="{% translate 'Edit hazard' %}">{% icon "pencil" "h-4 w-4" %}</a>
+          <form method="post" action="{% url 'locations:hazard_toggle' hazard.pk %}">
+            {% csrf_token %}
+            {% if hazard.is_active %}
+              <button type="submit" class="btn-ghost btn-sm text-emerald-600 dark:text-emerald-400">
+                {% icon "circle-check" "h-4 w-4" %} {% translate "Clear" %}
+              </button>
+            {% else %}
+              <button type="submit" class="btn-ghost btn-sm text-amber-600 dark:text-amber-400">
+                {% icon "rotate-ccw" "h-4 w-4" %} {% translate "Reopen" %}
+              </button>
+            {% endif %}
+          </form>
+        </div>
+      {% endif %}
+    </li>
+  {% endfor %}
+</ul>

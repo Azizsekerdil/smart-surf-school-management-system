@@ -1,0 +1,88 @@
+{% load i18n surf_tags %}
+{% comment %} Fleet problems that need a person today: open repairs first (worst severity
+   at the top), then items whose preventive service date has passed. {% endcomment %}
+<div class="card">
+  <div class="card-header">
+    <h2 class="card-title flex items-center gap-2">{% icon "wrench" "h-4 w-4 text-amber-500" %} {% translate "Equipment warnings" %}</h2>
+    {% if links.maintenance_list %}
+      <a href="{{ links.maintenance_list }}" class="btn-ghost btn-sm">{% translate "All" %} {% icon "chevron-right" "h-4 w-4" %}</a>
+    {% endif %}
+  </div>
+
+  {% if equipment_warnings is None %}
+    <div class="card-body">
+      <p class="text-sm text-slate-500 dark:text-slate-400">
+        {% translate "The equipment module is not available." %}
+      </p>
+    </div>
+  {% else %}
+    <div class="card-body space-y-4">
+
+      <dl class="grid grid-cols-2 gap-3 text-center sm:grid-cols-4">
+        <div class="rounded-lg bg-slate-50 p-2 dark:bg-slate-800/60">
+          <dt class="text-xs text-slate-500 dark:text-slate-400">{% translate "Service due" %}</dt>
+          <dd class="text-lg font-semibold tabular-nums text-slate-900 dark:text-slate-100">{{ equipment_warnings.service_due }}</dd>
+        </div>
+        <div class="rounded-lg bg-slate-50 p-2 dark:bg-slate-800/60">
+          <dt class="text-xs text-slate-500 dark:text-slate-400">{% translate "Open repairs" %}</dt>
+          <dd class="text-lg font-semibold tabular-nums {% if equipment_warnings.critical_repairs %}text-rose-600 dark:text-rose-400{% else %}text-slate-900 dark:text-slate-100{% endif %}">
+            {{ equipment_warnings.open_repairs }}
+          </dd>
+        </div>
+        <div class="rounded-lg bg-slate-50 p-2 dark:bg-slate-800/60">
+          <dt class="text-xs text-slate-500 dark:text-slate-400">{% translate "Damaged / lost" %}</dt>
+          <dd class="text-lg font-semibold tabular-nums {% if equipment_warnings.damaged %}text-rose-600 dark:text-rose-400{% else %}text-slate-900 dark:text-slate-100{% endif %}">
+            {{ equipment_warnings.damaged }}
+          </dd>
+        </div>
+        <div class="rounded-lg bg-slate-50 p-2 dark:bg-slate-800/60">
+          <dt class="text-xs text-slate-500 dark:text-slate-400">{% translate "Poor condition" %}</dt>
+          <dd class="text-lg font-semibold tabular-nums text-slate-900 dark:text-slate-100">{{ equipment_warnings.poor_condition }}</dd>
+        </div>
+      </dl>
+
+      {% if open_repairs %}
+        <div>
+          <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">{% translate "Open repairs" %}</p>
+          <ul class="space-y-2">
+            {% for record in open_repairs %}
+              <li class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <p class="truncate text-sm text-slate-800 dark:text-slate-200">{{ record.equipment }}</p>
+                  <p class="truncate text-xs text-slate-500 dark:text-slate-400">
+                    {{ record.get_damage_type_display }} · {{ record.reported_at|date:"d.m.Y" }}
+                  </p>
+                </div>
+                <span class="shrink-0 {% if record.severity == 'critical' %}badge-rose{% elif record.severity == 'high' %}badge-amber{% elif record.severity == 'medium' %}badge-sky{% else %}badge-slate{% endif %}">
+                  {{ record.get_severity_display }}
+                </span>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+
+      {% if service_due %}
+        <div>
+          <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">{% translate "Service overdue" %}</p>
+          <ul class="space-y-2">
+            {% for item in service_due %}
+              <li class="flex items-start justify-between gap-3">
+                <p class="min-w-0 truncate text-sm text-slate-800 dark:text-slate-200">{{ item }}</p>
+                <span class="shrink-0 text-xs tabular-nums text-amber-600 dark:text-amber-400">
+                  {{ item.next_maintenance_date|date:"d.m.Y" }}
+                </span>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+
+      {% if not open_repairs and not service_due %}
+        <p class="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
+          {% icon "circle-check" "h-4 w-4" %} {% translate "The whole fleet is in service." %}
+        </p>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>

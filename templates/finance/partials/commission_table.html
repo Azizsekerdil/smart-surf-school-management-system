@@ -1,0 +1,68 @@
+{% load i18n surf_tags %}
+
+{% if commissions %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">{% translate "Instructor" %}</th>
+          <th scope="col">{% translate "Lesson" %}</th>
+          <th scope="col">{% translate "Period" %}</th>
+          <th scope="col" class="text-end">{% translate "Base" %}</th>
+          <th scope="col" class="text-end">{% translate "Rate" %}</th>
+          <th scope="col" class="text-end">{% translate "Commission" %}</th>
+          <th scope="col">{% translate "Status" %}</th>
+          <th scope="col"><span class="sr-only">{% translate "Actions" %}</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for record in commissions %}
+          <tr>
+            <td class="font-medium text-slate-900 dark:text-slate-100">{{ record.instructor }}</td>
+            <td class="text-slate-500 dark:text-slate-400">
+              {% if record.lesson_id %}{{ record.lesson.lesson_code }}{% else %}—{% endif %}
+            </td>
+            <td class="whitespace-nowrap">
+              {{ record.period_start|date:"d.m.Y" }} – {{ record.period_end|date:"d.m.Y" }}
+            </td>
+            <td class="text-end tabular-nums">{{ record.base_amount|money }}</td>
+            <td class="text-end tabular-nums">{{ record.commission_percent|floatformat:2 }}%</td>
+            <td class="text-end font-semibold tabular-nums">{{ record.commission_amount|money }}</td>
+            <td>
+              {% status_badge record.status record.get_status_display %}
+              {% if record.paid_at %}
+                <span class="block text-xs text-slate-400">{{ record.paid_at|date:"d.m.Y" }}</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <div class="flex items-center justify-end gap-1">
+                {% can "finance.approve" as may_approve %}
+                {% if may_approve and record.can_approve %}
+                  <form method="post" action="{% url 'finance:commission_approve' record.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-secondary btn-sm">
+                      {% icon "check" "h-3.5 w-3.5" %} {% translate "Approve" %}
+                    </button>
+                  </form>
+                {% endif %}
+                {% can "finance.change" as may_pay %}
+                {% if may_pay and record.can_pay %}
+                  <form method="post" action="{% url 'finance:commission_pay' record.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-success btn-sm">
+                      {% icon "banknote" "h-3.5 w-3.5" %} {% translate "Mark paid" %}
+                    </button>
+                  </form>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% include "partials/pagination.html" %}
+{% else %}
+  {% include "partials/empty_state.html" with icon_name="percent" title=_("No commission records") subtitle=_("Calculate a period above to raise the rows an instructor has earned.") %}
+{% endif %}

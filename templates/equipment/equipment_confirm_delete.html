@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Archive equipment" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Archive equipment" %}{% endblock %}
+
+{% block content %}
+  <div class="card max-w-2xl">
+    <div class="card-body space-y-4">
+      <div class="alert-warning" role="alert">
+        {% icon "triangle-alert" "h-4 w-4 shrink-0" %}
+        <span>
+          {% blocktranslate with code=equipment.asset_code name=equipment.name %}Archive {{ code }} — {{ name }}?{% endblocktranslate %}
+        </span>
+      </div>
+
+      <p class="text-sm text-slate-600 dark:text-slate-300">
+        {% translate "The item disappears from every list, but its rentals, lessons and maintenance history stay intact. An administrator can restore it later." %}
+      </p>
+
+      {% if equipment.status == "rented" or equipment.status == "in_lesson" or equipment.status == "reserved" %}
+        <div class="alert-error" role="alert">
+          {% icon "circle-alert" "h-4 w-4 shrink-0" %}
+          <span>{% translate "This item is currently out. Check it back in before archiving." %}</span>
+        </div>
+      {% endif %}
+
+      <form method="post" class="flex flex-wrap items-center gap-2">
+        {% csrf_token %}
+        <button type="submit" class="btn-danger">
+          {% icon "trash-2" "h-4 w-4" %} {% translate "Archive item" %}
+        </button>
+        <a href="{% url 'equipment:detail' equipment.pk %}" class="btn-secondary">{% translate "Cancel" %}</a>
+      </form>
+    </div>
+  </div>
+{% endblock %}

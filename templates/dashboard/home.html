@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+{% load i18n static surf_tags %}
+
+{% block title %}{% translate "Dashboard" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Dashboard" %}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% if dashboard_variant == "instructor" %}
+      {% blocktranslate with day=today|date:"l, d F Y" %}Your day — {{ day }}{% endblocktranslate %}
+    {% else %}
+      {{ today|date:"l, d F Y" }}
+    {% endif %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <button type="button" class="btn-secondary btn-sm"
+          hx-get="{{ tiles_url }}" hx-target="#dashboard-tiles" hx-swap="outerHTML">
+    {% icon "refresh-cw" "h-4 w-4" %} {% translate "Refresh" %}
+  </button>
+  {% can "bookings.add" as may_book %}
+  {% if may_book and links.bookings_create %}
+    <a href="{{ links.bookings_create }}" class="btn-primary">
+      {% icon "plus" "h-4 w-4" %} {% translate "New booking" %}
+    </a>
+  {% endif %}
+  {% can "rentals.add" as may_rent %}
+  {% if may_rent and links.rentals_create %}
+    <a href="{{ links.rentals_create }}" class="btn-secondary">
+      {% icon "arrow-left-right" "h-4 w-4" %} {% translate "New rental" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  {# Capability flags resolved once, so every panel below reads the same answer. #}
+  {% can "lessons.view" as may_see_lessons %}
+  {% can "finance.view" as may_see_money %}
+  {% can "surf_conditions.view" as may_see_surf %}
+  {% can "equipment.view" as may_see_equipment %}
+  {% can "maintenance.view" as may_see_maintenance %}
+  {% can "rentals.view" as may_see_rentals %}
+  {% can "audit.view" as may_see_audit %}
+
+  {# ------------------------------------------------------------ stat tiles #}
+  {% include "dashboard/partials/tiles.html" %}
+
+  {# ------------------------------------------------- instructor day banner #}
+  {% if dashboard_variant == "instructor" %}
+    <div class="mt-5 card">
+      <div class="card-body flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <span class="flex h-10 w-10 items-center justify-center rounded-full bg-brand-100 text-sm font-semibold text-brand-700 dark:bg-brand-500/20 dark:text-brand-300">
+            {{ instructor.initials }}
+          </span>
+          <div>
+            <p class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ instructor.full_name }}</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400">
+              {% blocktranslate count counter=schedule|length %}{{ counter }} lesson today{% plural %}{{ counter }} lessons today{% endblocktranslate %}
+              · {% blocktranslate count counter=my_student_count %}{{ counter }} student{% plural %}{{ counter }} students{% endblocktranslate %}
+            </p>
+          </div>
+        </div>
+        {% if my_awaiting_check_in %}
+          <span class="badge-amber inline-flex items-center gap-1">
+            {% icon "clipboard-list" "h-3.5 w-3.5" %}
+            {% blocktranslate count counter=my_awaiting_check_in %}{{ counter }} student still to check in{% plural %}{{ counter }} students still to check in{% endblocktranslate %}
+          </span>
+        {% endif %}
+        {% if school_lesson_count %}
+          <p class="text-xs text-slate-500 dark:text-slate-400">
+            {% blocktranslate count counter=school_lesson_count %}{{ counter }} lesson across the school today{% plural %}{{ counter }} lessons across the school today{% endblocktranslate %}
+          </p>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+  {# --------------------------------------------------------- two columns #}
+  <div class="mt-5 grid gap-5 lg:grid-cols-3">
+
+    {# ---- left: today's water ------------------------------------------ #}
+    <div class="space-y-5 lg:col-span-2">
+      {% if may_see_lessons %}
+        {% include "dashboard/partials/schedule.html" %}
+      {% endif %}
+
+      {% if pending_confirmations %}
+        <div class="alert-warning">
+          {% icon "circle-alert" "h-5 w-5 shrink-0" %}
+          <div>
+            <p class="font-medium">
+              {% blocktranslate count counter=pending_confirmations %}{{ counter }} booking is waiting for confirmation{% plural %}{{ counter }} bookings are waiting for confirmation{% endblocktranslate %}
+            </p>
+            {% if links.bookings_list %}
+              <a href="{{ links.bookings_list }}?status=pending" class="mt-1 inline-flex items-center gap-1 text-sm underline">
+                {% translate "Review them" %} {% icon "chevron-right" "h-3.5 w-3.5" %}
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      {% endif %}
+
+      {% if may_see_money %}
+        {% include "dashboard/partials/revenue_card.html" %}
+      {% endif %}
+    </div>
+
+    {# ---- right: what needs attention ---------------------------------- #}
+    <div class="space-y-5">
+      {% if may_see_surf %}
+        {% include "dashboard/partials/surf_panel.html" %}
+      {% endif %}
+
+      {% include "dashboard/partials/ai_panel.html" %}
+
+      {% if may_see_equipment or may_see_maintenance %}
+        {% include "dashboard/partials/equipment_panel.html" %}
+      {% endif %}
+
+      {% if may_see_rentals %}
+        {% include "dashboard/partials/rentals_panel.html" %}
+      {% endif %}
+
+      {% if may_see_money %}
+        {% include "dashboard/partials/payments_panel.html" %}
+      {% endif %}
+
+      {% if expiring_certifications %}
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title flex items-center gap-2">
+              {% icon "shield-check" "h-4 w-4 text-amber-500" %} {% translate "Certifications expiring" %}
+            </h2>
+          </div>
+          <ul class="divide-y divide-slate-100 dark:divide-slate-800">
+            {% for certification in expiring_certifications %}
+              <li class="flex items-center justify-between gap-3 px-5 py-3">
+                <div class="min-w-0">
+                  <p class="truncate text-sm text-slate-800 dark:text-slate-200">{{ certification.instructor.full_name }}</p>
+                  <p class="truncate text-xs text-slate-500 dark:text-slate-400">{{ certification.name }}</p>
+                </div>
+                <span class="shrink-0 {% if certification.is_expired %}badge-rose{% else %}badge-amber{% endif %} tabular-nums">
+                  {{ certification.expires_on|date:"d.m.Y" }}
+                </span>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+
+      {% if may_see_audit %}
+        {% include "dashboard/partials/activity_panel.html" %}
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}
+
+{% block extra_scripts %}
+  {% can "finance.view" as may_chart %}
+  {% if may_chart and revenue_chart %}
+    <script src="{% static 'vendor/chartjs/chart.umd.js' %}" defer></script>
+    <script>
+      // Deferred scripts (Chart.js, app.js) execute before DOMContentLoaded, so
+      // both the library and window.surfChartDefaults are ready by this point.
+      document.addEventListener('DOMContentLoaded', function () {
+        var canvas = document.getElementById('revenue-sparkline');
+        var payload = document.getElementById('revenue-series');
+        if (!canvas || !payload || !window.Chart || !window.surfChartDefaults) return;
+
+        var series;
+        try {
+          series = JSON.parse(payload.textContent || '{}');
+        } catch (e) {
+          return;
+        }
+        if (!series.labels || !series.labels.length) return;
+
+        var options = window.surfChartDefaults();
+        options.plugins.legend.display = false;
+        options.scales.x.grid.display = false;
+
+        new window.Chart(canvas.getContext('2d'), {
+          type: 'line',
+          data: {
+            labels: series.labels,
+            datasets: [{
+              label: '{% translate "Revenue" %}',
+              data: series.values,
+              borderColor: window.surfChartColors[0],
+              backgroundColor: 'rgba(0, 131, 206, 0.12)',
+              borderWidth: 2,
+              fill: true,
+              tension: 0.3,
+              pointRadius: 0,
+              pointHoverRadius: 4,
+            }],
+          },
+          options: options,
+        });
+      });
+    </script>
+  {% endif %}
+{% endblock %}

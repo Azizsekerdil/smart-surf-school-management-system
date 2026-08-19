@@ -1,0 +1,70 @@
+{% load i18n surf_tags %}
+<div id="status-panel" class="card">
+  <div class="card-header flex items-center justify-between gap-2">
+    <h2 class="card-title">{% translate "Status" %}</h2>
+    {% status_badge equipment.status equipment.get_status_display status_colors %}
+  </div>
+  <div class="card-body space-y-4">
+    {% if status_error %}
+      <div class="alert-error" role="alert">
+        {% icon "circle-alert" "h-4 w-4 shrink-0" %}
+        <span>{{ status_error }}</span>
+      </div>
+    {% endif %}
+
+    {% if equipment.retired_at %}
+      <p class="text-sm text-slate-500 dark:text-slate-400">
+        {% blocktranslate with when=equipment.retired_at|date:"d.m.Y" reason=equipment.retired_reason %}Retired on {{ when }} — {{ reason }}{% endblocktranslate %}
+      </p>
+    {% endif %}
+
+    {% can "equipment.change" as may_change %}
+    {% if may_change %}
+      {% if allowed_statuses %}
+        <form method="post"
+              action="{% url 'equipment:status_change' equipment.pk %}"
+              hx-post="{% url 'equipment:status_change' equipment.pk %}"
+              hx-target="#status-panel"
+              hx-swap="outerHTML"
+              class="space-y-3">
+          {% csrf_token %}
+          <div>
+            <label class="form-label" for="{{ status_form.status.id_for_label }}">{{ status_form.status.label }}</label>
+            {{ status_form.status }}
+          </div>
+          <div>
+            <label class="form-label" for="{{ status_form.reason.id_for_label }}">{{ status_form.reason.label }}</label>
+            {{ status_form.reason }}
+            <p class="form-help">{% translate "Required when sending an item to maintenance, or marking it damaged, lost or retired." %}</p>
+          </div>
+          <button type="submit" class="btn-primary btn-sm">
+            {% icon "refresh-cw" "h-4 w-4" %} {% translate "Change status" %}
+          </button>
+        </form>
+      {% else %}
+        <p class="text-sm text-slate-500 dark:text-slate-400">
+          {% translate "This item has no further status moves available." %}
+        </p>
+      {% endif %}
+    {% endif %}
+
+    {% if status_history %}
+      <div>
+        <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+          {% translate "Recent history" %}
+        </p>
+        <ul class="space-y-2">
+          {% for entry in status_history|slice:":6" %}
+            <li class="flex gap-2 text-xs text-slate-600 dark:text-slate-300">
+              <span class="whitespace-nowrap text-slate-400">{{ entry.created_at|date:"d.m.Y H:i" }}</span>
+              <span class="min-w-0">
+                <span class="font-medium">{{ entry.username|default:_("system") }}</span>
+                — {{ entry.description|default:entry.get_action_display }}
+              </span>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+  </div>
+</div>

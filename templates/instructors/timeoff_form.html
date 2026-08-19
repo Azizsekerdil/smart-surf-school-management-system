@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ title }} · {{ instructor.full_name }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-3 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'instructors:list' %}" class="hover:text-brand-700 dark:hover:text-brand-300">{% translate "Instructors" %}</a>
+    <span class="mx-1">/</span>
+    <a href="{% url 'instructors:detail' instructor.pk %}" class="hover:text-brand-700 dark:hover:text-brand-300">{{ instructor.full_name }}</a>
+    <span class="mx-1">/</span>
+    <span class="text-slate-700 dark:text-slate-300">{% translate "Time off" %}</span>
+  </nav>
+{% endblock %}
+
+{% block content %}
+  <div class="alert-info mb-5">
+    <span class="mt-0.5 shrink-0">{% icon "info" "h-5 w-5" %}</span>
+    <div class="flex-1">
+      {% translate "Absence only removes an instructor from the booking pool once it has been approved. Lessons already scheduled inside the period must be reassigned by hand." %}
+    </div>
+  </div>
+
+  <form method="post" novalidate class="space-y-5">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="alert-error">
+        <span class="mt-0.5 shrink-0">{% icon "circle-x" "h-5 w-5" %}</span>
+        <div class="flex-1">
+          {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+    <section class="card">
+      <div class="card-body grid gap-4 sm:grid-cols-2">
+        {% include "instructors/partials/field.html" with field=form.start_date %}
+        {% include "instructors/partials/field.html" with field=form.end_date %}
+        {% include "instructors/partials/field.html" with field=form.reason %}
+        {% include "instructors/partials/field.html" with field=form.note wrapper_class="sm:col-span-2" %}
+      </div>
+    </section>
+
+    <div class="flex flex-wrap items-center gap-3">
+      <button type="submit" class="btn-primary">
+        {% icon "save" "h-4 w-4" %} {% translate "Save" %}
+      </button>
+      <a href="{{ cancel_url }}" class="btn-secondary">{% translate "Cancel" %}</a>
+    </div>
+  </form>
+{% endblock %}

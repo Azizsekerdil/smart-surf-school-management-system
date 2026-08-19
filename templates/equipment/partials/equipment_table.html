@@ -1,0 +1,60 @@
+{% load i18n surf_tags %}
+<div class="table-wrap">
+  <table class="table">
+    <thead>
+      <tr>
+        <th scope="col">{% translate "Asset code" %}</th>
+        <th scope="col">{% translate "Item" %}</th>
+        <th scope="col">{% translate "Category" %}</th>
+        <th scope="col">{% translate "Specification" %}</th>
+        <th scope="col">{% translate "Status" %}</th>
+        <th scope="col">{% translate "Condition" %}</th>
+        <th scope="col" class="text-end">{% translate "Day rate" %}</th>
+        <th scope="col">{% translate "Location" %}</th>
+        <th scope="col">{% translate "Service due" %}</th>
+        <th scope="col"><span class="sr-only">{% translate "Actions" %}</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% can "equipment.change" as may_change %}
+      {% for item in equipment_items %}
+        <tr>
+          <td class="font-mono text-xs">
+            <a href="{% url 'equipment:detail' item.pk %}" class="text-brand-600 hover:underline">{{ item.asset_code }}</a>
+          </td>
+          <td>
+            <span class="font-medium text-slate-900 dark:text-slate-100">{{ item.name }}</span>
+            {% if item.serial_number %}
+              <span class="block text-xs text-slate-500 dark:text-slate-400">{{ item.serial_number }}</span>
+            {% endif %}
+          </td>
+          <td>{{ item.category.name }}</td>
+          <td>{{ item.specification_summary|default:"—" }}</td>
+          <td>{% status_badge item.status item.get_status_display status_colors %}</td>
+          <td>{% status_badge item.condition item.get_condition_display condition_colors %}</td>
+          <td class="text-end tabular-nums">
+            {% if item.is_rentable %}{{ item.rental_price_daily|money }}{% else %}—{% endif %}
+          </td>
+          <td>{{ item.storage_location|default:"—" }}</td>
+          <td>
+            {% if item.next_maintenance_date %}
+              <span class="{% if item.needs_maintenance %}text-rose-600 dark:text-rose-400{% endif %}">
+                {{ item.next_maintenance_date|date:"d.m.Y" }}
+              </span>
+            {% else %}—{% endif %}
+          </td>
+          <td class="text-end">
+            <div class="flex items-center justify-end gap-1">
+              <a href="{% url 'equipment:labels' %}?ids={{ item.pk }}" class="btn-ghost btn-sm"
+                 title="{% translate 'Print label' %}">{% icon "qr-code" "h-4 w-4" %}</a>
+              {% if may_change %}
+                <a href="{% url 'equipment:update' item.pk %}" class="btn-ghost btn-sm"
+                   title="{% translate 'Edit' %}">{% icon "pencil" "h-4 w-4" %}</a>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,313 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ spot.name }} · {% translate "Surf spots" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ spot.name }}{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-3 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'locations:list' %}" class="hover:underline">{% translate "Surf spots" %}</a>
+    <span class="mx-1">/</span>
+    <span class="text-slate-700 dark:text-slate-300">{{ spot.name }}</span>
+  </nav>
+{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+    <span class="font-mono">{{ spot.code }}</span>
+    <span>·</span>
+    <span>{{ spot.get_break_type_display }}</span>
+    <span>·</span>
+    <span>{{ spot.level_range_display }}</span>
+    {% if spot.is_primary %}<span class="badge-sky">{% icon "star" "h-3 w-3" %}{% translate "Default spot" %}</span>{% endif %}
+    {% if not spot.is_active %}<span class="badge-slate">{% translate "Archived" %}</span>{% endif %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  {% can "locations.manage" as may_manage %}
+  {% if may_manage and not is_primary_spot and spot.is_active %}
+    <form method="post" action="{% url 'locations:set_primary' spot.pk %}">
+      {% csrf_token %}
+      <button type="submit" class="btn-secondary">
+        {% icon "star" "h-4 w-4" %} {% translate "Make default" %}
+      </button>
+    </form>
+  {% endif %}
+  {% can "locations.change" as may_change %}
+  {% if may_change %}
+    <a href="{% url 'locations:hazard_create' spot.pk %}" class="btn-secondary">
+      {% icon "triangle-alert" "h-4 w-4" %} {% translate "Add hazard" %}
+    </a>
+    <a href="{% url 'locations:update' spot.pk %}" class="btn-primary">
+      {% icon "pencil" "h-4 w-4" %} {% translate "Edit spot" %}
+    </a>
+  {% endif %}
+  {% can "locations.delete" as may_delete %}
+  {% if may_delete and spot.is_active %}
+    <a href="{% url 'locations:delete' spot.pk %}" class="btn-ghost text-rose-600 dark:text-rose-400">
+      {% icon "trash-2" "h-4 w-4" %} {% translate "Archive" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+
+  {# --- standing readiness banner --------------------------------------- #}
+  {% if readiness.is_blocked %}
+    <div class="alert-error mb-5">
+      {% icon "shield-alert" "h-5 w-5 shrink-0" %}
+      <div>
+        <p class="font-semibold">{% translate "This spot is not usable right now." %}</p>
+        <ul class="mt-1 list-disc space-y-0.5 ps-5">
+          {% for reason in readiness.blocking %}<li>{{ reason }}</li>{% endfor %}
+        </ul>
+      </div>
+    </div>
+  {% elif readiness.warnings %}
+    <div class="alert-warning mb-5">
+      {% icon "circle-alert" "h-5 w-5 shrink-0" %}
+      <div>
+        <p class="font-semibold">{% translate "Check before you send a group in" %}</p>
+        <ul class="mt-1 list-disc space-y-0.5 ps-5">
+          {% for warning in readiness.warnings %}<li>{{ warning }}</li>{% endfor %}
+        </ul>
+      </div>
+    </div>
+  {% else %}
+    <div class="alert-success mb-5">
+      {% icon "circle-check" "h-5 w-5 shrink-0" %}
+      <p>{% translate "No standing blockers: the spot is active, has no critical hazard and emergency contacts are on file." %}</p>
+    </div>
+  {% endif %}
+
+  <div class="grid gap-5 lg:grid-cols-3">
+
+    {# ================================================== main column ==== #}
+    <div class="space-y-5 lg:col-span-2">
+
+      {# --- overview --------------------------------------------------- #}
+      <section class="card overflow-hidden">
+        {% if spot.photo %}
+          <img src="{{ spot.photo.url }}" alt="{{ spot.name }}" class="h-56 w-full object-cover">
+        {% endif %}
+        <div class="card-body">
+          {% if spot.description %}
+            <p class="text-sm leading-relaxed text-slate-700 dark:text-slate-300">{{ spot.description }}</p>
+          {% endif %}
+
+          <dl class="mt-4 grid gap-4 sm:grid-cols-3">
+            <div>
+              <dt class="text-xs font-medium text-slate-500 dark:text-slate-400">{% translate "Break type" %}</dt>
+              <dd class="mt-0.5 text-sm font-semibold text-slate-900 dark:text-slate-100">{{ spot.get_break_type_display }}</dd>
+            </div>
+            <div>
+              <dt class="text-xs font-medium text-slate-500 dark:text-slate-400">{% translate "Bottom" %}</dt>
+              <dd class="mt-0.5 text-sm font-semibold text-slate-900 dark:text-slate-100">{{ spot.get_bottom_type_display }}</dd>
+            </div>
+            <div>
+              <dt class="text-xs font-medium text-slate-500 dark:text-slate-400">{% translate "Capacity" %}</dt>
+              <dd class="mt-0.5 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                {% blocktranslate with n=spot.capacity %}{{ n }} students at once{% endblocktranslate %}
+              </dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+
+      {# --- conditions (filled by surf_conditions) ---------------------- #}
+      {% include "locations/partials/spot_conditions.html" %}
+
+      {# --- hazards ----------------------------------------------------- #}
+      <section class="card" aria-labelledby="hazards-heading">
+        <div class="card-header">
+          <h2 class="card-title" id="hazards-heading">
+            {% icon "triangle-alert" "inline h-4 w-4 text-amber-500" %} {% translate "Hazards" %}
+          </h2>
+          {% can "locations.change" as may_change %}
+          {% if may_change %}
+            <a href="{% url 'locations:hazard_create' spot.pk %}" class="btn-secondary btn-sm">
+              {% icon "plus" "h-4 w-4" %} {% translate "Add" %}
+            </a>
+          {% endif %}
+        </div>
+
+        {% if open_hazards %}
+          {% include "locations/partials/hazard_list.html" with hazards=open_hazards %}
+        {% else %}
+          <div class="card-body">
+            <p class="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
+              {% icon "circle-check" "h-4 w-4" %}
+              {% translate "No open hazards recorded for this spot." %}
+            </p>
+          </div>
+        {% endif %}
+
+        {% if cleared_hazards %}
+          <details class="border-t border-slate-200 dark:border-slate-700">
+            <summary class="cursor-pointer px-5 py-3 text-sm font-medium text-slate-600 dark:text-slate-300">
+              {% blocktranslate count counter=cleared_hazards|length %}{{ counter }} cleared hazard{% plural %}{{ counter }} cleared hazards{% endblocktranslate %}
+            </summary>
+            {% include "locations/partials/hazard_list.html" with hazards=cleared_hazards %}
+          </details>
+        {% endif %}
+      </section>
+
+      {# --- who may surf here ------------------------------------------ #}
+      <section class="card" aria-labelledby="levels-heading">
+        <div class="card-header">
+          <h2 class="card-title" id="levels-heading">
+            {% icon "graduation-cap" "inline h-4 w-4 text-brand-500" %} {% translate "Suitability by level" %}
+          </h2>
+        </div>
+        <div class="table-wrap border-0">
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col">{% translate "Level" %}</th>
+                <th scope="col">{% translate "Suitable" %}</th>
+                <th scope="col" class="text-end">{% translate "Max group / instructor" %}</th>
+                <th scope="col" class="text-end">{% translate "Under 18s" %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in level_matrix %}
+                <tr>
+                  <td class="font-medium text-slate-900 dark:text-slate-100">{{ row.label }}</td>
+                  <td>
+                    {% if row.suitable %}
+                      <span class="badge-emerald">{% icon "check" "h-3 w-3" %}{% translate "Yes" %}</span>
+                    {% else %}
+                      <span class="badge-slate">{% translate "No" %}</span>
+                    {% endif %}
+                  </td>
+                  <td class="text-end tabular-nums">{% if row.suitable %}{{ row.max_group }}{% else %}—{% endif %}</td>
+                  <td class="text-end tabular-nums">{% if row.suitable %}{{ row.max_group_minors }}{% else %}—{% endif %}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="card-body border-t border-slate-200 pt-4 dark:border-slate-700">
+          <p class="text-xs text-slate-500 dark:text-slate-400">
+            {% translate "Group sizes are the lower of this spot's water capacity and the supervision ratio for the level. Under-18 groups always use the stricter ratio." %}
+          </p>
+        </div>
+      </section>
+    </div>
+
+    {# ================================================== side column ==== #}
+    <div class="space-y-5">
+
+      {# --- location ---------------------------------------------------- #}
+      <section class="card" aria-labelledby="location-heading">
+        <div class="card-header">
+          <h2 class="card-title" id="location-heading">
+            {% icon "map-pin" "inline h-4 w-4 text-brand-500" %} {% translate "Location" %}
+          </h2>
+        </div>
+        <div class="card-body space-y-3">
+          <p class="font-mono text-sm text-slate-700 dark:text-slate-300">{{ spot.coordinates_display }}</p>
+          {% if spot.altitude is not None %}
+            <p class="text-sm text-slate-600 dark:text-slate-300">
+              {% blocktranslate with alt=spot.altitude|floatformat:1 %}Access point {{ alt }} m above sea level{% endblocktranslate %}
+            </p>
+          {% endif %}
+
+          <div class="flex flex-wrap gap-2">
+            <a href="{{ spot.map_url }}" target="_blank" rel="noopener noreferrer" class="btn-secondary btn-sm">
+              {% icon "external-link" "h-4 w-4" %} {% translate "OpenStreetMap" %}
+            </a>
+            <a href="{{ spot.directions_url }}" target="_blank" rel="noopener noreferrer" class="btn-ghost btn-sm">
+              {% icon "compass" "h-4 w-4" %} {% translate "Directions" %}
+            </a>
+          </div>
+
+          {% if spot.parking_info %}
+            <div>
+              <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{% translate "Parking" %}</h3>
+              <p class="mt-1 text-sm text-slate-700 dark:text-slate-300">{{ spot.parking_info|linebreaksbr }}</p>
+            </div>
+          {% endif %}
+          {% if spot.access_notes %}
+            <div>
+              <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{% translate "Access" %}</h3>
+              <p class="mt-1 text-sm text-slate-700 dark:text-slate-300">{{ spot.access_notes|linebreaksbr }}</p>
+            </div>
+          {% endif %}
+        </div>
+      </section>
+
+      {# --- emergency --------------------------------------------------- #}
+      <section class="card" aria-labelledby="emergency-heading">
+        <div class="card-header">
+          <h2 class="card-title" id="emergency-heading">
+            {% icon "life-buoy" "inline h-4 w-4 text-rose-500" %} {% translate "Emergency" %}
+          </h2>
+        </div>
+        <div class="card-body space-y-3">
+          <p class="flex items-center gap-2 text-sm">
+            {% if spot.lifeguard_on_duty %}
+              <span class="badge-emerald">{% icon "shield-check" "h-3 w-3" %}{% translate "Lifeguard service" %}</span>
+            {% else %}
+              <span class="badge-amber">{% icon "shield-alert" "h-3 w-3" %}{% translate "No lifeguard service" %}</span>
+            {% endif %}
+          </p>
+
+          {% if spot.nearest_hospital %}
+            <div>
+              <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{% translate "Nearest hospital" %}</h3>
+              <p class="mt-1 text-sm text-slate-800 dark:text-slate-200">{{ spot.nearest_hospital }}</p>
+              {% if spot.nearest_hospital_phone %}
+                <a href="tel:{{ spot.nearest_hospital_phone }}"
+                   class="mt-1 inline-flex items-center gap-1.5 text-sm font-medium text-brand-600 hover:underline dark:text-brand-400">
+                  {% icon "phone" "h-4 w-4" %} {{ spot.nearest_hospital_phone }}
+                </a>
+              {% endif %}
+            </div>
+          {% else %}
+            <p class="text-sm text-amber-600 dark:text-amber-400">
+              {% translate "No hospital recorded. Add one before running a session here." %}
+            </p>
+          {% endif %}
+
+          {% if spot.emergency_notes %}
+            <div>
+              <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{% translate "Notes" %}</h3>
+              <p class="mt-1 text-sm text-slate-700 dark:text-slate-300">{{ spot.emergency_notes|linebreaksbr }}</p>
+            </div>
+          {% endif %}
+        </div>
+      </section>
+
+      {# --- record ------------------------------------------------------ #}
+      <section class="card" aria-labelledby="record-heading">
+        <div class="card-header">
+          <h2 class="card-title" id="record-heading">{% translate "Record" %}</h2>
+        </div>
+        <div class="card-body">
+          <dl class="space-y-2 text-sm">
+            <div class="flex justify-between gap-3">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Reference" %}</dt>
+              <dd class="font-mono text-slate-800 dark:text-slate-200">{{ spot.code }}</dd>
+            </div>
+            <div class="flex justify-between gap-3">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Created" %}</dt>
+              <dd class="text-slate-800 dark:text-slate-200">{{ spot.created_at|date:"d.m.Y" }}</dd>
+            </div>
+            {% if spot.created_by %}
+              <div class="flex justify-between gap-3">
+                <dt class="text-slate-500 dark:text-slate-400">{% translate "Added by" %}</dt>
+                <dd class="text-slate-800 dark:text-slate-200">{{ spot.created_by.get_display_name }}</dd>
+              </div>
+            {% endif %}
+            <div class="flex justify-between gap-3">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Last change" %}</dt>
+              <dd class="text-slate-800 dark:text-slate-200">{{ spot.updated_at|date:"d.m.Y H:i" }}</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+    </div>
+  </div>
+{% endblock %}

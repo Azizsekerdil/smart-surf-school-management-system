@@ -1,0 +1,48 @@
+{% load i18n surf_tags %}
+{% if assessments %}
+  <ol class="relative space-y-4 border-s border-slate-200 ps-5 dark:border-slate-700">
+    {% for assessment in assessments %}
+      <li class="relative">
+        <span class="absolute -start-[1.6rem] top-1.5 flex h-3 w-3 items-center justify-center rounded-full
+                     {% if assessment.level_changed %}bg-emerald-500{% else %}bg-slate-300 dark:bg-slate-600{% endif %}"></span>
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-sm font-medium text-slate-900 dark:text-slate-100">{{ assessment.assessed_on }}</span>
+          <span class="badge-slate">{% blocktranslate with score=assessment.average_score %}Average {{ score }}{% endblocktranslate %}</span>
+          {% if assessment.level_changed %}
+            <span class="badge-emerald">
+              {% blocktranslate with before=assessment.get_level_before_display after=assessment.get_level_after_display %}{{ before }} → {{ after }}{% endblocktranslate %}
+            </span>
+          {% endif %}
+          {% if assessment.instructor %}
+            <span class="text-xs text-slate-500 dark:text-slate-400">· {{ assessment.instructor }}</span>
+          {% endif %}
+        </div>
+
+        <dl class="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs sm:grid-cols-5">
+          <div><dt class="text-slate-500 dark:text-slate-400">{% translate "Paddling" %}</dt><dd class="font-medium tabular-nums">{{ assessment.paddling }}/5</dd></div>
+          <div><dt class="text-slate-500 dark:text-slate-400">{% translate "Pop-up" %}</dt><dd class="font-medium tabular-nums">{{ assessment.popup }}/5</dd></div>
+          <div><dt class="text-slate-500 dark:text-slate-400">{% translate "Positioning" %}</dt><dd class="font-medium tabular-nums">{{ assessment.positioning }}/5</dd></div>
+          <div><dt class="text-slate-500 dark:text-slate-400">{% translate "Wave reading" %}</dt><dd class="font-medium tabular-nums">{{ assessment.wave_reading }}/5</dd></div>
+          <div><dt class="text-slate-500 dark:text-slate-400">{% translate "Safety" %}</dt><dd class="font-medium tabular-nums">{{ assessment.safety }}/5</dd></div>
+        </dl>
+
+        {% if assessment.next_focus %}
+          <p class="mt-2 text-sm text-slate-700 dark:text-slate-300">
+            <span class="font-medium">{% translate "Next focus" %}:</span> {{ assessment.next_focus }}
+          </p>
+        {% endif %}
+        {% if assessment.notes %}
+          <p class="mt-1 whitespace-pre-line text-sm text-slate-600 dark:text-slate-400">{{ assessment.notes }}</p>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ol>
+{% else %}
+  {% can "students.change" as may_change %}
+  {% if may_change %}
+    {% url 'students:assessment_create' student.pk as assess_url %}
+    {% include "partials/empty_state.html" with icon_name="clipboard-check" title=_("No assessments yet") subtitle=_("Score the five competencies after the next lesson to start tracking progress.") action_url=assess_url action_label=_("Record an assessment") %}
+  {% else %}
+    {% include "partials/empty_state.html" with icon_name="clipboard-check" title=_("No assessments yet") %}
+  {% endif %}
+{% endif %}

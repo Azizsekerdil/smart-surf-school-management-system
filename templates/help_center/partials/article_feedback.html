@@ -1,0 +1,53 @@
+{% load i18n surf_tags %}
+{# Swapped in place by HTMX. The whole block is replaced, so the ids stay unique. #}
+<div class="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+  {% if current_vote %}
+    <div class="flex items-center gap-2 text-sm">
+      {% if current_vote == "helpful" %}
+        <span class="text-emerald-600 dark:text-emerald-400">{% icon "circle-check" "h-5 w-5" %}</span>
+        <span class="text-slate-700 dark:text-slate-300">
+          {% translate "Thanks — glad this answered it." %}
+        </span>
+      {% else %}
+        <span class="text-amber-600 dark:text-amber-400">{% icon "circle-alert" "h-5 w-5" %}</span>
+        <span class="text-slate-700 dark:text-slate-300">
+          {% translate "Thanks. Tell a manager what was missing so this page can be fixed." %}
+        </span>
+      {% endif %}
+    </div>
+  {% else %}
+    <p class="text-sm font-medium text-slate-700 dark:text-slate-300">
+      {% translate "Was this article helpful?" %}
+    </p>
+  {% endif %}
+
+  <div class="flex items-center gap-2">
+    <form method="post" action="{% url 'help_center:article_feedback' article.slug %}"
+          hx-post="{% url 'help_center:article_feedback' article.slug %}"
+          hx-target="#article-feedback"
+          hx-swap="innerHTML">
+      {% csrf_token %}
+      <input type="hidden" name="answer" value="yes">
+      <button type="submit"
+              class="{% if current_vote == 'helpful' %}btn-success{% else %}btn-secondary{% endif %} btn-sm"
+              aria-pressed="{% if current_vote == 'helpful' %}true{% else %}false{% endif %}">
+        {% icon "check" "h-4 w-4" %} {% translate "Yes" %}
+        {% if article.helpful_count %}<span class="tabular-nums">({{ article.helpful_count }})</span>{% endif %}
+      </button>
+    </form>
+
+    <form method="post" action="{% url 'help_center:article_feedback' article.slug %}"
+          hx-post="{% url 'help_center:article_feedback' article.slug %}"
+          hx-target="#article-feedback"
+          hx-swap="innerHTML">
+      {% csrf_token %}
+      <input type="hidden" name="answer" value="no">
+      <button type="submit"
+              class="{% if current_vote == 'not_helpful' %}btn-danger{% else %}btn-secondary{% endif %} btn-sm"
+              aria-pressed="{% if current_vote == 'not_helpful' %}true{% else %}false{% endif %}">
+        {% icon "x" "h-4 w-4" %} {% translate "No" %}
+        {% if article.not_helpful_count %}<span class="tabular-nums">({{ article.not_helpful_count }})</span>{% endif %}
+      </button>
+    </form>
+  </div>
+</div>

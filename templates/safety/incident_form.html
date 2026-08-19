@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ form_title }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ form_title }}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "Record it while it is fresh. Facts first — the cause and the fix belong in the review." %}
+  </p>
+{% endblock %}
+
+{% block content %}
+  <form method="post" enctype="multipart/form-data" novalidate class="space-y-5">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="alert-error">
+        {% icon "circle-alert" "h-5 w-5 shrink-0" %}
+        <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+      </div>
+    {% endif %}
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">
+          {% icon "triangle-alert" "inline h-4 w-4 text-amber-500" %} {% translate "The incident" %}
+        </h2>
+      </div>
+      <div class="card-body grid gap-4 sm:grid-cols-2">
+        {% include "safety/partials/field.html" with field=form.occurred_at %}
+        {% include "safety/partials/field.html" with field=form.incident_type %}
+        {% include "safety/partials/field.html" with field=form.severity %}
+        {% include "safety/partials/field.html" with field=form.status %}
+        {% include "safety/partials/field.html" with field=form.description wrapper_class="sm:col-span-2" %}
+        {% include "safety/partials/field.html" with field=form.immediate_action wrapper_class="sm:col-span-2" %}
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">
+          {% icon "map-pin" "inline h-4 w-4 text-brand-500" %} {% translate "Where" %}
+        </h2>
+      </div>
+      <div class="card-body grid gap-4 sm:grid-cols-2">
+        {% include "safety/partials/field.html" with field=form.spot %}
+        {% include "safety/partials/field.html" with field=form.lesson %}
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">
+          {% icon "users" "inline h-4 w-4 text-brand-500" %} {% translate "Who was involved" %}
+        </h2>
+      </div>
+      <div class="card-body grid gap-4 sm:grid-cols-2">
+        {% include "safety/partials/field.html" with field=form.people_involved %}
+        {% include "safety/partials/field.html" with field=form.staff_involved %}
+      </div>
+      <div class="card-body border-t border-slate-200 pt-4 dark:border-slate-700">
+        <p class="text-xs text-slate-500 dark:text-slate-400">
+          {% translate "Hold Ctrl (or Cmd) to select more than one person." %}
+        </p>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">
+          {% icon "life-buoy" "inline h-4 w-4 text-rose-500" %} {% translate "Response and follow-up" %}
+        </h2>
+      </div>
+      <div class="card-body space-y-4">
+        {% include "safety/partials/field.html" with field=form.medical_attention_required %}
+        {% include "safety/partials/field.html" with field=form.emergency_services_called %}
+        {% include "safety/partials/field.html" with field=form.follow_up_required %}
+        <div class="sm:max-w-xs">
+          {% include "safety/partials/field.html" with field=form.follow_up_due %}
+        </div>
+        {% include "safety/partials/field.html" with field=form.photo %}
+      </div>
+    </section>
+
+    <div class="flex flex-wrap items-center justify-end gap-2">
+      <a href="{{ cancel_url }}" class="btn-secondary">{% translate "Cancel" %}</a>
+      <button type="submit" class="btn-primary">
+        {% icon "save" "h-4 w-4" %} {% translate "Save incident" %}
+      </button>
+    </div>
+  </form>
+{% endblock %}

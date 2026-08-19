@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% load i18n static surf_tags %}
+
+{% block title %}{% translate "Code change proposals" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Code change proposals" %}{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-3 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'ai_terminal:console' %}" class="hover:underline">{% translate "AI Development Terminal" %}</a>
+    <span class="mx-1">/</span>
+    <span class="text-slate-700 dark:text-slate-300">{% translate "Proposals" %}</span>
+  </nav>
+{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "Every file change the agent has ever suggested, and what a person decided about it. Nothing here has touched the disk unless it says “Applied”." %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'ai_terminal:policy' %}" class="btn-secondary">
+    {% icon "shield-check" "h-4 w-4" %} {% translate "Security policy" %}
+  </a>
+  <a href="{% url 'ai_terminal:console' %}" class="btn-primary">
+    {% icon "terminal" "h-4 w-4" %} {% translate "Back to the console" %}
+  </a>
+{% endblock %}
+
+{% block content %}
+  {% if proposals %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">{% translate "Change" %}</th>
+            <th scope="col">{% translate "File" %}</th>
+            <th scope="col">{% translate "Type" %}</th>
+            <th scope="col">{% translate "Status" %}</th>
+            <th scope="col" class="text-end">{% translate "Lines" %}</th>
+            <th scope="col">{% translate "Decided" %}</th>
+            <th scope="col"><span class="sr-only">{% translate "Actions" %}</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for proposal in proposals %}
+            <tr>
+              <td>
+                <a href="{% url 'ai_terminal:proposal_detail' proposal.pk %}"
+                   class="font-medium text-brand-700 hover:underline dark:text-brand-300">
+                  {{ proposal.title }}
+                </a>
+                <span class="block text-xs text-slate-400 dark:text-slate-500">
+                  {{ proposal.created_at|date:"d.m.Y H:i" }}
+                  {% if proposal.session_id %}
+                    · <a href="{% url 'ai_terminal:console' %}?s={{ proposal.session_id }}" class="hover:underline">
+                        {% translate "session" %} #{{ proposal.session_id }}
+                      </a>
+                  {% endif %}
+                </span>
+              </td>
+              <td class="max-w-xs break-all font-mono text-xs">{{ proposal.file_path }}</td>
+              <td>{{ proposal.get_change_type_display }}</td>
+              <td>
+                {% status_badge proposal.status proposal.get_status_display %}
+                {% if proposal.checkpoint_branch %}
+                  <span class="block text-[0.7rem] text-slate-400 dark:text-slate-500">
+                    {% translate "checkpoint:" %} <span class="font-mono">{{ proposal.checkpoint_branch }}</span>
+                  </span>
+                {% endif %}
+              </td>
+              <td class="whitespace-nowrap text-end">
+                <span class="text-emerald-600 tabular-nums dark:text-emerald-400">+{{ proposal.added_lines }}</span>
+                <span class="ms-1 text-rose-600 tabular-nums dark:text-rose-400">−{{ proposal.removed_lines }}</span>
+              </td>
+              <td class="whitespace-nowrap text-xs">
+                {% if proposal.decided_at %}
+                  {{ proposal.decided_at|date:"d.m.Y H:i" }}
+                  {% if proposal.approved_by %}
+                    <span class="block text-slate-400 dark:text-slate-500">{{ proposal.approved_by.get_username }}</span>
+                  {% endif %}
+                {% else %}
+                  <span class="text-slate-400 dark:text-slate-500">{% translate "Not decided" %}</span>
+                {% endif %}
+              </td>
+              <td class="text-end">
+                <a href="{% url 'ai_terminal:proposal_detail' proposal.pk %}" class="btn-secondary btn-sm">
+                  {% icon "eye" "h-4 w-4" %} {% translate "Review" %}
+                </a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% include "partials/pagination.html" %}
+  {% else %}
+    {% url 'ai_terminal:console' as console_url %}
+    {% include "partials/empty_state.html" with icon_name="file-text" title=_("No code changes have been proposed") subtitle=_("Ask the development agent for a change in the console. Its proposals appear here for review before anything is written.") action_url=console_url action_label=_("Open the console") %}
+  {% endif %}
+{% endblock %}

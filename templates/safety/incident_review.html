@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Review" %} {{ incident.incident_code }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% blocktranslate with code=incident.incident_code %}Review {{ code }}{% endblocktranslate %}{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-3 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'safety:incident_list' %}" class="hover:underline">{% translate "Incidents" %}</a>
+    <span class="mx-1">/</span>
+    <a href="{% url 'safety:incident_detail' incident.pk %}" class="hover:underline">{{ incident.incident_code }}</a>
+    <span class="mx-1">/</span>
+    <span class="text-slate-700 dark:text-slate-300">{% translate "Review" %}</span>
+  </nav>
+{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "Your name and the time are stored with this review. It is the record an inspection reads." %}
+  </p>
+{% endblock %}
+
+{% block content %}
+  <div class="grid gap-5 lg:grid-cols-3">
+    <div class="lg:col-span-2">
+      <form method="post" novalidate class="space-y-5">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+          <div class="alert-error">
+            {% icon "circle-alert" "h-5 w-5 shrink-0" %}
+            <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+          </div>
+        {% endif %}
+
+        <section class="card">
+          <div class="card-header">
+            <h2 class="card-title">
+              {% icon "clipboard-check" "inline h-4 w-4 text-emerald-500" %} {% translate "Sign-off" %}
+            </h2>
+          </div>
+          <div class="card-body space-y-4">
+            {% include "safety/partials/field.html" with field=form.root_cause %}
+            {% include "safety/partials/field.html" with field=form.corrective_action %}
+            <div class="sm:max-w-xs">
+              {% include "safety/partials/field.html" with field=form.status %}
+            </div>
+            {% include "safety/partials/field.html" with field=form.follow_up_required %}
+            <div class="sm:max-w-xs">
+              {% include "safety/partials/field.html" with field=form.follow_up_due %}
+            </div>
+          </div>
+        </section>
+
+        <div class="flex flex-wrap items-center justify-end gap-2">
+          <a href="{% url 'safety:incident_detail' incident.pk %}" class="btn-secondary">{% translate "Cancel" %}</a>
+          <button type="submit" class="btn-primary">
+            {% icon "check" "h-4 w-4" %} {% translate "Sign off as" %} {{ request.user.get_display_name }}
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div class="space-y-5">
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">{% translate "The incident" %}</h2>
+        </div>
+        <div class="card-body space-y-3">
+          <dl class="space-y-2 text-sm">
+            <div class="flex justify-between gap-3">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "When" %}</dt>
+              <dd class="text-slate-800 dark:text-slate-200">{{ incident.occurred_at|date:"d.m.Y H:i" }}</dd>
+            </div>
+            <div class="flex justify-between gap-3">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Type" %}</dt>
+              <dd class="text-slate-800 dark:text-slate-200">{{ incident.get_incident_type_display }}</dd>
+            </div>
+            <div class="flex justify-between gap-3">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Severity" %}</dt>
+              <dd class="text-slate-800 dark:text-slate-200">{{ incident.get_severity_display }}</dd>
+            </div>
+            <div class="flex justify-between gap-3">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Spot" %}</dt>
+              <dd class="text-slate-800 dark:text-slate-200">{% if incident.spot %}{{ incident.spot.name }}{% else %}—{% endif %}</dd>
+            </div>
+          </dl>
+          <p class="whitespace-pre-line border-t border-slate-200 pt-3 text-sm text-slate-700 dark:border-slate-700 dark:text-slate-300">
+            {{ incident.description }}
+          </p>
+        </div>
+      </section>
+
+      {% if incident.is_serious %}
+        <div class="alert-warning">
+          {% icon "circle-alert" "h-5 w-5 shrink-0" %}
+          <p>{% translate "High and critical incidents cannot be closed without a written corrective action." %}</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}

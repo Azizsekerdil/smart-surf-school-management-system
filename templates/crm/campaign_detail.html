@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ campaign.name }} · {% translate "Campaign" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ campaign.name }}{% endblock %}
+{% block page_subtitle %}
+  <p class="mt-0.5 flex flex-wrap items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+    <span class="font-mono">{{ campaign.code }}</span>
+    {% status_badge campaign.status campaign.get_status_display %}
+    <span>{{ campaign.get_channel_display }}</span>
+    <span>·</span>
+    <span>{{ campaign.start_date|date:"d.m.Y" }} – {{ campaign.end_date|date:"d.m.Y" }}</span>
+  </p>
+{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-3 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'crm:dashboard' %}" class="hover:text-brand-600">{% translate "CRM" %}</a>
+    <span class="mx-1">/</span>
+    <a href="{% url 'crm:campaign_list' %}" class="hover:text-brand-600">{% translate "Campaigns" %}</a>
+    <span class="mx-1">/</span>
+    <span class="text-slate-700 dark:text-slate-300">{{ campaign.code }}</span>
+  </nav>
+{% endblock %}
+
+{% block page_actions %}
+  {% can "crm.change" as may_change %}
+  {% if may_change %}
+    <a href="{% url 'crm:campaign_update' campaign.pk %}" class="btn-secondary">
+      {% icon "pencil" "h-4 w-4" %} {% translate "Edit" %}
+    </a>
+    {% for value, label in next_statuses %}
+      <form method="post" action="{% url 'crm:campaign_status' campaign.pk %}" class="inline">
+        {% csrf_token %}
+        <input type="hidden" name="status" value="{{ value }}">
+        <button type="submit" class="{% if value == 'cancelled' %}btn-secondary{% else %}btn-primary{% endif %}">
+          {% if value == "running" %}{% icon "play" "h-4 w-4" %}
+          {% elif value == "completed" %}{% icon "check" "h-4 w-4" %}
+          {% elif value == "cancelled" %}{% icon "circle-x" "h-4 w-4" %}
+          {% else %}{% icon "clock" "h-4 w-4" %}{% endif %}
+          {{ label }}
+        </button>
+      </form>
+    {% endfor %}
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  {% if performance.is_over_budget %}
+    <div class="alert-warning mb-5">
+      {% icon "triangle-alert" "h-5 w-5" %}
+      <div>
+        {% blocktranslate with spend=performance.spend|money budget=performance.budget|money %}
+          Spend of {{ spend }} is above the {{ budget }} budget.
+        {% endblocktranslate %}
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="grid grid-cols-2 gap-4 xl:grid-cols-4">
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Sent" %}</p>
+      <p class="stat-value">{{ performance.sent }}</p>
+      {% if performance.audience_size %}
+        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          {% blocktranslate with size=performance.audience_size %}of {{ size }} in the segment{% endblocktranslate %}
+        </p>
+      {% endif %}
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Open rate" %}</p>
+      <p class="stat-value">{{ performance.open_rate|pct }}</p>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {% blocktranslate with n=performance.opened %}{{ n }} opened{% endblocktranslate %}
+      </p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Conversion rate" %}</p>
+      <p class="stat-value">{{ performance.conversion_rate|pct }}</p>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {% blocktranslate with n=performance.converted %}{{ n }} converted{% endblocktranslate %}
+      </p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "ROI" %}</p>
+      <p class="stat-value {% if performance.is_profitable %}text-emerald-600 dark:text-emerald-400{% elif performance.roi is not None %}text-rose-600 dark:text-rose-400{% endif %}">
+        {{ performance.roi|pct }}
+      </p>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {% blocktranslate with profit=performance.profit|money %}{{ profit }} profit{% endblocktranslate %}
+      </p>
+    </div>
+  </div>
+
+  <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
+    <section class="card lg:col-span-2">
+      <div class="card-header"><h2 class="card-title">{% translate "Message" %}</h2></div>
+      <div class="card-body">
+        {% if campaign.message_subject or campaign.message_body %}
+          {% if campaign.message_subject %}
+            <p class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ campaign.message_subject }}</p>
+          {% endif %}
+          <p class="mt-2 whitespace-pre-line text-sm text-slate-700 dark:text-slate-300">{{ campaign.message_body }}</p>
+        {% else %}
+          <p class="text-sm text-slate-500 dark:text-slate-400">
+            {% translate "No message stored — this campaign is run outside the system." %}
+          </p>
+        {% endif %}
+      </div>
+    </section>
+
+    <div class="space-y-6">
+      <section class="card">
+        <div class="card-header"><h2 class="card-title">{% translate "Money" %}</h2></div>
+        <div class="card-body">
+          <dl class="space-y-3 text-sm">
+            <div class="flex items-baseline justify-between">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Budget" %}</dt>
+              <dd class="tabular-nums text-slate-900 dark:text-slate-100">{{ performance.budget|money }}</dd>
+            </div>
+            <div class="flex items-baseline justify-between">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Spent" %}</dt>
+              <dd class="tabular-nums {% if performance.is_over_budget %}font-semibold text-rose-600 dark:text-rose-400{% else %}text-slate-900 dark:text-slate-100{% endif %}">
+                {{ performance.spend|money }}
+              </dd>
+            </div>
+            <div class="flex items-baseline justify-between">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Revenue" %}</dt>
+              <dd class="tabular-nums text-slate-900 dark:text-slate-100">{{ performance.revenue|money }}</dd>
+            </div>
+            <div class="flex items-baseline justify-between border-t border-slate-100 pt-3 dark:border-slate-800">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Cost per conversion" %}</dt>
+              <dd class="tabular-nums text-slate-900 dark:text-slate-100">
+                {% if performance.cost_per_conversion is not None %}{{ performance.cost_per_conversion|money }}{% else %}—{% endif %}
+              </dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-header"><h2 class="card-title">{% translate "Audience" %}</h2></div>
+        <div class="card-body">
+          {% if campaign.target_segment %}
+            <a href="{% url 'crm:segment_detail' campaign.target_segment.pk %}"
+               class="text-sm font-medium text-brand-600 hover:underline">
+              {{ campaign.target_segment.name }}
+            </a>
+            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+              {% blocktranslate with count=campaign.target_segment.cached_count %}{{ count }} customers{% endblocktranslate %}
+            </p>
+            {% if campaign.target_segment.description %}
+              <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">{{ campaign.target_segment.description }}</p>
+            {% endif %}
+          {% else %}
+            <p class="text-sm text-slate-500 dark:text-slate-400">
+              {% translate "No segment attached — the audience is managed outside the system." %}
+            </p>
+          {% endif %}
+          {% if performance.days_remaining is not None %}
+            <p class="mt-3 border-t border-slate-100 pt-3 text-xs text-slate-500 dark:border-slate-800 dark:text-slate-400">
+              {% if performance.days_remaining >= 0 %}
+                {% blocktranslate with n=performance.days_remaining %}{{ n }} days left{% endblocktranslate %}
+              {% else %}
+                {% translate "The end date has passed." %}
+              {% endif %}
+            </p>
+          {% endif %}
+        </div>
+      </section>
+    </div>
+  </div>
+{% endblock %}

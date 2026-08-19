@@ -1,0 +1,101 @@
+{% load i18n surf_tags %}
+{% if products %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">{% translate "Product" %}</th>
+          <th scope="col">{% translate "Category" %}</th>
+          <th scope="col" class="text-end">{% translate "Cost" %}</th>
+          <th scope="col" class="text-end">{% translate "Shelf price" %}</th>
+          <th scope="col" class="text-end">{% translate "Margin" %}</th>
+          <th scope="col" class="text-end">{% translate "Stock" %}</th>
+          <th scope="col">{% translate "Status" %}</th>
+          <th scope="col"><span class="sr-only">{% translate "Actions" %}</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for product in products %}
+          {% comment %} Low stock is the one thing a shop manager scans this table for, so it
+             colours the whole row rather than hiding inside a column. {% endcomment %}
+          <tr class="{% if product.is_out_of_stock %}bg-rose-50/60 dark:bg-rose-500/5{% elif product.is_low_stock %}bg-amber-50/60 dark:bg-amber-500/5{% endif %}">
+            <td>
+              <span class="font-medium text-slate-900 dark:text-slate-100">{{ product.name }}</span>
+              <span class="block font-mono text-xs text-slate-400">
+                {{ product.sku }}{% if product.barcode %} · {{ product.barcode }}{% endif %}
+              </span>
+            </td>
+            <td>{{ product.category.name }}</td>
+            <td class="text-end tabular-nums">{{ product.cost_price|money }}</td>
+            <td class="text-end tabular-nums font-medium text-slate-900 dark:text-slate-100">
+              {{ product.sale_price|money }}
+              <span class="block text-xs font-normal text-slate-400">
+                {% blocktranslate with rate=product.tax_rate|floatformat:'-2' %}incl. {{ rate }}% tax{% endblocktranslate %}
+              </span>
+            </td>
+            <td class="text-end tabular-nums">
+              {{ product.margin_amount|money }}
+              <span class="block text-xs text-slate-400">{{ product.margin_percent|floatformat:1 }}%</span>
+            </td>
+            <td class="text-end tabular-nums">
+              {% if not product.track_stock %}
+                <span class="text-slate-400">—</span>
+              {% else %}
+                {{ product.stock_display }}
+                <span class="block text-xs text-slate-400">
+                  {% blocktranslate with threshold=product.low_stock_threshold %}reorder at {{ threshold }}{% endblocktranslate %}
+                </span>
+              {% endif %}
+            </td>
+            <td>
+              {% if not product.is_active %}
+                <span class="badge-slate">{% translate "Withdrawn" %}</span>
+              {% elif product.is_out_of_stock %}
+                <span class="badge-rose">{% translate "Out of stock" %}</span>
+              {% elif product.is_low_stock %}
+                <span class="badge-amber">{% translate "Low" %}</span>
+              {% else %}
+                <span class="badge-emerald">{% translate "In stock" %}</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <div class="flex items-center justify-end gap-1">
+                {% can "pos.view" as may_view %}
+                {% if may_view %}
+                  <a href="{% url 'pos:movement_list' %}?product={{ product.pk }}"
+                     class="btn-ghost btn-sm" aria-label="{% translate 'Stock ledger' %}">
+                    {% icon "history" "h-4 w-4" %}
+                  </a>
+                {% endif %}
+                {% can "pos.change" as may_change %}
+                {% if may_change %}
+                  <a href="{% url 'pos:stock_adjust' %}?product={{ product.pk }}"
+                     class="btn-ghost btn-sm" aria-label="{% translate 'Correct stock' %}">
+                    {% icon "arrow-left-right" "h-4 w-4" %}
+                  </a>
+                  <a href="{% url 'pos:product_update' product.pk %}"
+                     class="btn-ghost btn-sm" aria-label="{% translate 'Edit product' %}">
+                    {% icon "pencil" "h-4 w-4" %}
+                  </a>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% include "partials/pagination.html" %}
+{% else %}
+  {% translate "No products match" as empty_title %}
+  {% translate "Clear the filters, or add the first thing the shop sells." as empty_subtitle %}
+  {% can "pos.change" as may_change %}
+  {% if may_change %}
+    {% url 'pos:product_create' as action_url %}
+    {% translate "New product" as action_label %}
+    {% include "partials/empty_state.html" with icon_name="package" title=empty_title subtitle=empty_subtitle action_url=action_url action_label=action_label %}
+  {% else %}
+    {% include "partials/empty_state.html" with icon_name="package" title=empty_title subtitle=empty_subtitle %}
+  {% endif %}
+{% endif %}

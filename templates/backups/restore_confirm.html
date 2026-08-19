@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Restore" %} {{ backup.backup_code }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Restore this backup over the live system" %}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% blocktranslate with code=backup.backup_code %}Reading {{ code }} back over everything the school has today.{% endblocktranslate %}
+  </p>
+{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-3 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'backups:list' %}" class="hover:underline">{% translate "Backup & Restore" %}</a>
+    <span class="mx-1">/</span>
+    <a href="{% url 'backups:detail' backup.pk %}" class="hover:underline">{{ backup.backup_code }}</a>
+    <span class="mx-1">/</span>
+    <span class="text-slate-700 dark:text-slate-300">{% translate "Restore" %}</span>
+  </nav>
+{% endblock %}
+
+{% block content %}
+  <div class="alert-error mb-5">
+    {% icon "triangle-alert" "h-6 w-6 shrink-0" %}
+    <div>
+      <p class="text-base font-semibold">{% translate "This replaces live data. It cannot be undone from this screen." %}</p>
+      <p class="mt-1">
+        {% blocktranslate with days=backup.age_days when=backup.completed_at|date:"d.m.Y H:i" %}Everything created or changed since {{ when }} — {{ days }} day(s) of work — will be gone once this finishes.{% endblocktranslate %}
+      </p>
+    </div>
+  </div>
+
+  {% if not is_restorable %}
+    <div class="alert-warning mb-5">
+      {% icon "circle-x" "h-5 w-5 shrink-0" %}
+      <p>
+        {% translate "This backup cannot be restored: it is not a completed, on-disk copy of restorable data. Verify it first, or choose a different backup." %}
+      </p>
+    </div>
+  {% endif %}
+
+  <div class="grid gap-5 lg:grid-cols-5">
+    {# ------------------------------------------------ what gets overwritten #}
+    <div class="lg:col-span-3">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">{% translate "What will be overwritten" %}</h2>
+          {% icon "database" "h-4 w-4 text-slate-400" %}
+        </div>
+        <div class="card-body space-y-4">
+          {% if backup.covers_database %}
+            <div class="rounded-lg border border-rose-200 bg-rose-50/60 p-3 dark:border-rose-500/30 dark:bg-rose-500/10">
+              <p class="flex items-center gap-2 text-sm font-semibold text-rose-900 dark:text-rose-200">
+                {% icon "database" "h-4 w-4" %} {% translate "The entire database" %}
+              </p>
+              <p class="mt-1 break-all font-mono text-xs text-rose-800 dark:text-rose-300">{{ database_name }}</p>
+              <p class="mt-1 text-xs text-rose-800 dark:text-rose-300">{{ current_engine }}</p>
+            </div>
+          {% endif %}
+
+          {% if backup.covers_media %}
+            <div class="rounded-lg border border-amber-200 bg-amber-50/60 p-3 dark:border-amber-500/30 dark:bg-amber-500/10">
+              <p class="flex items-center gap-2 text-sm font-semibold text-amber-900 dark:text-amber-200">
+                {% icon "folder" "h-4 w-4" %} {% translate "Uploaded files" %}
+              </p>
+              <p class="mt-1 break-all font-mono text-xs text-amber-800 dark:text-amber-300">{{ media_root }}</p>
+              <p class="mt-1 text-xs text-amber-800 dark:text-amber-300">
+                {% translate "Files in the backup overwrite the current copies. Files uploaded since the backup are left in place, and the private folder is never touched." %}
+              </p>
+            </div>
+          {% endif %}
+
+          {% if at_risk.rows %}
+            <div>
+              <p class="mb-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                {% blocktranslate with total=at_risk.total_records %}{{ total }} record(s) created after this backup will disappear:{% endblocktranslate %}
+              </p>
+              <div class="table-wrap">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th scope="col">{% translate "Records" %}</th>
+                      <th scope="col">{% translate "Module" %}</th>
+                      <th scope="col" class="text-end">{% translate "Count" %}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for row in at_risk.rows %}
+                      <tr>
+                        <td>{{ row.label }}</td>
+                        <td class="text-slate-500 dark:text-slate-400">{{ row.app }}</td>
+                        <td class="text-end font-semibold tabular-nums text-rose-600 dark:text-rose-400">{{ row.count }}</td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+              {% if at_risk.hidden_models %}
+                <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                  {% blocktranslate with more=at_risk.hidden_models %}… and {{ more }} more record type(s) not listed.{% endblocktranslate %}
+                </p>
+              {% endif %}
+            </div>
+          {% elif backup.covers_database %}
+            <p class="text-sm text-slate-500 dark:text-slate-400">
+              {% translate "Nothing has been created since this backup was taken, so no records would be lost." %}
+            </p>
+          {% endif %}
+        </div>
+      </div>
+
+      {% if previous_restores %}
+        <div class="card mt-5">
+          <div class="card-header">
+            <h2 class="card-title">{% translate "Earlier attempts with this backup" %}</h2>
+            {% icon "history" "h-4 w-4 text-slate-400" %}
+          </div>
+          <div class="card-body space-y-2">
+            {% for restore in previous_restores %}
+              <div class="flex flex-wrap items-center justify-between gap-2 text-sm">
+                <span class="text-slate-600 dark:text-slate-300">{{ restore.started_at|date:"d.m.Y H:i" }}</span>
+                {% status_badge restore.status restore.get_status_display restore_status_colors %}
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+    </div>
+
+    {# --------------------------------------------------------- confirmation #}
+    <div class="lg:col-span-2">
+      <div class="card border-rose-300 dark:border-rose-500/40">
+        <div class="card-header">
+          <h2 class="card-title">{% translate "Confirm the restore" %}</h2>
+          {% icon "lock" "h-4 w-4 text-rose-500" %}
+        </div>
+        <div class="card-body">
+          <ol class="mb-4 space-y-2 text-sm text-slate-600 dark:text-slate-300">
+            <li class="flex gap-2">
+              {% icon "circle-check" "h-4 w-4 shrink-0 text-emerald-500" %}
+              <span>{% translate "The backup is verified against its checksum before anything is touched." %}</span>
+            </li>
+            <li class="flex gap-2">
+              {% icon "circle-check" "h-4 w-4 shrink-0 text-emerald-500" %}
+              <span>{% translate "A safety copy of the current system is taken first, automatically." %}</span>
+            </li>
+            <li class="flex gap-2">
+              {% icon "circle-check" "h-4 w-4 shrink-0 text-emerald-500" %}
+              <span>{% translate "If the restore fails, the safety copy is put back and the attempt is marked rolled back." %}</span>
+            </li>
+          </ol>
+
+          <div class="mb-4 rounded-lg bg-slate-100 p-3 text-center dark:bg-slate-800">
+            <p class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              {% translate "Type this code exactly" %}
+            </p>
+            <p class="mt-1 select-all font-mono text-lg font-semibold text-slate-900 dark:text-slate-100">
+              {{ backup.backup_code }}
+            </p>
+          </div>
+
+          <form method="post" x-data="{ typed: '', understood: false, busy: false }" @submit="busy = true">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+              <div class="alert-error mb-3">
+                {% icon "circle-x" "h-5 w-5 shrink-0" %}
+                <div>{{ form.non_field_errors }}</div>
+              </div>
+            {% endif %}
+
+            <div class="space-y-4">
+              {% include "backups/partials/field.html" with field=form.confirmation_text %}
+              {% include "backups/partials/field.html" with field=form.understood %}
+              {% include "backups/partials/field.html" with field=form.notes %}
+            </div>
+
+            <button type="submit"
+                    class="btn-danger mt-5 w-full"
+                    {% if not is_restorable %}disabled{% endif %}
+                    :disabled="busy || !understood || typed.trim() !== {{ backup.backup_code|to_json }}">
+              <span x-show="!busy" class="inline-flex items-center gap-2">
+                {% icon "rotate-ccw" "h-4 w-4" %} {% translate "Restore now — replace live data" %}
+              </span>
+              <span x-show="busy" x-cloak class="inline-flex items-center gap-2">
+                {% icon "loader-circle" "h-4 w-4 animate-spin" %} {% translate "Restoring — do not close this page" %}
+              </span>
+            </button>
+
+            <p class="mt-2 text-center text-xs text-slate-500 dark:text-slate-400"
+               x-show="typed.trim() !== {{ backup.backup_code|to_json }}">
+              {% translate "The button unlocks once the code matches." %}
+            </p>
+
+            <a href="{% url 'backups:detail' backup.pk %}" class="btn-secondary mt-3 w-full">
+              {% translate "Cancel — change nothing" %}
+            </a>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

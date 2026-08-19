@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Refund" %} {{ payment.payment_code }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% blocktranslate with code=payment.payment_code %}Refund {{ code }}{% endblocktranslate %}{% endblock %}
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "The original payment is never altered. A separate, negative entry is written against it." %}
+  </p>
+{% endblock %}
+
+{% block content %}
+  <div class="grid gap-4 lg:grid-cols-3">
+    <form method="post" novalidate class="space-y-5 lg:col-span-2">
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="alert-error">
+          {% icon "circle-alert" "h-5 w-5 shrink-0" %}
+          <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+        </div>
+      {% endif %}
+
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">
+            {% icon "rotate-ccw" "inline h-4 w-4 text-rose-500" %} {% translate "Refund details" %}
+          </h2>
+        </div>
+        <div class="card-body space-y-4">
+          {% include "finance/partials/field.html" with field=form.amount %}
+          {% include "finance/partials/field.html" with field=form.reason %}
+        </div>
+      </section>
+
+      <div class="alert-warning">
+        {% icon "triangle-alert" "h-5 w-5 shrink-0" %}
+        <div>
+          <p class="font-medium">{% translate "This cannot be undone from the app." %}</p>
+          <p class="mt-1">
+            {% translate "The refund is written to the ledger and to the audit trail with your name on it. Any linked invoice, booking or rental balance is reduced at the same time." %}
+          </p>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <button type="submit" class="btn-danger">
+          {% icon "rotate-ccw" "h-4 w-4" %} {% translate "Issue refund" %}
+        </button>
+        <a href="{{ cancel_url }}" class="btn-secondary">{% translate "Cancel" %}</a>
+      </div>
+    </form>
+
+    <aside class="card h-fit">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Original payment" %}</h2>
+      </div>
+      <div class="card-body space-y-3 text-sm">
+        <div class="flex items-center justify-between">
+          <span class="text-slate-500 dark:text-slate-400">{% translate "Code" %}</span>
+          <span class="font-medium">{{ payment.payment_code }}</span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-slate-500 dark:text-slate-400">{% translate "Customer" %}</span>
+          <span class="font-medium">{{ payment.customer }}</span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-slate-500 dark:text-slate-400">{% translate "Paid at" %}</span>
+          <span class="font-medium">{{ payment.paid_at|date:"d.m.Y H:i" }}</span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-slate-500 dark:text-slate-400">{% translate "Amount" %}</span>
+          <span class="font-medium tabular-nums">{{ payment.amount|money }}</span>
+        </div>
+        <div class="flex items-center justify-between border-t border-slate-200 pt-3 dark:border-slate-700">
+          <span class="text-slate-500 dark:text-slate-400">{% translate "Already refunded" %}</span>
+          <span class="font-medium tabular-nums">{{ payment.refunded_amount|money }}</span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-slate-500 dark:text-slate-400">{% translate "Still refundable" %}</span>
+          <span class="font-semibold tabular-nums text-slate-900 dark:text-slate-100">
+            {{ payment.refundable_amount|money }}
+          </span>
+        </div>
+      </div>
+    </aside>
+  </div>
+{% endblock %}

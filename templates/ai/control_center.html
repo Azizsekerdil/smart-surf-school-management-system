@@ -1,0 +1,325 @@
+{% extends "base.html" %}
+{% load i18n static surf_tags %}
+
+{% block title %}{% translate "AI Control Center" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "AI Control Center" %}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "Which providers are reachable, which models each role uses, and what the month has cost so far." %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <button type="button" class="btn-secondary"
+          hx-post="{% url 'ai:test_provider' 'all' %}"
+          hx-target="#ai-test-results"
+          hx-swap="innerHTML"
+          hx-indicator="#ai-test-spinner"
+          hx-disabled-elt="this">
+    {% icon "activity" "h-4 w-4" %} {% translate "Test all providers" %}
+  </button>
+  <a href="{% url 'ai:knowledge_list' %}" class="btn-secondary">
+    {% icon "book-open" "h-4 w-4" %} {% translate "Knowledge base" %}
+  </a>
+  <a href="{% url 'ai:usage' %}" class="btn-primary">
+    {% icon "gauge" "h-4 w-4" %} {% translate "Usage & costs" %}
+  </a>
+{% endblock %}
+
+{% block content %}
+
+  {# ============================================================ headline #}
+  <div class="mb-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Cloud spend this month" %}</p>
+      <p class="stat-value">${{ month_spend|floatformat:4 }}</p>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {% translate "Estimate in USD — providers bill in credits, so treat this as a scale indicator." %}
+      </p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Tools available" %}</p>
+      <p class="stat-value">{{ tool_count }}</p>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {% translate "Registered data look-ups. Each one is still capability-checked per user." %}
+      </p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Knowledge base" %}</p>
+      <p class="stat-value">{{ rag_status.indexed_documents }}<span class="text-base font-normal text-slate-400"> / {{ rag_status.documents }}</span></p>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {% blocktranslate with chunks=rag_status.chunks %}Indexed documents · {{ chunks }} chunks{% endblocktranslate %}
+      </p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Routing mode" %}</p>
+      <form method="post" action="{% url 'ai:set_routing_mode' %}" class="mt-1 flex items-center gap-2">
+        {% csrf_token %}
+        <label class="sr-only" for="id_mode">{% translate "Routing mode" %}</label>
+        <select name="mode" id="id_mode" class="form-select w-auto">
+          <option value="auto" {% if current_mode == "auto" %}selected{% endif %}>{% translate "Automatic" %}</option>
+          <option value="local_only" {% if current_mode == "local_only" %}selected{% endif %}>{% translate "Local only" %}</option>
+          <option value="cloud_only" {% if current_mode == "cloud_only" %}selected{% endif %}>{% translate "Cloud only" %}</option>
+        </select>
+        <button type="submit" class="btn-secondary btn-sm">{% translate "Apply" %}</button>
+      </form>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {% translate "Default for new requests in your session." %}
+      </p>
+    </div>
+  </div>
+
+  {# ====================================================== index integrity #}
+  {% if rag_status.needs_reindex %}
+    <div class="alert-warning mb-5" role="alert">
+      {% icon "triangle-alert" "h-5 w-5 shrink-0" %}
+      <div>
+        <p class="font-semibold">{% translate "The knowledge index mixes embedding models." %}</p>
+        <p class="mt-1">
+          {% translate "Vectors produced by different embedding models are not comparable, so a search can only ever look at the part of the index built with the model that answers the query. The rest of the index is effectively invisible. Re-index everything with a single embedding model to fix this." %}
+        </p>
+        <p class="mt-1 text-xs">
+          {% translate "Models found in the index:" %}
+          <span class="font-mono">{{ rag_status.embedding_models|join:", " }}</span>
+        </p>
+        {% can "ai.change" as may_reindex %}
+        {% if may_reindex %}
+          <form method="post" action="{% url 'ai:knowledge_reindex' %}" class="mt-2">
+            {% csrf_token %}
+            <button type="submit" class="btn-primary btn-sm">
+              {% icon "refresh-cw" "h-4 w-4" %} {% translate "Re-index the knowledge base" %}
+            </button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+  {% elif rag_status.embedding_models %}
+    <div class="alert-info mb-5">
+      {% icon "info" "h-5 w-5 shrink-0" %}
+      <p>
+        {% translate "The whole knowledge index is built with one embedding model, so every chunk is searchable:" %}
+        <span class="font-mono">{{ rag_status.embedding_models|join:", " }}</span>
+      </p>
+    </div>
+  {% endif %}
+
+  {# ========================================================= test results #}
+  <div class="mb-5 flex items-center gap-2">
+    <span id="ai-test-spinner" class="htmx-indicator flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
+      {% icon "loader-circle" "h-4 w-4 animate-spin" %} {% translate "Contacting providers…" %}
+    </span>
+    <span id="ai-probe-spinner" class="htmx-indicator flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
+      {% icon "loader-circle" "h-4 w-4 animate-spin" %} {% translate "Calling each model — this can take a minute…" %}
+    </span>
+  </div>
+  <div id="ai-test-results" class="mb-5"></div>
+  <div id="ai-probe-results" class="mb-5"></div>
+
+  {# ============================================================ providers #}
+  <div class="space-y-5">
+    {% for provider in providers %}
+      <section class="card" aria-label="{{ provider.label }}">
+
+        <div class="card-header flex-wrap">
+          <div class="flex flex-wrap items-center gap-2">
+            <h2 class="card-title">{{ provider.label }}</h2>
+            <span class="font-mono text-xs text-slate-400 dark:text-slate-500">{{ provider.name }}</span>
+            {% if provider.is_cloud %}
+              <span class="badge-sky">{% icon "globe" "h-3 w-3" %} {% translate "Cloud" %}</span>
+            {% else %}
+              <span class="badge-emerald">{% icon "hard-drive" "h-3 w-3" %} {% translate "Local" %}</span>
+            {% endif %}
+            {% if provider.enabled %}
+              <span class="badge-emerald">{% translate "Enabled" %}</span>
+            {% else %}
+              <span class="badge-slate">{% translate "Disabled" %}</span>
+            {% endif %}
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <button type="button" class="btn-secondary btn-sm"
+                    hx-post="{% url 'ai:test_provider' provider.name %}"
+                    hx-target="#ai-test-results"
+                    hx-swap="innerHTML"
+                    hx-indicator="#ai-test-spinner"
+                    hx-disabled-elt="this">
+              {% icon "activity" "h-4 w-4" %} {% translate "Test" %}
+            </button>
+            <button type="button" class="btn-secondary btn-sm"
+                    hx-post="{% url 'ai:probe_models' provider.name %}"
+                    hx-target="#ai-probe-results"
+                    hx-swap="innerHTML"
+                    hx-indicator="#ai-probe-spinner"
+                    hx-disabled-elt="this">
+              {% icon "zap" "h-4 w-4" %} {% translate "Probe models" %}
+            </button>
+            <a href="{% url 'ai:provider_config' provider.name %}" class="btn-secondary btn-sm">
+              {% icon "settings" "h-4 w-4" %} {% translate "Settings" %}
+            </a>
+          </div>
+        </div>
+
+        <div class="card-body space-y-4">
+
+          {# --- connection ------------------------------------------------ #}
+          <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div>
+              <p class="text-xs font-medium text-slate-500 dark:text-slate-400">{% translate "Base URL" %}</p>
+              <p class="mt-0.5 break-all font-mono text-xs text-slate-800 dark:text-slate-200">
+                {{ provider.base_url|default:"—" }}
+              </p>
+            </div>
+            <div>
+              <p class="text-xs font-medium text-slate-500 dark:text-slate-400">{% translate "API key" %}</p>
+              <p class="mt-0.5">
+                {% if provider.has_key %}
+                  <span class="badge-emerald">{% icon "lock" "h-3 w-3" %} {% translate "Configured" %}</span>
+                {% elif provider.is_cloud %}
+                  <span class="badge-rose">{% icon "lock-open" "h-3 w-3" %} {% translate "Not configured" %}</span>
+                {% else %}
+                  <span class="badge-slate">{% translate "Not required" %}</span>
+                {% endif %}
+              </p>
+              <p class="mt-1 text-[0.7rem] text-slate-400 dark:text-slate-500">
+                {% translate "Keys are read from the environment and are never stored or shown here." %}
+              </p>
+            </div>
+            <div>
+              <p class="text-xs font-medium text-slate-500 dark:text-slate-400">{% translate "Capabilities" %}</p>
+              <p class="mt-0.5 flex flex-wrap gap-1">
+                {% if provider.supports_vision %}<span class="badge-violet">{% translate "Vision" %}</span>{% endif %}
+                {% if provider.supports_tools %}<span class="badge-violet">{% translate "Tools" %}</span>{% endif %}
+                {% if provider.supports_embeddings %}<span class="badge-violet">{% translate "Embeddings" %}</span>{% endif %}
+                {% if not provider.supports_vision and not provider.supports_tools and not provider.supports_embeddings %}
+                  <span class="badge-slate">{% translate "Text only" %}</span>
+                {% endif %}
+              </p>
+            </div>
+            <div>
+              <p class="text-xs font-medium text-slate-500 dark:text-slate-400">{% translate "Last health check" %}</p>
+              {% if provider.last_at %}
+                <p class="mt-0.5 flex flex-wrap items-center gap-1.5">
+                  {% if provider.last_ok %}
+                    <span class="badge-emerald">{% icon "circle-check" "h-3 w-3" %} {% translate "Reachable" %}</span>
+                  {% else %}
+                    <span class="badge-rose">{% icon "circle-x" "h-3 w-3" %} {% translate "Failed" %}</span>
+                  {% endif %}
+                  <span class="text-xs text-slate-500 dark:text-slate-400">
+                    {% blocktranslate with ms=provider.last_latency %}{{ ms }} ms{% endblocktranslate %}
+                  </span>
+                </p>
+                <p class="mt-1 text-[0.7rem] text-slate-500 dark:text-slate-400">
+                  <time datetime="{{ provider.last_at|date:'c' }}">{{ provider.last_at|date:"d.m.Y H:i" }}</time>
+                </p>
+                {% if provider.last_message %}
+                  <p class="mt-1 break-words text-[0.7rem] text-slate-500 dark:text-slate-400">{{ provider.last_message }}</p>
+                {% endif %}
+              {% else %}
+                <p class="mt-0.5 text-sm text-slate-500 dark:text-slate-400">{% translate "Never tested" %}</p>
+              {% endif %}
+            </div>
+          </div>
+
+          {# --- spend vs budget ------------------------------------------- #}
+          <div class="rounded-lg border border-slate-200 p-3 dark:border-slate-700">
+            <div class="flex flex-wrap items-baseline justify-between gap-2">
+              <p class="text-xs font-medium text-slate-500 dark:text-slate-400">
+                {% translate "Estimated spend this month" %}
+              </p>
+              <p class="text-sm font-semibold tabular-nums text-slate-900 dark:text-slate-100">
+                ${{ provider.monthly_spend|floatformat:4 }}
+                {% if provider.budget %}
+                  <span class="text-xs font-normal text-slate-500 dark:text-slate-400">
+                    {% blocktranslate with budget=provider.budget|floatformat:2 %}of ${{ budget }} budget{% endblocktranslate %}
+                  </span>
+                {% else %}
+                  <span class="text-xs font-normal text-slate-500 dark:text-slate-400">· {% translate "no budget set" %}</span>
+                {% endif %}
+              </p>
+            </div>
+            {% if provider.budget %}
+              {% widthratio provider.monthly_spend provider.budget 100 as budget_raw %}
+              {% with budget_used=budget_raw|add:0 %}
+                <div class="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+                  <div class="h-full rounded-full {% if budget_used >= 100 %}bg-rose-500{% elif budget_used >= 80 %}bg-amber-500{% else %}bg-emerald-500{% endif %}"
+                       style="width: {{ budget_used }}%; max-width: 100%"></div>
+                </div>
+                <p class="mt-1 text-[0.7rem] text-slate-500 dark:text-slate-400">
+                  <span class="font-medium">{{ budget_used }}%</span>
+                  {% translate "of the monthly budget used. Requests are refused once the budget is reached." %}
+                </p>
+              {% endwith %}
+            {% endif %}
+          </div>
+
+          {# --- role → model --------------------------------------------- #}
+          <div>
+            <h3 class="mb-2 text-sm font-semibold text-slate-800 dark:text-slate-200">
+              {% translate "Model for each role" %}
+            </h3>
+            {% if provider.roles %}
+              <div class="table-wrap">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th scope="col">{% translate "Role" %}</th>
+                      <th scope="col">{% translate "Model" %}</th>
+                      <th scope="col">{% translate "Fallbacks" %}</th>
+                      <th scope="col" class="text-end">{% translate "Measured latency" %}</th>
+                      <th scope="col">{% translate "Use" %}</th>
+                      <th scope="col">{% translate "Notes" %}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for role, spec in provider.roles.items %}
+                      <tr>
+                        <td class="font-mono text-xs font-medium text-slate-900 dark:text-slate-100">{{ role }}</td>
+                        <td class="font-mono text-xs">
+                          {{ spec.model_id }}
+                          {% with probe=provider.probed|get_item:spec.model_id %}
+                            {% if probe %}
+                              {% if probe.ok %}
+                                <span class="badge-emerald ms-1">{% translate "Probed OK" %}</span>
+                              {% else %}
+                                <span class="badge-rose ms-1" title="{{ probe.message }}">{% translate "Probe failed" %}</span>
+                              {% endif %}
+                            {% endif %}
+                          {% endwith %}
+                        </td>
+                        <td class="font-mono text-xs text-slate-500 dark:text-slate-400">
+                          {% if spec.fallbacks %}{{ spec.fallbacks|join:", " }}{% else %}—{% endif %}
+                        </td>
+                        <td class="text-end tabular-nums">
+                          {% if spec.measured_latency_ms %}
+                            {% blocktranslate with ms=spec.measured_latency_ms %}{{ ms }} ms{% endblocktranslate %}
+                          {% else %}
+                            <span class="text-slate-400">{% translate "not measured" %}</span>
+                          {% endif %}
+                        </td>
+                        <td>
+                          {% if spec.interactive %}
+                            <span class="badge-emerald">{% translate "Interactive" %}</span>
+                          {% else %}
+                            <span class="badge-amber">{% translate "Batch only" %}</span>
+                          {% endif %}
+                        </td>
+                        <td class="max-w-xs text-xs text-slate-500 dark:text-slate-400">{{ spec.notes|default:"—" }}</td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% else %}
+              <p class="text-sm text-slate-500 dark:text-slate-400">
+                {% translate "No models are catalogued for this provider." %}
+              </p>
+            {% endif %}
+          </div>
+        </div>
+      </section>
+    {% empty %}
+      {% include "partials/empty_state.html" with icon_name="cpu" title=_("No AI providers are registered") subtitle=_("Configure at least one provider in the environment so the assistant has somewhere to send requests.") %}
+    {% endfor %}
+  </div>
+{% endblock %}

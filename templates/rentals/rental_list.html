@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Rentals" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Rentals" %}{% endblock %}
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "Equipment hire counter — check-out, check-in, deposits and overdue gear." %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'rentals:out_now' %}" class="btn-secondary">
+    {% icon "package" "h-4 w-4" %} {% translate "Out now" %}
+  </a>
+  {% can "rentals.add" as may_add %}
+  {% if may_add %}
+    <a href="{% url 'rentals:create' %}" class="btn-primary">
+      {% icon "plus" "h-4 w-4" %} {% translate "New rental" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <div class="grid grid-cols-2 gap-4 lg:grid-cols-5">
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Items out" %}</p>
+      <p class="stat-value">{{ stats.out_count }}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Overdue" %}</p>
+      <p class="stat-value {% if stats.overdue_count %}text-rose-600 dark:text-rose-400{% endif %}">
+        {{ stats.overdue_count }}
+      </p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Due back today" %}</p>
+      <p class="stat-value">{{ stats.due_today_count }}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Deposits held" %}</p>
+      <p class="stat-value">{{ stats.deposits_held|money }}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Revenue this month" %}</p>
+      <p class="stat-value">{{ stats.month_revenue|money }}</p>
+    </div>
+  </div>
+
+  {% can "rentals.change" as may_return %}
+  {% if may_return %}
+    <div class="card mt-5">
+      <div class="card-body">
+        <div class="flex flex-wrap items-end gap-3">
+          <form class="flex flex-1 flex-wrap items-end gap-3"
+                hx-post="{% url 'rentals:quick_return' %}"
+                hx-target="#quick-return-result"
+                hx-swap="innerHTML"
+                hx-on::after-request="this.reset(); this.querySelector('input[name=asset_code]').focus()">
+            {% csrf_token %}
+            <div class="min-w-[16rem] flex-1">
+              <label class="form-label" for="quick-asset-code">
+                {% translate "Quick return" %}
+              </label>
+              <div class="relative">
+                <span class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3 text-slate-400">
+                  {% icon "barcode" "h-4 w-4" %}
+                </span>
+                <input type="text" name="asset_code" id="quick-asset-code" autocomplete="off"
+                       class="form-input ps-9"
+                       placeholder="{% translate 'Scan or type an asset code' %}">
+              </div>
+              <p class="form-help">
+                {% translate "Takes the asset back on whichever rental it is out on." %}
+              </p>
+            </div>
+            <button type="submit" class="btn-primary">
+              {% icon "rotate-ccw" "h-4 w-4" %} {% translate "Check in" %}
+            </button>
+          </form>
+          <div id="quick-return-result" class="min-w-[18rem] flex-1"></div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="mt-5 flex flex-wrap items-center justify-between gap-3">
+    <nav class="flex flex-wrap gap-1" aria-label="{% translate 'Rental status' %}">
+      {% for key, label in tabs %}
+        <a href="{% query_string tab=key page=None %}"
+           class="rounded-lg px-3 py-1.5 text-sm font-medium
+                  {% if tab == key %}bg-brand-600 text-white{% else %}text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800{% endif %}">
+          {{ label }}
+        </a>
+      {% endfor %}
+    </nav>
+
+    <form class="flex items-center gap-2"
+          hx-get="{% url 'rentals:list' %}"
+          hx-target="#rental-table"
+          hx-trigger="submit, input from:find input[name=q] changed delay:400ms"
+          hx-indicator="#rental-search-indicator">
+      <input type="hidden" name="tab" value="{{ tab }}">
+      <div class="relative">
+        <span class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3 text-slate-400">
+          {% icon "search" "h-4 w-4" %}
+        </span>
+        <input type="search" name="q" value="{{ search_term }}"
+               class="form-input ps-9"
+               placeholder="{% translate 'Code, customer or asset' %}"
+               aria-label="{% translate 'Search rentals' %}">
+      </div>
+      <span id="rental-search-indicator" class="htmx-indicator text-slate-400">
+        {% icon "loader-circle" "h-4 w-4 animate-spin" %}
+      </span>
+    </form>
+  </div>
+
+  <div id="rental-table" class="mt-4">
+    {% include "rentals/partials/rental_table.html" %}
+  </div>
+{% endblock %}

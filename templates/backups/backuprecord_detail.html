@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ backup.backup_code }} · {% translate "Backup" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ backup.backup_code }}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {{ backup.get_scope_display }} · {{ backup.get_backup_type_display }} ·
+    {% blocktranslate with when=backup.created_at|date:"d.m.Y H:i" %}taken {{ when }}{% endblocktranslate %}
+  </p>
+{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-3 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'backups:list' %}" class="hover:underline">{% translate "Backup & Restore" %}</a>
+    <span class="mx-1">/</span>
+    <span class="text-slate-700 dark:text-slate-300">{{ backup.backup_code }}</span>
+  </nav>
+{% endblock %}
+
+{% block page_actions %}
+  {% can "backups.export" as may_export %}
+  {% can "backups.restore" as may_restore %}
+  {% can "backups.delete" as may_delete %}
+
+  <form method="post" action="{% url 'backups:verify' backup.pk %}" class="inline">
+    {% csrf_token %}
+    <button type="submit" class="btn-secondary">
+      {% icon "shield-check" "h-4 w-4" %} {% translate "Verify now" %}
+    </button>
+  </form>
+
+  {% if may_export and backup.exists_on_disk %}
+    <a href="{% url 'backups:download' backup.pk %}" class="btn-secondary">
+      {% icon "download" "h-4 w-4" %} {% translate "Download" %}
+    </a>
+  {% endif %}
+
+  {% if may_restore and backup.is_restorable %}
+    <a href="{% url 'backups:restore' backup.pk %}" class="btn-danger">
+      {% icon "rotate-ccw" "h-4 w-4" %} {% translate "Restore this backup" %}
+    </a>
+  {% endif %}
+
+  {% if may_delete %}
+    <a href="{% url 'backups:delete' backup.pk %}" class="btn-ghost">
+      {% icon "trash-2" "h-4 w-4" %} {% translate "Delete" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  {# --- state banners ----------------------------------------------------- #}
+  {% if backup.status == "failed" %}
+    <div class="alert-error mb-5">
+      {% icon "circle-x" "h-5 w-5 shrink-0" %}
+      <div>
+        <p class="font-semibold">{% translate "This backup run failed." %}</p>
+        <p class="mt-1 font-mono text-xs">{{ backup.error_message }}</p>
+      </div>
+    </div>
+  {% elif backup.status == "corrupt" %}
+    <div class="alert-error mb-5">
+      {% icon "triangle-alert" "h-5 w-5 shrink-0" %}
+      <div>
+        <p class="font-semibold">{% translate "This backup did not verify and must not be restored." %}</p>
+        <p class="mt-1 font-mono text-xs">{{ backup.error_message }}</p>
+      </div>
+    </div>
+  {% elif not backup.exists_on_disk and backup.status == "completed" %}
+    <div class="alert-warning mb-5">
+      {% icon "triangle-alert" "h-5 w-5 shrink-0" %}
+      <p>{% translate "The record exists but the file is not on the backup volume. Check that the volume is mounted." %}</p>
+    </div>
+  {% elif backup.is_verified %}
+    <div class="alert-success mb-5">
+      {% icon "shield-check" "h-5 w-5 shrink-0" %}
+      <p>
+        {% blocktranslate with when=backup.verified_at|date:"d.m.Y H:i" %}Verified on {{ when }} — the checksum matched and the contents were readable.{% endblocktranslate %}
+      </p>
+    </div>
+  {% else %}
+    <div class="alert-info mb-5">
+      {% icon "info" "h-5 w-5 shrink-0" %}
+      <p>{% translate "This backup has not been verified since it was written. Run a verification before relying on it." %}</p>
+    </div>
+  {% endif %}
+
+  <div class="grid gap-5 lg:grid-cols-3">
+    {# --- metadata -------------------------------------------------------- #}
+    <div class="card lg:col-span-2">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "What this backup contains" %}</h2>
+        {% status_badge backup.status backup.get_status_display status_colors %}
+      </div>
+      <div class="card-body">
+        <dl class="grid gap-x-6 gap-y-4 sm:grid-cols-2">
+          <div>
+            <dt class="stat-label">{% translate "Scope" %}</dt>
+            <dd class="mt-0.5 text-sm text-slate-900 dark:text-slate-100">{{ backup.get_scope_display }}</dd>
+          </div>
+          <div>
+            <dt class="stat-label">{% translate "Type" %}</dt>
+            <dd class="mt-0.5 text-sm text-slate-900 dark:text-slate-100">{{ backup.get_backup_type_display }}</dd>
+          </div>
+          <div>
+            <dt class="stat-label">{% translate "Recorded size" %}</dt>
+            <dd class="mt-0.5 text-sm tabular-nums text-slate-900 dark:text-slate-100">{{ backup.size_display }}</dd>
+          </div>
+          <div>
+            <dt class="stat-label">{% translate "Size on disk right now" %}</dt>
+            <dd class="mt-0.5 text-sm tabular-nums text-slate-900 dark:text-slate-100">{{ size_on_disk_display }}</dd>
+          </div>
+          <div>
+            <dt class="stat-label">{% translate "Started" %}</dt>
+            <dd class="mt-0.5 text-sm text-slate-900 dark:text-slate-100">{{ backup.started_at|date:"d.m.Y H:i:s"|default:"—" }}</dd>
+          </div>
+          <div>
+            <dt class="stat-label">{% translate "Completed" %}</dt>
+            <dd class="mt-0.5 text-sm text-slate-900 dark:text-slate-100">{{ backup.completed_at|date:"d.m.Y H:i:s"|default:"—" }}</dd>
+          </div>
+          <div>
+            <dt class="stat-label">{% translate "Duration" %}</dt>
+            <dd class="mt-0.5 text-sm text-slate-900 dark:text-slate-100">{{ backup.duration_display }}</dd>
+          </div>
+          <div>
+            <dt class="stat-label">{% translate "Taken by" %}</dt>
+            <dd class="mt-0.5 text-sm text-slate-900 dark:text-slate-100">
+              {% if backup.created_by %}{{ backup.created_by.get_full_name|default:backup.created_by.username }}{% else %}{% translate "Scheduled task" %}{% endif %}
+            </dd>
+          </div>
+          <div class="sm:col-span-2">
+            <dt class="stat-label">{% translate "File" %}</dt>
+            <dd class="mt-0.5 break-all font-mono text-xs text-slate-700 dark:text-slate-300">
+              {{ backup.file_path|default:"—" }}
+            </dd>
+          </div>
+          <div class="sm:col-span-2">
+            <dt class="stat-label">{% translate "SHA-256 checksum" %}</dt>
+            <dd class="mt-0.5 break-all rounded-lg bg-slate-50 p-2 font-mono text-xs text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+              {{ backup.checksum_sha256|default:"—" }}
+            </dd>
+          </div>
+          {% if backup.notes %}
+            <div class="sm:col-span-2">
+              <dt class="stat-label">{% translate "Note" %}</dt>
+              <dd class="mt-0.5 text-sm text-slate-700 dark:text-slate-300">{{ backup.notes }}</dd>
+            </div>
+          {% endif %}
+        </dl>
+      </div>
+    </div>
+
+    {# --- provenance ------------------------------------------------------ #}
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Where it came from" %}</h2>
+        {% icon "server" "h-4 w-4 text-slate-400" %}
+      </div>
+      <div class="card-body">
+        <dl class="space-y-3">
+          <div>
+            <dt class="stat-label">{% translate "Database engine" %}</dt>
+            <dd class="mt-0.5 break-all font-mono text-xs text-slate-700 dark:text-slate-300">
+              {{ backup.database_engine|default:"—" }}
+            </dd>
+          </div>
+          <div>
+            <dt class="stat-label">{% translate "Django" %}</dt>
+            <dd class="mt-0.5 text-sm text-slate-900 dark:text-slate-100">{{ backup.django_version|default:"—" }}</dd>
+          </div>
+          <div>
+            <dt class="stat-label">{% translate "Application version" %}</dt>
+            <dd class="mt-0.5 text-sm text-slate-900 dark:text-slate-100">{{ backup.app_version|default:"—" }}</dd>
+          </div>
+        </dl>
+
+        {% if backup.covers_database and not backup.engine_matches_current %}
+          <div class="alert-warning mt-4">
+            {% icon "triangle-alert" "h-5 w-5 shrink-0" %}
+            <p class="text-xs">
+              {% blocktranslate with now=current_engine %}This site now runs on {{ now }}. A dump cannot be moved between database engines, so this backup cannot be restored here.{% endblocktranslate %}
+            </p>
+          </div>
+        {% endif %}
+
+        {% if not can_be_deleted and delete_block_reason %}
+          <div class="alert-info mt-4">
+            {% icon "lock" "h-5 w-5 shrink-0" %}
+            <p class="text-xs">{{ delete_block_reason }}</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {# --- restore history --------------------------------------------------- #}
+  <div class="card mt-5">
+    <div class="card-header">
+      <h2 class="card-title">{% translate "Restores from this backup" %}</h2>
+      {% icon "history" "h-4 w-4 text-slate-400" %}
+    </div>
+    {% if restores %}
+      <div class="table-wrap border-0">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">{% translate "When" %}</th>
+              <th scope="col">{% translate "Status" %}</th>
+              <th scope="col">{% translate "Confirmed by" %}</th>
+              <th scope="col">{% translate "Safety copy" %}</th>
+              <th scope="col">{% translate "Duration" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for restore in restores %}
+              <tr>
+                <td class="whitespace-nowrap">{{ restore.started_at|date:"d.m.Y H:i"|default:"—" }}</td>
+                <td>
+                  {% status_badge restore.status restore.get_status_display restore_status_colors %}
+                  {% if restore.error_message %}
+                    <span class="mt-1 block max-w-md text-xs text-rose-600 dark:text-rose-400">{{ restore.error_message|truncatechars:180 }}</span>
+                  {% endif %}
+                </td>
+                <td class="whitespace-nowrap">
+                  {% if restore.confirmed_by %}{{ restore.confirmed_by.username }}{% else %}—{% endif %}
+                </td>
+                <td class="whitespace-nowrap font-mono text-xs">
+                  {% if restore.safety_backup %}
+                    <a href="{% url 'backups:detail' restore.safety_backup.pk %}" class="hover:underline">
+                      {{ restore.safety_backup.backup_code }}
+                    </a>
+                  {% else %}—{% endif %}
+                </td>
+                <td class="whitespace-nowrap tabular-nums">{{ restore.duration_display }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="card-body">
+        <p class="text-sm text-slate-500 dark:text-slate-400">
+          {% translate "This backup has never been restored." %}
+        </p>
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}

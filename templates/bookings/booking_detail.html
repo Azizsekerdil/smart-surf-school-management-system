@@ -1,0 +1,317 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ booking.booking_code }} · {% translate "Booking" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ booking.booking_code }}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+    {% status_badge booking.status booking.get_status_display %}
+    {% status_badge booking.payment_status booking.get_payment_status_display %}
+    <span>{{ booking.get_booking_type_display }}</span>
+    <span>·</span>
+    <span>{{ booking.activity_label }}</span>
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'bookings:list' %}" class="btn-secondary">
+    {% icon "chevron-left" "h-4 w-4" %} {% translate "All bookings" %}
+  </a>
+  {% can "bookings.change" as may_change %}
+  {% if may_change %}
+    <a href="{% url 'bookings:update' booking.pk %}" class="btn-secondary">
+      {% icon "pencil" "h-4 w-4" %} {% translate "Edit" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  {% can "bookings.change" as may_change %}
+
+  {% if live_warnings %}
+    <div class="alert-warning mb-4">
+      <p class="font-semibold">{% translate "This booking currently breaks a rule" %}</p>
+      <ul class="mt-1 list-disc space-y-0.5 ps-5 text-sm">
+        {% for warning in live_warnings %}<li>{{ warning }}</li>{% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+
+  {# ------------------------------------------------------------- actions #}
+  {% if may_change %}
+    <div class="card mb-5 p-4">
+      <div class="flex flex-wrap items-center gap-2">
+        <form method="post" action="{% url 'bookings:confirm' booking.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="btn-primary btn-sm" {% if not booking.can_confirm %}disabled{% endif %}>
+            {% icon "circle-check" "h-4 w-4" %} {% translate "Confirm" %}
+          </button>
+        </form>
+
+        <form method="post" action="{% url 'bookings:check_in' booking.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="btn-secondary btn-sm" {% if not booking.can_check_in %}disabled{% endif %}>
+            {% icon "user-check" "h-4 w-4" %} {% translate "Check in" %}
+          </button>
+        </form>
+
+        <form method="post" action="{% url 'bookings:complete' booking.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="btn-success btn-sm" {% if not booking.can_complete %}disabled{% endif %}>
+            {% icon "check" "h-4 w-4" %} {% translate "Complete" %}
+          </button>
+        </form>
+
+        <form method="post" action="{% url 'bookings:no_show' booking.pk %}"
+              onsubmit="return confirm('{% translate "Mark this booking as a no-show? The full amount stays payable." %}');">
+          {% csrf_token %}
+          <button type="submit" class="btn-secondary btn-sm" {% if not booking.can_mark_no_show %}disabled{% endif %}>
+            {% icon "circle-alert" "h-4 w-4" %} {% translate "No-show" %}
+          </button>
+        </form>
+
+        {% if booking.can_cancel %}
+          <a href="{% url 'bookings:cancel' booking.pk %}" class="btn-danger btn-sm">
+            {% icon "circle-x" "h-4 w-4" %} {% translate "Cancel" %}
+          </a>
+        {% endif %}
+
+        <span class="ms-auto text-xs text-slate-500 dark:text-slate-400">
+          {% if booking.scheduled_start %}
+            {% if booking.is_cancellable_free %}
+              {% translate "Free cancellation still applies." %}
+            {% else %}
+              {% blocktranslate with fee=suggested_fee %}Cancelling now would charge {{ fee }}.{% endblocktranslate %}
+            {% endif %}
+          {% endif %}
+        </span>
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="grid gap-5 lg:grid-cols-3">
+
+    {# ------------------------------------------------------------ column 1 #}
+    <div class="space-y-5 lg:col-span-2">
+
+      <section class="card">
+        <div class="card-header"><h2 class="card-title">{% translate "Booking" %}</h2></div>
+        <div class="card-body grid gap-4 sm:grid-cols-2">
+          <div>
+            <p class="form-label">{% translate "Customer" %}</p>
+            <p class="text-sm text-slate-800 dark:text-slate-100">{{ booking.customer }}</p>
+          </div>
+          <div>
+            <p class="form-label">{% translate "Student" %}</p>
+            <p class="text-sm text-slate-800 dark:text-slate-100">{{ booking.student|default:"—" }}</p>
+          </div>
+          <div>
+            <p class="form-label">{% translate "Activity" %}</p>
+            <p class="text-sm text-slate-800 dark:text-slate-100">{{ booking.activity_label }}</p>
+          </div>
+          <div>
+            <p class="form-label">{% translate "When" %}</p>
+            <p class="text-sm tabular-nums text-slate-800 dark:text-slate-100">
+              {% if booking.scheduled_start %}
+                {{ booking.scheduled_start|date:"d.m.Y H:i" }} – {{ booking.scheduled_end|date:"H:i" }}
+              {% else %}—{% endif %}
+            </p>
+          </div>
+          <div>
+            <p class="form-label">{% translate "Seats" %}</p>
+            <p class="text-sm tabular-nums text-slate-800 dark:text-slate-100">
+              {{ booking.participants }}
+              {% if seats_capacity %}
+                <span class="text-slate-400">
+                  · {% blocktranslate with taken=seats_taken capacity=seats_capacity %}session {{ taken }}/{{ capacity }} sold{% endblocktranslate %}
+                </span>
+              {% endif %}
+            </p>
+          </div>
+          <div>
+            <p class="form-label">{% translate "Source" %}</p>
+            <p class="text-sm text-slate-800 dark:text-slate-100">{{ booking.get_source_display }}</p>
+          </div>
+          {% if booking.special_requests %}
+            <div class="sm:col-span-2">
+              <p class="form-label">{% translate "Special requests" %}</p>
+              <p class="whitespace-pre-line text-sm text-slate-800 dark:text-slate-100">{{ booking.special_requests }}</p>
+            </div>
+          {% endif %}
+          {% if booking.internal_notes and may_change %}
+            <div class="sm:col-span-2">
+              <p class="form-label">{% translate "Internal notes" %}</p>
+              <p class="whitespace-pre-line text-sm text-slate-600 dark:text-slate-300">{{ booking.internal_notes }}</p>
+            </div>
+          {% endif %}
+          {% if booking.cancellation_reason %}
+            <div class="sm:col-span-2">
+              <p class="form-label">{% translate "Cancellation reason" %}</p>
+              <p class="whitespace-pre-line text-sm text-rose-700 dark:text-rose-300">{{ booking.cancellation_reason }}</p>
+            </div>
+          {% endif %}
+        </div>
+      </section>
+
+      {# ------------------------------------------------------------ roster #}
+      {% if roster %}
+        <section class="card">
+          <div class="card-header">
+            <h2 class="card-title">{% translate "Others on this session" %}</h2>
+          </div>
+          <div class="table-wrap rounded-none border-0">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th scope="col">{% translate "Code" %}</th>
+                  <th scope="col">{% translate "Student" %}</th>
+                  <th scope="col" class="text-center">{% translate "Seats" %}</th>
+                  <th scope="col">{% translate "Status" %}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for other in roster %}
+                  <tr>
+                    <td>
+                      <a href="{% url 'bookings:detail' other.pk %}" class="text-brand-700 hover:underline dark:text-brand-300">
+                        {{ other.booking_code }}
+                      </a>
+                    </td>
+                    <td>{{ other.student|default:other.customer }}</td>
+                    <td class="text-center tabular-nums">{{ other.participants }}</td>
+                    <td>{% status_badge other.status other.get_status_display %}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      {% endif %}
+
+      {# ---------------------------------------------------------- timeline #}
+      <section class="card">
+        <div class="card-header"><h2 class="card-title">{% translate "History" %}</h2></div>
+        <div class="card-body">
+          <ol class="relative space-y-4 border-s border-slate-200 ps-5 dark:border-slate-700">
+            {% for entry in timeline %}
+              <li class="relative">
+                <span class="absolute -start-[27px] flex h-5 w-5 items-center justify-center rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800">
+                  {% icon entry.icon "h-3 w-3" %}
+                </span>
+                <p class="text-sm font-medium text-slate-800 dark:text-slate-100">{{ entry.label }}</p>
+                {% if entry.detail %}
+                  <p class="text-sm text-slate-600 dark:text-slate-300">{{ entry.detail }}</p>
+                {% endif %}
+                <p class="text-xs text-slate-400">
+                  {{ entry.at|date:"d.m.Y H:i" }}{% if entry.user %} · {{ entry.user }}{% endif %}
+                </p>
+              </li>
+            {% empty %}
+              <li class="text-sm text-slate-500 dark:text-slate-400">{% translate "No history recorded yet." %}</li>
+            {% endfor %}
+          </ol>
+        </div>
+      </section>
+    </div>
+
+    {# ------------------------------------------------------------ column 2 #}
+    <div class="space-y-5">
+
+      <section class="card">
+        <div class="card-header"><h2 class="card-title">{% translate "Payment" %}</h2></div>
+        <div class="card-body space-y-2 text-sm">
+          <div class="flex justify-between">
+            <span class="text-slate-500 dark:text-slate-400">
+              {% blocktranslate with price=booking.unit_price|money seats=booking.participants %}{{ price }} × {{ seats }}{% endblocktranslate %}
+            </span>
+            <span class="tabular-nums">{{ booking.gross_amount|money }}</span>
+          </div>
+          {% if booking.discount_amount %}
+            <div class="flex justify-between text-emerald-600 dark:text-emerald-400">
+              <span>{% translate "Discount" %}</span>
+              <span class="tabular-nums">−{{ booking.discount_amount|money }}</span>
+            </div>
+          {% endif %}
+          {% if booking.cancellation_fee %}
+            <div class="flex justify-between text-rose-600 dark:text-rose-400">
+              <span>{% translate "Cancellation fee" %}</span>
+              <span class="tabular-nums">{{ booking.cancellation_fee|money }}</span>
+            </div>
+          {% endif %}
+          <div class="flex justify-between border-t border-slate-200 pt-2 font-semibold dark:border-slate-700">
+            <span>{% translate "Total" %}</span>
+            <span class="tabular-nums">{{ booking.total_amount|money }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-500 dark:text-slate-400">{% translate "Paid" %}</span>
+            <span class="tabular-nums">{{ booking.paid_amount|money }}</span>
+          </div>
+          <div class="flex justify-between font-semibold {% if booking.balance_due > 0 %}text-rose-600 dark:text-rose-400{% else %}text-emerald-600 dark:text-emerald-400{% endif %}">
+            <span>{% translate "Balance" %}</span>
+            <span class="tabular-nums">{{ booking.balance_due|money }}</span>
+          </div>
+
+          {% if may_change and booking.balance_due > 0 %}
+            <form method="post" action="{% url 'bookings:payment' booking.pk %}" class="mt-3 flex items-end gap-2">
+              {% csrf_token %}
+              <div class="flex-1">
+                <label class="form-label" for="{{ payment_form.amount.id_for_label }}">
+                  {% translate "Record a payment" %}
+                </label>
+                {{ payment_form.amount }}
+              </div>
+              <button type="submit" class="btn-primary btn-sm">
+                {% icon "wallet" "h-4 w-4" %} {% translate "Record" %}
+              </button>
+            </form>
+          {% endif %}
+        </div>
+      </section>
+
+      {% if waitlist %}
+        <section class="card">
+          <div class="card-header">
+            <h2 class="card-title">{% translate "Waiting for this session" %}</h2>
+          </div>
+          <div class="card-body">
+            <ul class="space-y-2 text-sm">
+              {% for entry in waitlist %}
+                <li class="flex items-center justify-between gap-2">
+                  <span>
+                    <span class="text-slate-400">#{{ entry.position }}</span>
+                    {{ entry.customer }}
+                    {% if entry.student %}<span class="text-slate-400">· {{ entry.student }}</span>{% endif %}
+                  </span>
+                  <span class="tabular-nums text-slate-400">
+                    {% blocktranslate with n=entry.participants %}{{ n }} seat(s){% endblocktranslate %}
+                  </span>
+                </li>
+              {% endfor %}
+            </ul>
+            <a href="{% url 'bookings:waitlist' %}" class="btn-secondary btn-sm mt-3">
+              {% translate "Open the waiting list" %}
+            </a>
+          </div>
+        </section>
+      {% endif %}
+
+      <section class="card">
+        <div class="card-header"><h2 class="card-title">{% translate "Record" %}</h2></div>
+        <div class="card-body space-y-1 text-sm text-slate-600 dark:text-slate-300">
+          <p>{% translate "Booked" %}: {{ booking.booked_at|date:"d.m.Y H:i" }}</p>
+          {% if booking.confirmed_at %}
+            <p>{% translate "Confirmed" %}: {{ booking.confirmed_at|date:"d.m.Y H:i" }}</p>
+          {% endif %}
+          {% if booking.cancelled_at %}
+            <p>{% translate "Cancelled" %}: {{ booking.cancelled_at|date:"d.m.Y H:i" }}</p>
+          {% endif %}
+          {% if booking.created_by %}
+            <p>{% translate "Created by" %}: {{ booking.created_by.get_display_name|default:booking.created_by }}</p>
+          {% endif %}
+          <p class="text-xs text-slate-400">{{ booking.public_id }}</p>
+        </div>
+      </section>
+    </div>
+  </div>
+{% endblock %}

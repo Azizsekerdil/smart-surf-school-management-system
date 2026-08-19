@@ -1,0 +1,3448 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "smart-surf-school-management-system-1.1.0",
+  "documentNamespace": "https://anchore.com/syft/dir/smart-surf-school-management-system-169e45eb-fa2d-4713-a73d-bebe9d9e3c58",
+  "creationInfo": {
+    "licenseListVersion": "3.28",
+    "creators": [
+      "Organization: Anchore, Inc",
+      "Tool: syft-1.51.0"
+    ],
+    "created": "2026-08-19T10:27:02Z"
+  },
+  "packages": [
+    {
+      "name": "@kurkle/color",
+      "SPDXID": "SPDXRef-Package-npm--kurkle-color-08ed537c42923b28",
+      "versionInfo": "0.3.4",
+      "supplier": "NOASSERTION",
+      "downloadLocation": "https://registry.npmjs.org/@kurkle/color/-/color-0.3.4.tgz",
+      "filesAnalyzed": false,
+      "sourceInfo": "acquired package info from installed node module manifest file: \\package-lock.json",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:\\@kurkle\\/color:\\@kurkle\\/color:0.3.4:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40kurkle/color@0.3.4"
+        }
+      ]
+    },
+    {
+      "name": "@vue/reactivity",
+      "SPDXID": "SPDXRef-Package-npm--vue-reactivity-668bcd1b91296ba7",
+      "versionInfo": "3.1.5",
+      "supplier": "NOASSERTION",
+      "downloadLocation": "https://registry.npmjs.org/@vue/reactivity/-/reactivity-3.1.5.tgz",
+      "filesAnalyzed": false,
+      "sourceInfo": "acquired package info from installed node module manifest file: \\package-lock.json",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:\\@vue\\/reactivity:\\@vue\\/reactivity:3.1.5:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40vue/reactivity@3.1.5"
+        }
+      ]
+    },
+    {
+      "name": "@vue/shared",
+      "SPDXID": "SPDXRef-Package-npm--vue-shared-c5dc310d55061c1d",
+      "versionInfo": "3.1.5",
+      "supplier": "NOASSERTION",
+      "downloadLocation": "https://registry.npmjs.org/@vue/shared/-/shared-3.1.5.tgz",
+      "filesAnalyzed": false,
+      "sourceInfo": "acquired package info from installed node module manifest file: \\package-lock.json",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:\\@vue\\/shared:\\@vue\\/shared:3.1.5:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40vue/shared@3.1.5"
+        }
+      ]
+    },
+    {
+      "name": "actions/checkout",
+      "SPDXID": "SPDXRef-Package-github-action-actions-checkout-5fdb0fd14b54e41c",
+      "versionInfo": "v4",
+      "supplier": "Organization: GitHub",
+      "originator": "Organization: GitHub",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "sourceInfo": "acquired package info from GitHub Actions workflow file or composite action file: \\.github\\workflows\\ci.yml",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:actions\\/checkout:actions\\/checkout:v4:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/actions/checkout@v4"
+        }
+      ]
+    },
+    {
+      "name": "actions/setup-node",
+      "SPDXID": "SPDXRef-Package-github-action-actions-setup-node-652eaff902494d78",
+      "versionInfo": "v4",
+      "supplier": "Organization: GitHub",
+      "originator": "Organization: GitHub",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "sourceInfo": "acquired package info from GitHub Actions workflow file or composite action file: \\.github\\workflows\\ci.yml",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:actions\\/setup-node:actions\\/setup-node:v4:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:actions\\/setup-node:actions\\/setup_node:v4:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:actions\\/setup_node:actions\\/setup-node:v4:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:actions\\/setup_node:actions\\/setup_node:v4:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:actions\\/setup:actions\\/setup-node:v4:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:actions\\/setup:actions\\/setup_node:v4:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/actions/setup-node@v4"
+        }
+      ]
+    },
+    {
+      "name": "actions/setup-python",
+      "SPDXID": "SPDXRef-Package-github-action-actions-setup-python-68b76f47f603f033",
+      "versionInfo": "v5",
+      "supplier": "Organization: GitHub",
+      "originator": "Organization: GitHub",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "sourceInfo": "acquired package info from GitHub Actions workflow file or composite action file: \\.github\\workflows\\ci.yml",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:actions\\/setup-python:actions\\/setup-python:v5:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:actions\\/setup-python:actions\\/setup_python:v5:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:actions\\/setup_python:actions\\/setup-python:v5:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:actions\\/setup_python:actions\\/setup_python:v5:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:actions\\/setup:actions\\/setup-python:v5:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:actions\\/setup:actions\\/setup_python:v5:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/actions/setup-python@v5"
+        }
+      ]
+    },
+    {
+      "name": "alpinejs",
+      "SPDXID": "SPDXRef-Package-npm-alpinejs-ee6ff4f81a642ee9",
+      "versionInfo": "3.16.1",
+      "supplier": "NOASSERTION",
+      "downloadLocation": "https://registry.npmjs.org/alpinejs/-/alpinejs-3.16.1.tgz",
+      "filesAnalyzed": false,
+      "sourceInfo": "acquired package info from installed node module manifest file: \\package-lock.json",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:alpinejs:alpinejs:3.16.1:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/alpinejs@3.16.1"
+        }
+      ]
+    },
+    {
+      "name": "anchore/sbom-action",
+      "SPDXID": "SPDXRef-Package-github-action-anchore-sbom-action-7da83c6beb5294f1",
+      "versionInfo": "v0",
+      "supplier": "Organization: anchore",
+      "originator": "Organization: anchore",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "sourceInfo": "acquired package info from GitHub Actions workflow file or composite action file: \\.github\\workflows\\ci.yml",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:anchore\\/sbom-action:anchore\\/sbom-action:v0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:anchore\\/sbom-action:anchore\\/sbom_action:v0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:anchore\\/sbom_action:anchore\\/sbom-action:v0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:anchore\\/sbom_action:anchore\\/sbom_action:v0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:anchore\\/sbom:anchore\\/sbom-action:v0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:anchore\\/sbom:anchore\\/sbom_action:v0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/anchore/sbom-action@v0"
+        }
+      ]
+    },
+    {
+      "name": "chart.js",
+      "SPDXID": "SPDXRef-Package-npm-chart.js-cc8c1175a7296d95",
+      "versionInfo": "4.5.1",
+      "supplier": "NOASSERTION",
+      "downloadLocation": "https://registry.npmjs.org/chart.js/-/chart.js-4.5.1.tgz",
+      "filesAnalyzed": false,
+      "sourceInfo": "acquired package info from installed node module manifest file: \\package-lock.json",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:chartjs:chart.js:4.5.1:*:*:*:*:node.js:*:*"
+        },
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/chart.js@4.5.1"
+        }
+      ]
+    },
+    {
+      "name": "gitleaks/gitleaks-action",
+      "SPDXID": "SPDXRef-Package-github-action-gitleaks-gitleaks-action-d56bece341a9774e",
+      "versionInfo": "v2",
+      "supplier": "Organization: gitleaks",
+      "originator": "Organization: gitleaks",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "sourceInfo": "acquired package info from GitHub Actions workflow file or composite action file: \\.github\\workflows\\ci.yml",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:gitleaks\\/gitleaks-action:gitleaks\\/gitleaks-action:v2:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:gitleaks\\/gitleaks-action:gitleaks\\/gitleaks_action:v2:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:gitleaks\\/gitleaks_action:gitleaks\\/gitleaks-action:v2:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:gitleaks\\/gitleaks_action:gitleaks\\/gitleaks_action:v2:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:gitleaks\\/gitleaks:gitleaks\\/gitleaks-action:v2:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:gitleaks\\/gitleaks:gitleaks\\/gitleaks_action:v2:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/gitleaks/gitleaks-action@v2"
+        }
+      ]
+    },
+    {
+      "name": "htmx.org",
+      "SPDXID": "SPDXRef-Package-npm-htmx.org-4ac7a51d2bd76899",
+      "versionInfo": "1.9.12",
+      "supplier": "NOASSERTION",
+      "downloadLocation": "https://registry.npmjs.org/htmx.org/-/htmx.org-1.9.12.tgz",
+      "filesAnalyzed": false,
+      "sourceInfo": "acquired package info from installed node module manifest file: \\package-lock.json",
+      "licenseConcluded": "0BSD",
+      "licenseDeclared": "0BSD",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:htmx.org:htmx.org:1.9.12:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/htmx.org@1.9.12"
+        }
+      ]
+    },
+    {
+      "name": "lucide-static",
+      "SPDXID": "SPDXRef-Package-npm-lucide-static-bbf50e818f32fe37",
+      "versionInfo": "0.468.0",
+      "supplier": "NOASSERTION",
+      "downloadLocation": "https://registry.npmjs.org/lucide-static/-/lucide-static-0.468.0.tgz",
+      "filesAnalyzed": false,
+      "sourceInfo": "acquired package info from installed node module manifest file: \\package-lock.json",
+      "licenseConcluded": "ISC",
+      "licenseDeclared": "ISC",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:lucide-static:lucide-static:0.468.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:lucide-static:lucide_static:0.468.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:lucide_static:lucide-static:0.468.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:lucide_static:lucide_static:0.468.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:lucide:lucide-static:0.468.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:lucide:lucide_static:0.468.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/lucide-static@0.468.0"
+        }
+      ]
+    },
+    {
+      "name": "smart-surf-school-management-system",
+      "SPDXID": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "versionInfo": "1.0.0",
+      "supplier": "NOASSERTION",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "sourceInfo": "acquired package info from installed node module manifest file: \\package-lock.json",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:smart-surf-school-management-system:smart-surf-school-management-system:1.0.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:smart-surf-school-management-system:smart_surf_school_management_system:1.0.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:smart_surf_school_management_system:smart-surf-school-management-system:1.0.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:smart_surf_school_management_system:smart_surf_school_management_system:1.0.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:smart-surf-school-management:smart-surf-school-management-system:1.0.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:smart-surf-school-management:smart_surf_school_management_system:1.0.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:smart_surf_school_management:smart-surf-school-management-system:1.0.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:smart_surf_school_management:smart_surf_school_management_system:1.0.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:smart-surf-school:smart-surf-school-management-system:1.0.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:smart-surf-school:smart_surf_school_management_system:1.0.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:smart_surf_school:smart-surf-school-management-system:1.0.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:smart_surf_school:smart_surf_school_management_system:1.0.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:smart-surf:smart-surf-school-management-system:1.0.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:smart-surf:smart_surf_school_management_system:1.0.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:smart_surf:smart-surf-school-management-system:1.0.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:smart_surf:smart_surf_school_management_system:1.0.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:smart:smart-surf-school-management-system:1.0.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:smart:smart_surf_school_management_system:1.0.0:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/smart-surf-school-management-system@1.0.0"
+        }
+      ]
+    },
+    {
+      "name": "smart-surf-school-management-system",
+      "SPDXID": "SPDXRef-DocumentRoot-Directory-smart-surf-school-management-system",
+      "versionInfo": "1.1.0",
+      "supplier": "NOASSERTION",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "primaryPackagePurpose": "FILE"
+    },
+    {
+      "SPDXID": "SPDXRef-python-CacheControl-0-14-4",
+      "name": "CacheControl",
+      "versionInfo": "0.14.4",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/cachecontrol@0.14.4"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-Django-5-2-17",
+      "name": "Django",
+      "versionInfo": "5.2.17",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-3-Clause",
+      "licenseDeclared": "BSD-3-Clause",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/django@5.2.17"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-Faker-40-36-0",
+      "name": "Faker",
+      "versionInfo": "40.36.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/faker@40.36.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-Markdown-3-10-3",
+      "name": "Markdown",
+      "versionInfo": "3.10.3",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-3-Clause",
+      "licenseDeclared": "BSD-3-Clause",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/markdown@3.10.3"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-PyJWT-2-13-0",
+      "name": "PyJWT",
+      "versionInfo": "2.13.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/pyjwt@2.13.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-PyYAML-6-0-3",
+      "name": "PyYAML",
+      "versionInfo": "6.0.3",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/pyyaml@6.0.3"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-Pygments-2-21-0",
+      "name": "Pygments",
+      "versionInfo": "2.21.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-2-Clause",
+      "licenseDeclared": "BSD-2-Clause",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/pygments@2.21.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-amqp-5-3-1",
+      "name": "amqp",
+      "versionInfo": "5.3.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "License :: OSI Approved :: BSD License",
+      "licenseDeclared": "License :: OSI Approved :: BSD License",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/amqp@5.3.1"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-anyio-4-14-2",
+      "name": "anyio",
+      "versionInfo": "4.14.2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/anyio@4.14.2"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-argon2-cffi-25-1-0",
+      "name": "argon2-cffi",
+      "versionInfo": "25.1.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/argon2-cffi@25.1.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-argon2-cffi-bindings-25-1-0",
+      "name": "argon2-cffi-bindings",
+      "versionInfo": "25.1.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/argon2-cffi-bindings@25.1.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-asgiref-3-12-1",
+      "name": "asgiref",
+      "versionInfo": "3.12.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-3-Clause AND License :: OSI Approved :: BSD License",
+      "licenseDeclared": "BSD-3-Clause AND License :: OSI Approved :: BSD License",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/asgiref@3.12.1"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-attrs-26-1-0",
+      "name": "attrs",
+      "versionInfo": "26.1.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/attrs@26.1.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-bandit-1-9-4",
+      "name": "bandit",
+      "versionInfo": "1.9.4",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/bandit@1.9.4"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-billiard-4-2-4",
+      "name": "billiard",
+      "versionInfo": "4.2.4",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "License :: OSI Approved :: BSD License",
+      "licenseDeclared": "License :: OSI Approved :: BSD License",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/billiard@4.2.4"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-bleach-6-4-0",
+      "name": "bleach",
+      "versionInfo": "6.4.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/bleach@6.4.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-boolean-py-5-0",
+      "name": "boolean.py",
+      "versionInfo": "5.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-2-Clause",
+      "licenseDeclared": "BSD-2-Clause",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/boolean.py@5.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-celery-5-6-3",
+      "name": "celery",
+      "versionInfo": "5.6.3",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-3-Clause",
+      "licenseDeclared": "BSD-3-Clause",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/celery@5.6.3"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-certifi-2026-7-22",
+      "name": "certifi",
+      "versionInfo": "2026.7.22",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MPL-2.0 AND License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
+      "licenseDeclared": "MPL-2.0 AND License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/certifi@2026.7.22"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-cffi-2-1-1",
+      "name": "cffi",
+      "versionInfo": "2.1.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT-0",
+      "licenseDeclared": "MIT-0",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/cffi@2.1.1"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-charset-normalizer-3-5-1",
+      "name": "charset-normalizer",
+      "versionInfo": "3.5.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/charset-normalizer@3.5.1"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-click-8-4-2",
+      "name": "click",
+      "versionInfo": "8.4.2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-3-Clause",
+      "licenseDeclared": "BSD-3-Clause",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/click@8.4.2"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-click-didyoumean-0-3-1",
+      "name": "click-didyoumean",
+      "versionInfo": "0.3.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/click-didyoumean@0.3.1"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-click-plugins-1-1-1-2",
+      "name": "click-plugins",
+      "versionInfo": "1.1.1.2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "License :: OSI Approved :: BSD License",
+      "licenseDeclared": "License :: OSI Approved :: BSD License",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/click-plugins@1.1.1.2"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-click-repl-0-3-0",
+      "name": "click-repl",
+      "versionInfo": "0.3.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/click-repl@0.3.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-colorama-0-4-6",
+      "name": "colorama",
+      "versionInfo": "0.4.6",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "License :: OSI Approved :: BSD License",
+      "licenseDeclared": "License :: OSI Approved :: BSD License",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/colorama@0.4.6"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-coverage-7-15-4",
+      "name": "coverage",
+      "versionInfo": "7.15.4",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/coverage@7.15.4"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-cron-descriptor-1-4-5",
+      "name": "cron-descriptor",
+      "versionInfo": "1.4.5",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/cron-descriptor@1.4.5"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-cryptography-50-0-0",
+      "name": "cryptography",
+      "versionInfo": "50.0.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0 OR BSD-3-Clause",
+      "licenseDeclared": "Apache-2.0 OR BSD-3-Clause",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/cryptography@50.0.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-cyclonedx-python-lib-11-12-0",
+      "name": "cyclonedx-python-lib",
+      "versionInfo": "11.12.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0 AND License :: OSI Approved :: Apache Software License",
+      "licenseDeclared": "Apache-2.0 AND License :: OSI Approved :: Apache Software License",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/cyclonedx-python-lib@11.12.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-defusedxml-0-7-1",
+      "name": "defusedxml",
+      "versionInfo": "0.7.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Python-2.0",
+      "licenseDeclared": "Python-2.0",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/defusedxml@0.7.1"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-django-axes-8-3-1",
+      "name": "django-axes",
+      "versionInfo": "8.3.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/django-axes@8.3.1"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-django-celery-beat-2-9-0",
+      "name": "django-celery-beat",
+      "versionInfo": "2.9.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "License :: OSI Approved :: BSD License",
+      "licenseDeclared": "License :: OSI Approved :: BSD License",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/django-celery-beat@2.9.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-django-cors-headers-4-9-0",
+      "name": "django-cors-headers",
+      "versionInfo": "4.9.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/django-cors-headers@4.9.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-django-debug-toolbar-7-1-1",
+      "name": "django-debug-toolbar",
+      "versionInfo": "7.1.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-3-Clause AND License :: OSI Approved :: BSD License",
+      "licenseDeclared": "BSD-3-Clause AND License :: OSI Approved :: BSD License",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/django-debug-toolbar@7.1.1"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-django-environ-0-14-0",
+      "name": "django-environ",
+      "versionInfo": "0.14.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/django-environ@0.14.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-django-filter-26-1",
+      "name": "django-filter",
+      "versionInfo": "26.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "License :: OSI Approved :: BSD License",
+      "licenseDeclared": "License :: OSI Approved :: BSD License",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/django-filter@26.1"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-django-htmx-1-29-0",
+      "name": "django-htmx",
+      "versionInfo": "1.29.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/django-htmx@1.29.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-django-timezone-field-7-2-2",
+      "name": "django-timezone-field",
+      "versionInfo": "7.2.2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-2-Clause AND License :: OSI Approved :: BSD License",
+      "licenseDeclared": "BSD-2-Clause AND License :: OSI Approved :: BSD License",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/django-timezone-field@7.2.2"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-djangorestframework-3-18-0",
+      "name": "djangorestframework",
+      "versionInfo": "3.18.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-3-Clause",
+      "licenseDeclared": "BSD-3-Clause",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/djangorestframework@3.18.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-djangorestframework-simplejwt-5-5-1",
+      "name": "djangorestframework_simplejwt",
+      "versionInfo": "5.5.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/djangorestframework-simplejwt@5.5.1"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-drf-spectacular-0-30-0",
+      "name": "drf-spectacular",
+      "versionInfo": "0.30.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-3-Clause",
+      "licenseDeclared": "BSD-3-Clause",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/drf-spectacular@0.30.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-et-xmlfile-2-0-0",
+      "name": "et_xmlfile",
+      "versionInfo": "2.0.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/et-xmlfile@2.0.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-execnet-2-1-2",
+      "name": "execnet",
+      "versionInfo": "2.1.2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/execnet@2.1.2"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-factory-boy-3-3-3",
+      "name": "factory_boy",
+      "versionInfo": "3.3.3",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/factory-boy@3.3.3"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-filelock-3-32-3",
+      "name": "filelock",
+      "versionInfo": "3.32.3",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/filelock@3.32.3"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-freezegun-1-5-5",
+      "name": "freezegun",
+      "versionInfo": "1.5.5",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/freezegun@1.5.5"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-h11-0-16-0",
+      "name": "h11",
+      "versionInfo": "0.16.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/h11@0.16.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-httpcore-1-0-9",
+      "name": "httpcore",
+      "versionInfo": "1.0.9",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-3-Clause",
+      "licenseDeclared": "BSD-3-Clause",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/httpcore@1.0.9"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-httpx-0-28-1",
+      "name": "httpx",
+      "versionInfo": "0.28.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-3-Clause AND License :: OSI Approved :: BSD License",
+      "licenseDeclared": "BSD-3-Clause AND License :: OSI Approved :: BSD License",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/httpx@0.28.1"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-idna-3-19",
+      "name": "idna",
+      "versionInfo": "3.19",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-3-Clause",
+      "licenseDeclared": "BSD-3-Clause",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/idna@3.19"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-inflection-0-5-1",
+      "name": "inflection",
+      "versionInfo": "0.5.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/inflection@0.5.1"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-iniconfig-2-3-0",
+      "name": "iniconfig",
+      "versionInfo": "2.3.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/iniconfig@2.3.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-jsonschema-4-26-0",
+      "name": "jsonschema",
+      "versionInfo": "4.26.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/jsonschema@4.26.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-jsonschema-specifications-2025-9-1",
+      "name": "jsonschema-specifications",
+      "versionInfo": "2025.9.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/jsonschema-specifications@2025.9.1"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-kombu-5-6-2",
+      "name": "kombu",
+      "versionInfo": "5.6.2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-3-Clause",
+      "licenseDeclared": "BSD-3-Clause",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/kombu@5.6.2"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-license-expression-30-4-4",
+      "name": "license-expression",
+      "versionInfo": "30.4.4",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/license-expression@30.4.4"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-lxml-6-1-2",
+      "name": "lxml",
+      "versionInfo": "6.1.2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-3-Clause",
+      "licenseDeclared": "BSD-3-Clause",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/lxml@6.1.2"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-markdown-it-py-4-2-0",
+      "name": "markdown-it-py",
+      "versionInfo": "4.2.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/markdown-it-py@4.2.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-mdurl-0-1-2",
+      "name": "mdurl",
+      "versionInfo": "0.1.2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/mdurl@0.1.2"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-msgpack-1-2-1",
+      "name": "msgpack",
+      "versionInfo": "1.2.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/msgpack@1.2.1"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-numpy-2-4-6",
+      "name": "numpy",
+      "versionInfo": "2.4.6",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0",
+      "licenseDeclared": "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/numpy@2.4.6"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-openpyxl-3-1-5",
+      "name": "openpyxl",
+      "versionInfo": "3.1.5",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/openpyxl@3.1.5"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-packageurl-python-0-17-6",
+      "name": "packageurl-python",
+      "versionInfo": "0.17.6",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/packageurl-python@0.17.6"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-packaging-26-3",
+      "name": "packaging",
+      "versionInfo": "26.3",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0 OR BSD-2-Clause",
+      "licenseDeclared": "Apache-2.0 OR BSD-2-Clause",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/packaging@26.3"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-pillow-12-3-0",
+      "name": "pillow",
+      "versionInfo": "12.3.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT-CMU",
+      "licenseDeclared": "MIT-CMU",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/pillow@12.3.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-pip-26-2-1",
+      "name": "pip",
+      "versionInfo": "26.2.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/pip@26.2.1"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-pip-api-0-0-34",
+      "name": "pip-api",
+      "versionInfo": "0.0.34",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "License :: OSI Approved :: Apache Software License",
+      "licenseDeclared": "License :: OSI Approved :: Apache Software License",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/pip-api@0.0.34"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-pip-requirements-parser-32-0-1",
+      "name": "pip-requirements-parser",
+      "versionInfo": "32.0.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/pip-requirements-parser@32.0.1"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-pip-audit-2-10-1",
+      "name": "pip_audit",
+      "versionInfo": "2.10.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "License :: OSI Approved :: Apache Software License",
+      "licenseDeclared": "License :: OSI Approved :: Apache Software License",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/pip-audit@2.10.1"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-platformdirs-4-11-3",
+      "name": "platformdirs",
+      "versionInfo": "4.11.3",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/platformdirs@4.11.3"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-pluggy-1-6-0",
+      "name": "pluggy",
+      "versionInfo": "1.6.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/pluggy@1.6.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-prompt-toolkit-3-0-53",
+      "name": "prompt_toolkit",
+      "versionInfo": "3.0.53",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "License :: OSI Approved :: BSD License",
+      "licenseDeclared": "License :: OSI Approved :: BSD License",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/prompt-toolkit@3.0.53"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-psycopg-3-3-4",
+      "name": "psycopg",
+      "versionInfo": "3.3.4",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "LGPL-3.0-only",
+      "licenseDeclared": "LGPL-3.0-only",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/psycopg@3.3.4"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-psycopg-binary-3-3-4",
+      "name": "psycopg-binary",
+      "versionInfo": "3.3.4",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "LGPL-3.0-only",
+      "licenseDeclared": "LGPL-3.0-only",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/psycopg-binary@3.3.4"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-py-serializable-2-1-0",
+      "name": "py-serializable",
+      "versionInfo": "2.1.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0 AND License :: OSI Approved :: Apache Software License",
+      "licenseDeclared": "Apache-2.0 AND License :: OSI Approved :: Apache Software License",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/py-serializable@2.1.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-pycparser-3-0",
+      "name": "pycparser",
+      "versionInfo": "3.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-3-Clause",
+      "licenseDeclared": "BSD-3-Clause",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/pycparser@3.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-pyparsing-3-3-2",
+      "name": "pyparsing",
+      "versionInfo": "3.3.2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/pyparsing@3.3.2"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-pytest-9-1-1",
+      "name": "pytest",
+      "versionInfo": "9.1.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/pytest@9.1.1"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-pytest-cov-7-1-0",
+      "name": "pytest-cov",
+      "versionInfo": "7.1.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/pytest-cov@7.1.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-pytest-django-4-14-0",
+      "name": "pytest-django",
+      "versionInfo": "4.14.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "License :: OSI Approved :: BSD License",
+      "licenseDeclared": "License :: OSI Approved :: BSD License",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/pytest-django@4.14.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-pytest-xdist-3-8-0",
+      "name": "pytest-xdist",
+      "versionInfo": "3.8.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/pytest-xdist@3.8.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-python-barcode-0-16-1",
+      "name": "python-barcode",
+      "versionInfo": "0.16.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/python-barcode@0.16.1"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-python-crontab-3-3-0",
+      "name": "python-crontab",
+      "versionInfo": "3.3.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/python-crontab@3.3.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-python-dateutil-2-9-0-post0",
+      "name": "python-dateutil",
+      "versionInfo": "2.9.0.post0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "License :: OSI Approved :: Apache Software License AND License :: OSI Approved :: BSD License",
+      "licenseDeclared": "License :: OSI Approved :: Apache Software License AND License :: OSI Approved :: BSD License",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/python-dateutil@2.9.0.post0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-python-pptx-1-0-2",
+      "name": "python-pptx",
+      "versionInfo": "1.0.2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/python-pptx@1.0.2"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-pywin32-312",
+      "name": "pywin32",
+      "versionInfo": "312",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Python-2.0",
+      "licenseDeclared": "Python-2.0",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/pywin32@312"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-redis-8-1-0",
+      "name": "redis",
+      "versionInfo": "8.1.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/redis@8.1.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-referencing-0-37-0",
+      "name": "referencing",
+      "versionInfo": "0.37.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/referencing@0.37.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-reportlab-5-0-0",
+      "name": "reportlab",
+      "versionInfo": "5.0.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "License :: OSI Approved :: BSD License",
+      "licenseDeclared": "License :: OSI Approved :: BSD License",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/reportlab@5.0.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-requests-2-34-2",
+      "name": "requests",
+      "versionInfo": "2.34.2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0 AND License :: OSI Approved :: Apache Software License",
+      "licenseDeclared": "Apache-2.0 AND License :: OSI Approved :: Apache Software License",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/requests@2.34.2"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-responses-0-26-2",
+      "name": "responses",
+      "versionInfo": "0.26.2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/responses@0.26.2"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-rich-15-0-0",
+      "name": "rich",
+      "versionInfo": "15.0.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/rich@15.0.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-rpds-py-2026-6-3",
+      "name": "rpds-py",
+      "versionInfo": "2026.6.3",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/rpds-py@2026.6.3"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-ruff-0-16-3",
+      "name": "ruff",
+      "versionInfo": "0.16.3",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/ruff@0.16.3"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-segno-1-6-6",
+      "name": "segno",
+      "versionInfo": "1.6.6",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "License :: OSI Approved :: BSD License",
+      "licenseDeclared": "License :: OSI Approved :: BSD License",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/segno@1.6.6"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-setuptools-84-0-0",
+      "name": "setuptools",
+      "versionInfo": "84.0.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/setuptools@84.0.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-six-1-17-0",
+      "name": "six",
+      "versionInfo": "1.17.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/six@1.17.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-sortedcontainers-2-4-0",
+      "name": "sortedcontainers",
+      "versionInfo": "2.4.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "License :: OSI Approved :: Apache Software License",
+      "licenseDeclared": "License :: OSI Approved :: Apache Software License",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/sortedcontainers@2.4.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-sqlparse-0-6-0",
+      "name": "sqlparse",
+      "versionInfo": "0.6.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "License :: OSI Approved :: BSD License",
+      "licenseDeclared": "License :: OSI Approved :: BSD License",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/sqlparse@0.6.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-stevedore-5-9-0",
+      "name": "stevedore",
+      "versionInfo": "5.9.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/stevedore@5.9.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-tenacity-9-1-4",
+      "name": "tenacity",
+      "versionInfo": "9.1.4",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "License :: OSI Approved :: Apache Software License",
+      "licenseDeclared": "License :: OSI Approved :: Apache Software License",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/tenacity@9.1.4"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-tomli-2-4-1",
+      "name": "tomli",
+      "versionInfo": "2.4.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/tomli@2.4.1"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-tomli-w-1-2-0",
+      "name": "tomli_w",
+      "versionInfo": "1.2.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/tomli-w@1.2.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-typing-extensions-4-16-0",
+      "name": "typing_extensions",
+      "versionInfo": "4.16.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "PSF-2.0",
+      "licenseDeclared": "PSF-2.0",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/typing-extensions@4.16.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-tzdata-2026-3",
+      "name": "tzdata",
+      "versionInfo": "2026.3",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/tzdata@2026.3"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-tzlocal-5-4-4",
+      "name": "tzlocal",
+      "versionInfo": "5.4.4",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/tzlocal@5.4.4"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-uritemplate-4-2-0",
+      "name": "uritemplate",
+      "versionInfo": "4.2.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/uritemplate@4.2.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-urllib3-2-7-0",
+      "name": "urllib3",
+      "versionInfo": "2.7.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/urllib3@2.7.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-vine-5-1-0",
+      "name": "vine",
+      "versionInfo": "5.1.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "License :: OSI Approved :: BSD License",
+      "licenseDeclared": "License :: OSI Approved :: BSD License",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/vine@5.1.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-wcwidth-0-8-2",
+      "name": "wcwidth",
+      "versionInfo": "0.8.2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/wcwidth@0.8.2"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-webencodings-0-6-1",
+      "name": "webencodings",
+      "versionInfo": "0.6.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "License :: OSI Approved :: BSD License",
+      "licenseDeclared": "License :: OSI Approved :: BSD License",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/webencodings@0.6.1"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-wheel-0-48-0",
+      "name": "wheel",
+      "versionInfo": "0.48.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/wheel@0.48.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-whitenoise-6-12-0",
+      "name": "whitenoise",
+      "versionInfo": "6.12.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/whitenoise@6.12.0"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-python-xlsxwriter-3-2-9",
+      "name": "xlsxwriter",
+      "versionInfo": "3.2.9",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-2-Clause AND License :: OSI Approved :: BSD License",
+      "licenseDeclared": "BSD-2-Clause AND License :: OSI Approved :: BSD License",
+      "copyrightText": "NOASSERTION",
+      "supplier": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/xlsxwriter@3.2.9"
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "fileName": "\\.github\\workflows\\ci.yml",
+      "SPDXID": "SPDXRef-File--.github-workflows-ci.yml-7f46309ca868cff9",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "0000000000000000000000000000000000000000"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "licenseInfoInFiles": [
+        "NOASSERTION"
+      ],
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": "\\package-lock.json",
+      "SPDXID": "SPDXRef-File--package-lock.json-1b2b37f4aaeb40d1",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "0000000000000000000000000000000000000000"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "licenseInfoInFiles": [
+        "NOASSERTION"
+      ],
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": "\\requirements-dev.txt",
+      "SPDXID": "SPDXRef-File--requirements-dev.txt-b9326e6b8f436089",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "0000000000000000000000000000000000000000"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "licenseInfoInFiles": [
+        "NOASSERTION"
+      ],
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": "\\requirements.txt",
+      "SPDXID": "SPDXRef-File--requirements.txt-e431c8b290e3f69e",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "0000000000000000000000000000000000000000"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "licenseInfoInFiles": [
+        "NOASSERTION"
+      ],
+      "copyrightText": "NOASSERTION"
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-npm--kurkle-color-08ed537c42923b28",
+      "relatedSpdxElement": "SPDXRef-Package-npm-chart.js-cc8c1175a7296d95",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-htmx.org-4ac7a51d2bd76899",
+      "relatedSpdxElement": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm--vue-reactivity-668bcd1b91296ba7",
+      "relatedSpdxElement": "SPDXRef-Package-npm-alpinejs-ee6ff4f81a642ee9",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-lucide-static-bbf50e818f32fe37",
+      "relatedSpdxElement": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm--vue-shared-c5dc310d55061c1d",
+      "relatedSpdxElement": "SPDXRef-Package-npm--vue-reactivity-668bcd1b91296ba7",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-chart.js-cc8c1175a7296d95",
+      "relatedSpdxElement": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-alpinejs-ee6ff4f81a642ee9",
+      "relatedSpdxElement": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm--kurkle-color-08ed537c42923b28",
+      "relatedSpdxElement": "SPDXRef-File--package-lock.json-1b2b37f4aaeb40d1",
+      "relationshipType": "OTHER",
+      "comment": "evident-by: indicates the package's existence is evident by the given file"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-File--package-lock.json-1b2b37f4aaeb40d1",
+      "relationshipType": "OTHER",
+      "comment": "evident-by: indicates the package's existence is evident by the given file"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-htmx.org-4ac7a51d2bd76899",
+      "relatedSpdxElement": "SPDXRef-File--package-lock.json-1b2b37f4aaeb40d1",
+      "relationshipType": "OTHER",
+      "comment": "evident-by: indicates the package's existence is evident by the given file"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-github-action-actions-checkout-5fdb0fd14b54e41c",
+      "relatedSpdxElement": "SPDXRef-File--.github-workflows-ci.yml-7f46309ca868cff9",
+      "relationshipType": "OTHER",
+      "comment": "evident-by: indicates the package's existence is evident by the given file"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-github-action-actions-setup-node-652eaff902494d78",
+      "relatedSpdxElement": "SPDXRef-File--.github-workflows-ci.yml-7f46309ca868cff9",
+      "relationshipType": "OTHER",
+      "comment": "evident-by: indicates the package's existence is evident by the given file"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm--vue-reactivity-668bcd1b91296ba7",
+      "relatedSpdxElement": "SPDXRef-File--package-lock.json-1b2b37f4aaeb40d1",
+      "relationshipType": "OTHER",
+      "comment": "evident-by: indicates the package's existence is evident by the given file"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-github-action-actions-setup-python-68b76f47f603f033",
+      "relatedSpdxElement": "SPDXRef-File--.github-workflows-ci.yml-7f46309ca868cff9",
+      "relationshipType": "OTHER",
+      "comment": "evident-by: indicates the package's existence is evident by the given file"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-github-action-anchore-sbom-action-7da83c6beb5294f1",
+      "relatedSpdxElement": "SPDXRef-File--.github-workflows-ci.yml-7f46309ca868cff9",
+      "relationshipType": "OTHER",
+      "comment": "evident-by: indicates the package's existence is evident by the given file"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-lucide-static-bbf50e818f32fe37",
+      "relatedSpdxElement": "SPDXRef-File--package-lock.json-1b2b37f4aaeb40d1",
+      "relationshipType": "OTHER",
+      "comment": "evident-by: indicates the package's existence is evident by the given file"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm--vue-shared-c5dc310d55061c1d",
+      "relatedSpdxElement": "SPDXRef-File--package-lock.json-1b2b37f4aaeb40d1",
+      "relationshipType": "OTHER",
+      "comment": "evident-by: indicates the package's existence is evident by the given file"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-chart.js-cc8c1175a7296d95",
+      "relatedSpdxElement": "SPDXRef-File--package-lock.json-1b2b37f4aaeb40d1",
+      "relationshipType": "OTHER",
+      "comment": "evident-by: indicates the package's existence is evident by the given file"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-github-action-gitleaks-gitleaks-action-d56bece341a9774e",
+      "relatedSpdxElement": "SPDXRef-File--.github-workflows-ci.yml-7f46309ca868cff9",
+      "relationshipType": "OTHER",
+      "comment": "evident-by: indicates the package's existence is evident by the given file"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-alpinejs-ee6ff4f81a642ee9",
+      "relatedSpdxElement": "SPDXRef-File--package-lock.json-1b2b37f4aaeb40d1",
+      "relationshipType": "OTHER",
+      "comment": "evident-by: indicates the package's existence is evident by the given file"
+    },
+    {
+      "spdxElementId": "SPDXRef-DocumentRoot-Directory-smart-surf-school-management-system",
+      "relatedSpdxElement": "SPDXRef-Package-npm--kurkle-color-08ed537c42923b28",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-DocumentRoot-Directory-smart-surf-school-management-system",
+      "relatedSpdxElement": "SPDXRef-Package-npm--vue-reactivity-668bcd1b91296ba7",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-DocumentRoot-Directory-smart-surf-school-management-system",
+      "relatedSpdxElement": "SPDXRef-Package-npm--vue-shared-c5dc310d55061c1d",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-DocumentRoot-Directory-smart-surf-school-management-system",
+      "relatedSpdxElement": "SPDXRef-Package-github-action-actions-checkout-5fdb0fd14b54e41c",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-DocumentRoot-Directory-smart-surf-school-management-system",
+      "relatedSpdxElement": "SPDXRef-Package-github-action-actions-setup-node-652eaff902494d78",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-DocumentRoot-Directory-smart-surf-school-management-system",
+      "relatedSpdxElement": "SPDXRef-Package-github-action-actions-setup-python-68b76f47f603f033",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-DocumentRoot-Directory-smart-surf-school-management-system",
+      "relatedSpdxElement": "SPDXRef-Package-npm-alpinejs-ee6ff4f81a642ee9",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-DocumentRoot-Directory-smart-surf-school-management-system",
+      "relatedSpdxElement": "SPDXRef-Package-github-action-anchore-sbom-action-7da83c6beb5294f1",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-DocumentRoot-Directory-smart-surf-school-management-system",
+      "relatedSpdxElement": "SPDXRef-Package-npm-chart.js-cc8c1175a7296d95",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-DocumentRoot-Directory-smart-surf-school-management-system",
+      "relatedSpdxElement": "SPDXRef-Package-github-action-gitleaks-gitleaks-action-d56bece341a9774e",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-DocumentRoot-Directory-smart-surf-school-management-system",
+      "relatedSpdxElement": "SPDXRef-Package-npm-htmx.org-4ac7a51d2bd76899",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-DocumentRoot-Directory-smart-surf-school-management-system",
+      "relatedSpdxElement": "SPDXRef-Package-npm-lucide-static-bbf50e818f32fe37",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-DocumentRoot-Directory-smart-surf-school-management-system",
+      "relatedSpdxElement": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relatedSpdxElement": "SPDXRef-DocumentRoot-Directory-smart-surf-school-management-system",
+      "relationshipType": "DESCRIBES"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-CacheControl-0-14-4",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-Django-5-2-17",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-Faker-40-36-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-Markdown-3-10-3",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-PyJWT-2-13-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-PyYAML-6-0-3",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-Pygments-2-21-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-amqp-5-3-1",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-anyio-4-14-2",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-argon2-cffi-25-1-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-argon2-cffi-bindings-25-1-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-asgiref-3-12-1",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-attrs-26-1-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-bandit-1-9-4",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-billiard-4-2-4",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-bleach-6-4-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-boolean-py-5-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-celery-5-6-3",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-certifi-2026-7-22",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-cffi-2-1-1",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-charset-normalizer-3-5-1",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-click-8-4-2",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-click-didyoumean-0-3-1",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-click-plugins-1-1-1-2",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-click-repl-0-3-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-colorama-0-4-6",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-coverage-7-15-4",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-cron-descriptor-1-4-5",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-cryptography-50-0-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-cyclonedx-python-lib-11-12-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-defusedxml-0-7-1",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-django-axes-8-3-1",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-django-celery-beat-2-9-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-django-cors-headers-4-9-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-django-debug-toolbar-7-1-1",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-django-environ-0-14-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-django-filter-26-1",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-django-htmx-1-29-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-django-timezone-field-7-2-2",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-djangorestframework-3-18-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-djangorestframework-simplejwt-5-5-1",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-drf-spectacular-0-30-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-et-xmlfile-2-0-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-execnet-2-1-2",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-factory-boy-3-3-3",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-filelock-3-32-3",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-freezegun-1-5-5",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-h11-0-16-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-httpcore-1-0-9",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-httpx-0-28-1",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-idna-3-19",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-inflection-0-5-1",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-iniconfig-2-3-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-jsonschema-4-26-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-jsonschema-specifications-2025-9-1",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-kombu-5-6-2",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-license-expression-30-4-4",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-lxml-6-1-2",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-markdown-it-py-4-2-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-mdurl-0-1-2",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-msgpack-1-2-1",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-numpy-2-4-6",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-openpyxl-3-1-5",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-packageurl-python-0-17-6",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-packaging-26-3",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-pillow-12-3-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-pip-26-2-1",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-pip-api-0-0-34",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-pip-requirements-parser-32-0-1",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-pip-audit-2-10-1",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-platformdirs-4-11-3",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-pluggy-1-6-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-prompt-toolkit-3-0-53",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-psycopg-3-3-4",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-psycopg-binary-3-3-4",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-py-serializable-2-1-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-pycparser-3-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-pyparsing-3-3-2",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-pytest-9-1-1",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-pytest-cov-7-1-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-pytest-django-4-14-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-pytest-xdist-3-8-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-python-barcode-0-16-1",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-python-crontab-3-3-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-python-dateutil-2-9-0-post0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-python-pptx-1-0-2",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-pywin32-312",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-redis-8-1-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-referencing-0-37-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-reportlab-5-0-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-requests-2-34-2",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-responses-0-26-2",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-rich-15-0-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-rpds-py-2026-6-3",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-ruff-0-16-3",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-segno-1-6-6",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-setuptools-84-0-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-six-1-17-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-sortedcontainers-2-4-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-sqlparse-0-6-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-stevedore-5-9-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-tenacity-9-1-4",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-tomli-2-4-1",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-tomli-w-1-2-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-typing-extensions-4-16-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-tzdata-2026-3",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-tzlocal-5-4-4",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-uritemplate-4-2-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-urllib3-2-7-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-vine-5-1-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-wcwidth-0-8-2",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-webencodings-0-6-1",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-wheel-0-48-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-whitenoise-6-12-0",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-npm-smart-surf-school-management-system-2ff1e248883b1113",
+      "relatedSpdxElement": "SPDXRef-python-xlsxwriter-3-2-9",
+      "relationshipType": "CONTAINS"
+    }
+  ]
+}

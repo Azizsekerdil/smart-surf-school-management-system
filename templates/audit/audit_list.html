@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Audit log" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Audit log" %}{% endblock %}
+{% block page_subtitle %}
+  <p class="mt-1 max-w-prose text-sm text-slate-500 dark:text-slate-400">
+    {% blocktranslate %}Who did what, to which record, when, and from where. Entries are append-only
+    and cannot be edited.{% endblocktranslate %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  {% can "audit.export" as may_export %}
+  {% if may_export %}
+    <a href="{% url 'audit:export' %}?{{ request.GET.urlencode }}" class="btn-secondary">
+      {% icon "download" "h-4 w-4" %} {% translate "Export CSV" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <div class="card mb-5">
+    <div class="card-body">
+      <form method="get" class="grid gap-3 lg:grid-cols-[1fr_repeat(4,auto)]">
+        <div class="relative">
+          <span class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3 text-slate-400">
+            {% icon "search" "h-4 w-4" %}
+          </span>
+          <input type="search" name="q" value="{{ filters.q }}" class="form-input ps-9"
+                 placeholder="{% translate 'User, description, object or path' %}">
+        </div>
+        <select name="action" class="form-select">
+          <option value="">{% translate "All actions" %}</option>
+          {% for value, label in actions %}
+            <option value="{{ value }}" {% if value == filters.action %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <select name="source" class="form-select">
+          <option value="">{% translate "All sources" %}</option>
+          {% for value, label in sources %}
+            <option value="{{ value }}" {% if value == filters.source %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <select name="period" class="form-select">
+          <option value="1" {% if filters.period == "1" %}selected{% endif %}>{% translate "Today" %}</option>
+          <option value="7" {% if filters.period == "7" %}selected{% endif %}>{% translate "Last 7 days" %}</option>
+          <option value="30" {% if filters.period == "30" %}selected{% endif %}>{% translate "Last 30 days" %}</option>
+          <option value="90" {% if filters.period == "90" %}selected{% endif %}>{% translate "Last 3 months" %}</option>
+          <option value="365" {% if filters.period == "365" %}selected{% endif %}>{% translate "Last year" %}</option>
+        </select>
+        <button type="submit" class="btn-secondary">{% translate "Filter" %}</button>
+      </form>
+
+      <label class="mt-3 flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+        <input type="checkbox" form="" class="h-4 w-4 rounded border-slate-300 text-brand-600"
+               onchange="const u=new URL(window.location); this.checked ? u.searchParams.set('sensitive','1') : u.searchParams.delete('sensitive'); window.location=u"
+               {% if filters.sensitive == "1" %}checked{% endif %}>
+        {% translate "Only compliance-sensitive entries (payments, permissions, backups, AI actions)" %}
+      </label>
+    </div>
+  </div>
+
+  {% include "audit/partials/audit_table.html" %}
+{% endblock %}

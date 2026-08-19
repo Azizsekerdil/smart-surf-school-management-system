@@ -1,0 +1,68 @@
+{% load i18n surf_tags %}
+{% if checks %}
+  <div class="table-wrap border-0">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">{% translate "Item" %}</th>
+          <th scope="col">{% translate "Checked" %}</th>
+          <th scope="col">{% translate "By" %}</th>
+          <th scope="col">{% translate "Outcome" %}</th>
+          <th scope="col">{% translate "Failed items" %}</th>
+          <th scope="col">{% translate "Next due" %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for check in checks %}
+          <tr>
+            <td class="font-medium text-slate-900 dark:text-slate-100">{{ check.equipment }}</td>
+            <td class="whitespace-nowrap">{{ check.checked_at|date:"d.m.Y H:i" }}</td>
+            <td>{% if check.checked_by %}{{ check.checked_by.get_display_name }}{% else %}—{% endif %}</td>
+            <td>
+              {% if check.passed %}
+                <span class="badge-emerald">{% icon "check" "h-3 w-3" %}{% translate "Passed" %}</span>
+              {% else %}
+                <span class="badge-rose">{% icon "circle-x" "h-3 w-3" %}{% translate "Failed" %}</span>
+              {% endif %}
+            </td>
+            <td class="text-xs">
+              {% if check.failed_items %}
+                {{ check.failed_items|join:", " }}
+              {% else %}
+                —
+              {% endif %}
+            </td>
+            <td class="whitespace-nowrap">
+              {% if check.next_check_due %}
+                {% if check.is_overdue %}
+                  <span class="badge-rose">{{ check.next_check_due|date:"d.m.Y" }}</span>
+                {% else %}
+                  {{ check.next_check_due|date:"d.m.Y" }}
+                {% endif %}
+              {% else %}
+                —
+              {% endif %}
+            </td>
+          </tr>
+          {% if not check.passed and check.issues_found %}
+            <tr>
+              <td colspan="6" class="bg-rose-50/60 text-xs text-rose-800 dark:bg-rose-500/5 dark:text-rose-300">
+                <strong>{% translate "Issue" %}:</strong> {{ check.issues_found }}
+                {% if check.action_taken %}
+                  · <strong>{% translate "Action" %}:</strong> {{ check.action_taken }}
+                {% else %}
+                  · <span class="font-semibold">{% translate "No action recorded yet." %}</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include "partials/pagination.html" %}
+{% else %}
+  <div class="p-5">
+    {% include "partials/empty_state.html" with icon_name="clipboard-check" title=_("No safety checks recorded") subtitle=_("Record a check before the first session of the day; the log is what an inspection asks to see.") %}
+  </div>
+{% endif %}

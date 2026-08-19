@@ -1,0 +1,107 @@
+{% load i18n surf_tags %}
+{% comment %} Today's timeline. `schedule` is a list of rows built by
+   apps.dashboard.services.todays_schedule; `None` means the lessons module is
+   not available, which is a different message from "nothing booked". {% endcomment %}
+<div class="card">
+  <div class="card-header">
+    <h2 class="card-title">{{ schedule_title }}</h2>
+    {% if links.lessons_day %}
+      <a href="{{ links.lessons_day }}" class="btn-ghost btn-sm">
+        {% translate "Day view" %} {% icon "chevron-right" "h-4 w-4" %}
+      </a>
+    {% endif %}
+  </div>
+
+  {% if schedule is None %}
+    <div class="card-body">
+      <p class="text-sm text-slate-500 dark:text-slate-400">
+        {% translate "The lessons module is not available, so today's timetable cannot be shown." %}
+      </p>
+    </div>
+  {% elif schedule %}
+    <ol class="divide-y divide-slate-100 dark:divide-slate-800">
+      {% for row in schedule %}
+        <li class="flex gap-4 px-5 py-4 {% if row.is_running %}bg-brand-50/60 dark:bg-brand-500/5{% elif row.is_finished %}opacity-70{% endif %}">
+
+          {# --- time rail --- #}
+          <div class="w-16 shrink-0 text-start">
+            <p class="text-sm font-semibold tabular-nums text-slate-900 dark:text-slate-100">
+              {{ row.lesson.start_time|time:"H:i" }}
+            </p>
+            <p class="text-xs tabular-nums text-slate-400">{{ row.lesson.end_time|time:"H:i" }}</p>
+          </div>
+
+          <span class="w-1 shrink-0 rounded-full" aria-hidden="true"
+                style="background-color: {{ row.lesson.lesson_type.colour }}"></span>
+
+          {# --- body --- #}
+          <div class="min-w-0 flex-1">
+            <div class="flex flex-wrap items-start justify-between gap-2">
+              <div class="min-w-0">
+                {% if row.url %}
+                  <a href="{{ row.url }}" class="truncate text-sm font-semibold text-slate-900 hover:underline dark:text-slate-100">
+                    {{ row.lesson.lesson_type.name }}
+                  </a>
+                {% else %}
+                  <p class="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{{ row.lesson.lesson_type.name }}</p>
+                {% endif %}
+                <p class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
+                  <span class="inline-flex items-center gap-1">{% icon "user-check" "h-3.5 w-3.5" %} {{ row.lesson.instructor }}</span>
+                  <span class="inline-flex items-center gap-1">{% icon "map-pin" "h-3.5 w-3.5" %} {{ row.lesson.spot }}</span>
+                  <span class="inline-flex items-center gap-1 tabular-nums">
+                    {% icon "users" "h-3.5 w-3.5" %} {{ row.booked }}/{{ row.capacity }}
+                  </span>
+                </p>
+              </div>
+
+              <div class="flex shrink-0 flex-col items-end gap-1.5">
+                {% status_badge row.lesson.status row.lesson.get_status_display %}
+                {% if row.is_running %}
+                  <span class="badge-sky inline-flex items-center gap-1">
+                    {% icon "activity" "h-3 w-3" %} {% translate "In the water" %}
+                  </span>
+                {% endif %}
+              </div>
+            </div>
+
+            {# --- capacity bar --- #}
+            {% if row.capacity %}
+              <div class="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                <div class="h-full rounded-full {% if row.is_full %}bg-amber-500{% else %}bg-brand-500{% endif %}"
+                     style="width: {{ row.fill_percent }}%"></div>
+              </div>
+            {% endif %}
+
+            {# --- quick actions --- #}
+            {% if row.url %}
+              <div class="mt-2 flex flex-wrap items-center gap-2">
+                {% can "lessons.change" as may_check_in %}
+                {% if may_check_in and row.awaiting_check_in %}
+                  <a href="{{ row.url }}" class="btn-primary btn-sm">
+                    {% icon "clipboard-check" "h-3.5 w-3.5" %}
+                    {% blocktranslate count counter=row.awaiting_check_in %}Check in {{ counter }} student{% plural %}Check in {{ counter }} students{% endblocktranslate %}
+                  </a>
+                {% elif row.checked_in %}
+                  <span class="badge-emerald inline-flex items-center gap-1">
+                    {% icon "circle-check" "h-3 w-3" %}
+                    {% blocktranslate count counter=row.checked_in %}{{ counter }} checked in{% plural %}{{ counter }} checked in{% endblocktranslate %}
+                  </span>
+                {% endif %}
+                {% if not row.lesson.safety_briefing_done and not row.is_finished %}
+                  <span class="badge-amber inline-flex items-center gap-1">
+                    {% icon "shield-alert" "h-3 w-3" %} {% translate "Briefing due" %}
+                  </span>
+                {% endif %}
+                <a href="{{ row.url }}" class="btn-ghost btn-sm">{% translate "Open roster" %}</a>
+              </div>
+            {% endif %}
+          </div>
+        </li>
+      {% endfor %}
+    </ol>
+  {% else %}
+    <div class="card-body">
+      {% include "partials/empty_state.html" with icon_name="calendar-days" title=_("Nothing scheduled today") subtitle=_("When lessons are booked for today they appear here in start-time order.") action_url=links.lessons_day action_label=_("Open the day view") %}
+    </div>
+  {% endif %}
+</div>

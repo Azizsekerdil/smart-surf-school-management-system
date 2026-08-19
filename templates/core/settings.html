@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Settings" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Settings" %}{% endblock %}
+{% block page_subtitle %}
+  <p class="mt-1 max-w-prose text-sm text-slate-500 dark:text-slate-400">
+    {% blocktranslate %}How this installation is configured. Credentials are never shown here —
+    they are read from the server environment and never stored in the database.{% endblocktranslate %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'onboarding:start' %}" class="btn-secondary">
+    {% icon "sparkles" "h-4 w-4" %} {% translate "Setup wizard" %}
+  </a>
+  {% can "accounts.view" as may_view_users %}
+  {% if may_view_users %}
+    <a href="{% url 'accounts:role_matrix' %}" class="btn-secondary">
+      {% icon "shield-check" "h-4 w-4" %} {% translate "Role matrix" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="grid gap-6 lg:grid-cols-2">
+
+  <div class="card">
+    <div class="card-header"><h2 class="card-title">{% translate "School" %}</h2></div>
+    <div class="card-body">
+      <dl class="divide-y divide-slate-200 text-sm dark:divide-slate-700">
+        <div class="flex justify-between gap-4 py-2">
+          <dt class="text-slate-500 dark:text-slate-400">{% translate "Name" %}</dt>
+          <dd class="text-end font-medium">{{ school.NAME }}</dd>
+        </div>
+        <div class="flex justify-between gap-4 py-2">
+          <dt class="text-slate-500 dark:text-slate-400">{% translate "Currency" %}</dt>
+          <dd class="text-end font-medium">{{ school.CURRENCY }} ({{ school.CURRENCY_SYMBOL }})</dd>
+        </div>
+        <div class="flex justify-between gap-4 py-2">
+          <dt class="text-slate-500 dark:text-slate-400">{% translate "Default surf spot" %}</dt>
+          <dd class="text-end font-medium">{{ school.DEFAULT_SPOT_NAME }}</dd>
+        </div>
+        <div class="flex justify-between gap-4 py-2">
+          <dt class="text-slate-500 dark:text-slate-400">{% translate "Coordinates" %}</dt>
+          <dd class="text-end font-mono text-xs">{{ school.DEFAULT_LATITUDE }}, {{ school.DEFAULT_LONGITUDE }}</dd>
+        </div>
+      </dl>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h2 class="card-title">{% translate "System" %}</h2></div>
+    <div class="card-body">
+      <dl class="divide-y divide-slate-200 text-sm dark:divide-slate-700">
+        <div class="flex justify-between gap-4 py-2">
+          <dt class="text-slate-500 dark:text-slate-400">{% translate "Version" %}</dt>
+          <dd class="text-end font-medium">{{ APP_VERSION }}</dd>
+        </div>
+        <div class="flex justify-between gap-4 py-2">
+          <dt class="text-slate-500 dark:text-slate-400">{% translate "Database" %}</dt>
+          <dd class="text-end font-medium">{{ database_engine }}</dd>
+        </div>
+        <div class="flex justify-between gap-4 py-2">
+          <dt class="text-slate-500 dark:text-slate-400">{% translate "AI routing mode" %}</dt>
+          <dd class="text-end font-medium">{{ AI_ROUTING_MODE }}</dd>
+        </div>
+        <div class="flex justify-between gap-4 py-2">
+          <dt class="text-slate-500 dark:text-slate-400">{% translate "AI terminal" %}</dt>
+          <dd class="text-end">
+            {% if AI_TERMINAL_ENABLED %}
+              <span class="badge-amber">{% translate "Enabled" %}</span>
+            {% else %}
+              <span class="badge-slate">{% translate "Disabled" %}</span>
+            {% endif %}
+          </dd>
+        </div>
+        <div class="flex justify-between gap-4 py-2">
+          <dt class="text-slate-500 dark:text-slate-400">{% translate "Debug mode" %}</dt>
+          <dd class="text-end">
+            {% if DEBUG %}
+              <span class="badge-rose">{% translate "On — do not use in production" %}</span>
+            {% else %}
+              <span class="badge-emerald">{% translate "Off" %}</span>
+            {% endif %}
+          </dd>
+        </div>
+      </dl>
+      <a href="/api/health/" target="_blank" rel="noopener"
+         class="mt-4 inline-flex items-center gap-1.5 text-sm text-brand-600 hover:underline dark:text-brand-400">
+        {% icon "activity" "h-4 w-4" %} {% translate "Open the health check" %}
+      </a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h2 class="card-title">{% translate "Languages" %}</h2></div>
+    <div class="card-body">
+      <p class="mb-3 text-sm text-slate-500 dark:text-slate-400">
+        {% translate "Each user chooses their own language from the top bar." %}
+      </p>
+      <div class="flex flex-wrap gap-2">
+        {% get_current_language as CURRENT_LANGUAGE %}
+        {% for code, name in languages %}
+          <span class="{% if code == CURRENT_LANGUAGE %}badge-sky{% else %}badge-slate{% endif %}">
+            {{ name }} ({{ code }})
+          </span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">{% translate "Runtime settings" %}</h2>
+      <span class="badge-slate">{{ settings_by_group|length }}</span>
+    </div>
+    <div class="card-body">
+      {% if settings_by_group %}
+        {% for group, items in settings_by_group.items %}
+          <p class="mb-1 mt-3 text-xs font-semibold uppercase tracking-wide text-slate-400 first:mt-0">{{ group }}</p>
+          <dl class="divide-y divide-slate-200 text-sm dark:divide-slate-700">
+            {% for item in items %}
+              <div class="flex justify-between gap-4 py-2">
+                <dt class="font-mono text-xs text-slate-500 dark:text-slate-400">{{ item.key }}</dt>
+                <dd class="text-end font-medium">
+                  {% if item.is_secret %}
+                    <span class="badge-slate">{% translate "hidden" %}</span>
+                  {% else %}
+                    {{ item.value|truncatechars:40|default:"—" }}
+                  {% endif %}
+                </dd>
+              </div>
+            {% endfor %}
+          </dl>
+        {% endfor %}
+      {% else %}
+        <p class="text-sm text-slate-500 dark:text-slate-400">
+          {% translate "No runtime settings have been saved yet. Run the setup wizard to create them." %}
+        </p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ user_obj.get_display_name }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ user_obj.get_display_name }}{% endblock %}
+{% block page_subtitle %}
+  <p class="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+    <span class="badge-sky">{{ user_obj.get_role_display }}</span>
+    {% if user_obj.is_active %}
+      <span class="badge-emerald">{% translate "Active" %}</span>
+    {% else %}
+      <span class="badge-slate">{% translate "Disabled" %}</span>
+    {% endif %}
+    <span>{{ user_obj.username }}</span>
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'accounts:user_list' %}" class="btn-ghost">{% translate "Back to users" %}</a>
+  {% can "accounts.manage" as may_manage %}
+  {% if may_manage %}
+    <a href="{% url 'accounts:user_capabilities' user_obj.pk %}" class="btn-secondary">
+      {% icon "shield-check" "h-4 w-4" %} {% translate "Permissions" %}
+    </a>
+  {% endif %}
+  {% can "accounts.change" as may_change %}
+  {% if may_change %}
+    <a href="{% url 'accounts:user_update' user_obj.pk %}" class="btn-primary">
+      {% icon "pencil" "h-4 w-4" %} {% translate "Edit" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="grid gap-6 lg:grid-cols-3">
+
+  <div class="card lg:col-span-1">
+    <div class="card-header"><h2 class="card-title">{% translate "Profile" %}</h2></div>
+    <div class="card-body space-y-4">
+      <div class="flex items-center gap-3">
+        {% if user_obj.photo %}
+          <img src="{{ user_obj.photo.url }}" alt="" class="h-16 w-16 rounded-full object-cover">
+        {% else %}
+          <span class="flex h-16 w-16 items-center justify-center rounded-full bg-brand-100 text-lg font-semibold text-brand-700 dark:bg-brand-500/20 dark:text-brand-300">
+            {{ user_obj.initials }}
+          </span>
+        {% endif %}
+        <div class="min-w-0">
+          <p class="truncate font-medium text-slate-900 dark:text-slate-100">{{ user_obj.get_display_name }}</p>
+          <p class="truncate text-sm text-slate-500 dark:text-slate-400">{{ user_obj.job_title|default:"—" }}</p>
+        </div>
+      </div>
+
+      <dl class="divide-y divide-slate-200 text-sm dark:divide-slate-700">
+        <div class="flex justify-between gap-4 py-2">
+          <dt class="text-slate-500 dark:text-slate-400">{% translate "E-mail" %}</dt>
+          <dd class="text-end font-medium text-slate-900 dark:text-slate-100">{{ user_obj.email }}</dd>
+        </div>
+        <div class="flex justify-between gap-4 py-2">
+          <dt class="text-slate-500 dark:text-slate-400">{% translate "Phone" %}</dt>
+          <dd class="text-end font-medium text-slate-900 dark:text-slate-100">{{ user_obj.phone|default:"—" }}</dd>
+        </div>
+        <div class="flex justify-between gap-4 py-2">
+          <dt class="text-slate-500 dark:text-slate-400">{% translate "Employee ID" %}</dt>
+          <dd class="text-end font-medium text-slate-900 dark:text-slate-100">{{ user_obj.employee_id|default:"—" }}</dd>
+        </div>
+        <div class="flex justify-between gap-4 py-2">
+          <dt class="text-slate-500 dark:text-slate-400">{% translate "Language" %}</dt>
+          <dd class="text-end font-medium uppercase text-slate-900 dark:text-slate-100">{{ user_obj.language }}</dd>
+        </div>
+        <div class="flex justify-between gap-4 py-2">
+          <dt class="text-slate-500 dark:text-slate-400">{% translate "Joined" %}</dt>
+          <dd class="text-end font-medium text-slate-900 dark:text-slate-100">{{ user_obj.date_joined|date:"d.m.Y" }}</dd>
+        </div>
+        <div class="flex justify-between gap-4 py-2">
+          <dt class="text-slate-500 dark:text-slate-400">{% translate "Last sign-in" %}</dt>
+          <dd class="text-end font-medium text-slate-900 dark:text-slate-100">
+            {% if user_obj.last_login %}{{ user_obj.last_login|date:"d.m.Y H:i" }}{% else %}{% translate "Never" %}{% endif %}
+          </dd>
+        </div>
+      </dl>
+
+      {% if user_obj.notes %}
+        <div>
+          <p class="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">{% translate "Internal notes" %}</p>
+          <p class="whitespace-pre-line text-sm text-slate-600 dark:text-slate-300">{{ user_obj.notes }}</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="space-y-6 lg:col-span-2">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Effective permissions" %}</h2>
+        <span class="badge-slate">{{ capabilities|length }}</span>
+      </div>
+      <div class="card-body">
+        <p class="mb-3 text-sm text-slate-500 dark:text-slate-400">
+          {% blocktranslate with role=user_obj.get_role_display %}Granted by the role “{{ role }}”, plus any individual overrides.{% endblocktranslate %}
+        </p>
+        <div class="flex flex-wrap gap-1.5">
+          {% for capability in capabilities %}
+            <span class="badge-slate font-mono text-[0.68rem]">{{ capability }}</span>
+          {% empty %}
+            <p class="text-sm text-slate-500">{% translate "No permissions." %}</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h2 class="card-title">{% translate "Recent sign-ins" %}</h2></div>
+      <div class="card-body">
+        {% if recent_sessions %}
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>{% translate "When" %}</th>
+                  <th>{% translate "IP address" %}</th>
+                  <th>{% translate "Result" %}</th>
+                  <th>{% translate "Signed out" %}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for session in recent_sessions %}
+                  <tr>
+                    <td class="whitespace-nowrap">{{ session.login_at|date:"d.m.Y H:i" }}</td>
+                    <td class="font-mono text-xs">{{ session.ip_address|default:"—" }}</td>
+                    <td>
+                      {% if session.was_successful %}
+                        <span class="badge-emerald">{% translate "Success" %}</span>
+                      {% else %}
+                        <span class="badge-rose">{% translate "Failed" %}</span>
+                      {% endif %}
+                    </td>
+                    <td class="whitespace-nowrap text-slate-500">
+                      {% if session.logout_at %}{{ session.logout_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="text-sm text-slate-500 dark:text-slate-400">{% translate "This user has never signed in." %}</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ title }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block page_subtitle %}
+  <p class="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "Every rule narrows the audience. The size on the right updates as you type." %}
+  </p>
+{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-3 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'crm:dashboard' %}" class="hover:text-brand-600">{% translate "CRM" %}</a>
+    <span class="mx-1">/</span>
+    <a href="{% url 'crm:segment_list' %}" class="hover:text-brand-600">{% translate "Segments" %}</a>
+    {% if segment %}
+      <span class="mx-1">/</span>
+      <a href="{% url 'crm:segment_detail' segment.pk %}" class="hover:text-brand-600">{{ segment.name }}</a>
+    {% endif %}
+  </nav>
+{% endblock %}
+
+{% block content %}
+  <form method="post" novalidate
+        hx-post="{% url 'crm:segment_preview' %}"
+        hx-trigger="change delay:300ms, keyup changed delay:600ms"
+        hx-target="#segment-preview"
+        hx-swap="outerHTML">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="alert-error mb-5">
+        {% icon "circle-x" "h-5 w-5" %}
+        <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+      </div>
+    {% endif %}
+
+    {% if form.unavailable_rules %}
+      <div class="alert-info mb-5">
+        {% icon "info" "h-5 w-5" %}
+        <div>
+          <p class="font-medium">{% translate "Some rules are not available on this installation" %}</p>
+          <p class="mt-1 text-sm">{{ form.unavailable_rules|join:", " }}</p>
+        </div>
+      </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div class="space-y-5 lg:col-span-2">
+
+        <section class="card">
+          <div class="card-header"><h2 class="card-title">{% translate "Identity" %}</h2></div>
+          <div class="card-body space-y-4">
+            {% include "crm/partials/field.html" with field=form.name %}
+            {% include "crm/partials/field.html" with field=form.description %}
+            <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+              {{ form.is_dynamic }} <span>{{ form.is_dynamic.label }}</span>
+            </label>
+            <p class="form-help">{{ form.is_dynamic.help_text }}</p>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-header"><h2 class="card-title">{% translate "Who they are" %}</h2></div>
+          <div class="card-body space-y-4">
+            <fieldset>
+              <legend class="form-label">{{ form.surf_level.label }}</legend>
+              <div class="mt-1 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {% for checkbox in form.surf_level %}
+                  <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+                    {{ checkbox.tag }} <span>{{ checkbox.choice_label }}</span>
+                  </label>
+                {% endfor %}
+              </div>
+              {% for error in form.surf_level.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+            </fieldset>
+
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              {% include "crm/partials/field.html" with field=form.marketing_consent %}
+              {% include "crm/partials/field.html" with field=form.has_email %}
+              {% include "crm/partials/field.html" with field=form.has_phone %}
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {% include "crm/partials/field.html" with field=form.city %}
+              {% include "crm/partials/field.html" with field=form.country %}
+              {% include "crm/partials/field.html" with field=form.language %}
+              {% include "crm/partials/field.html" with field=form.tags %}
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-header"><h2 class="card-title">{% translate "What they have done" %}</h2></div>
+          <div class="card-body grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {% include "crm/partials/field.html" with field=form.min_bookings %}
+            {% include "crm/partials/field.html" with field=form.max_bookings %}
+            {% include "crm/partials/field.html" with field=form.last_visit_days %}
+            {% include "crm/partials/field.html" with field=form.no_visit_days %}
+            {% include "crm/partials/field.html" with field=form.created_within_days %}
+            {% include "crm/partials/field.html" with field=form.min_lifetime_value %}
+          </div>
+        </section>
+
+        <div class="flex items-center gap-3">
+          {% comment %} The form's hx-trigger list deliberately omits "submit", so this
+             button performs a normal POST to this page and saves the segment;
+             HTMX only ever drives the live preview panel. {% endcomment %}
+          <button type="submit" class="btn-primary">
+            {% icon "save" "h-4 w-4" %} {% translate "Save segment" %}
+          </button>
+          <a href="{% if segment %}{% url 'crm:segment_detail' segment.pk %}{% else %}{% url 'crm:segment_list' %}{% endif %}"
+             class="btn-secondary">{% translate "Cancel" %}</a>
+        </div>
+      </div>
+
+      <div class="lg:col-span-1">
+        <div class="lg:sticky lg:top-6">
+          {% include "crm/partials/segment_preview.html" with count=segment.cached_count rules=segment.describe_criteria issues=segment.criteria_issues has_rules=segment.criteria %}
+        </div>
+      </div>
+    </div>
+  </form>
+{% endblock %}

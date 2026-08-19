@@ -1,0 +1,66 @@
+{% load i18n surf_tags %}
+{% if sales %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">{% translate "Receipt" %}</th>
+          <th scope="col">{% translate "When" %}</th>
+          <th scope="col">{% translate "Customer" %}</th>
+          <th scope="col">{% translate "Cashier" %}</th>
+          <th scope="col" class="text-end">{% translate "Lines" %}</th>
+          <th scope="col" class="text-end">{% translate "Total" %}</th>
+          <th scope="col">{% translate "Payment" %}</th>
+          <th scope="col">{% translate "Status" %}</th>
+          <th scope="col"><span class="sr-only">{% translate "Actions" %}</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for sale in sales %}
+          <tr class="{% if sale.is_voided %}opacity-60{% endif %}">
+            <td>
+              <a href="{% url 'pos:detail' sale.pk %}" class="font-mono font-medium text-brand-600 hover:underline dark:text-brand-300">
+                {{ sale.sale_number }}
+              </a>
+            </td>
+            <td class="whitespace-nowrap">{{ sale.sold_at|date:"d.m.Y H:i" }}</td>
+            <td>{% if sale.customer %}{{ sale.customer.full_name }}{% else %}<span class="text-slate-400">{% translate "Walk-in" %}</span>{% endif %}</td>
+            <td>{% if sale.cashier %}{{ sale.cashier.get_full_name|default:sale.cashier.username }}{% else %}—{% endif %}</td>
+            <td class="text-end tabular-nums">{{ sale.line_count }}</td>
+            <td class="text-end font-medium tabular-nums text-slate-900 dark:text-slate-100">{{ sale.total_amount|money }}</td>
+            <td>{{ sale.get_payment_method_display }}</td>
+            <td>{% status_badge sale.status sale.get_status_display status_colors %}</td>
+            <td class="text-end">
+              <div class="flex items-center justify-end gap-1">
+                <a href="{% url 'pos:receipt' sale.pk %}" target="_blank" rel="noopener"
+                   class="btn-ghost btn-sm" aria-label="{% translate 'Print receipt' %}">
+                  {% icon "printer" "h-4 w-4" %}
+                </a>
+                {% can "pos.delete" as may_void %}
+                {% if may_void and sale.can_be_voided %}
+                  <a href="{% url 'pos:void' sale.pk %}" class="btn-ghost btn-sm text-rose-600 dark:text-rose-400"
+                     aria-label="{% translate 'Void this sale' %}">
+                    {% icon "circle-x" "h-4 w-4" %}
+                  </a>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% include "partials/pagination.html" %}
+{% else %}
+  {% translate "No sales in this period" as empty_title %}
+  {% translate "Widen the date range, or open the till and ring one up." as empty_subtitle %}
+  {% can "pos.add" as may_sell %}
+  {% if may_sell %}
+    {% url 'pos:terminal' as action_url %}
+    {% translate "Open the till" as action_label %}
+    {% include "partials/empty_state.html" with icon_name="receipt" title=empty_title subtitle=empty_subtitle action_url=action_url action_label=action_label %}
+  {% else %}
+    {% include "partials/empty_state.html" with icon_name="receipt" title=empty_title subtitle=empty_subtitle %}
+  {% endif %}
+{% endif %}

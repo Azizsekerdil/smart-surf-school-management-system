@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ title }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-3 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'crm:dashboard' %}" class="hover:text-brand-600">{% translate "CRM" %}</a>
+    <span class="mx-1">/</span>
+    <a href="{% url 'crm:interaction_list' %}" class="hover:text-brand-600">{% translate "Interactions" %}</a>
+  </nav>
+{% endblock %}
+
+{% block content %}
+  <form method="post" novalidate class="max-w-3xl">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="alert-error mb-5">
+        {% icon "circle-x" "h-5 w-5" %}
+        <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+      </div>
+    {% endif %}
+
+    <section class="card">
+      {% if lead %}
+        <div class="card-header">
+          <h2 class="card-title">{{ lead.full_name }}</h2>
+        </div>
+      {% endif %}
+      <div class="card-body">
+        {% include "crm/partials/interaction_fields.html" %}
+      </div>
+    </section>
+
+    <div class="mt-5 flex items-center gap-3">
+      <button type="submit" class="btn-primary">{% icon "save" "h-4 w-4" %} {% translate "Save" %}</button>
+      <a href="{% url 'crm:interaction_list' %}" class="btn-secondary">{% translate "Cancel" %}</a>
+    </div>
+  </form>
+{% endblock %}

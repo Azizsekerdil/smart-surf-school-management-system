@@ -1,0 +1,69 @@
+{% load i18n surf_tags %}
+
+{% if reports %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">{% translate "Report" %}</th>
+          <th scope="col">{% translate "Format" %}</th>
+          <th scope="col">{% translate "Rows" %}</th>
+          <th scope="col">{% translate "Size" %}</th>
+          <th scope="col">{% translate "Took" %}</th>
+          <th scope="col">{% translate "By" %}</th>
+          <th scope="col">{% translate "When" %}</th>
+          <th scope="col">{% translate "Status" %}</th>
+          <th scope="col"><span class="sr-only">{% translate "Actions" %}</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for report in reports %}
+          <tr>
+            <td>
+              <div class="flex items-center gap-2">
+                {% icon report.format_icon "h-4 w-4 shrink-0 text-slate-400" %}
+                <div class="min-w-0">
+                  <p class="truncate font-medium text-slate-900 dark:text-slate-100">{{ report.title }}</p>
+                  <p class="text-xs text-slate-500 dark:text-slate-400">
+                    {{ report.report_key }}{% if report.definition %} · {{ report.definition.name }}{% endif %}
+                  </p>
+                </div>
+              </div>
+            </td>
+            <td>{{ report.get_format_display }}</td>
+            <td class="tabular-nums">{{ report.row_count }}</td>
+            <td class="tabular-nums">{{ report.file_size_display }}</td>
+            <td class="tabular-nums">{{ report.duration_display }}</td>
+            <td>
+              {% if report.generated_by %}
+                {{ report.generated_by.get_display_name|default:report.generated_by.username }}
+              {% else %}
+                {% translate "System" %}
+              {% endif %}
+            </td>
+            <td class="whitespace-nowrap">{{ report.created_at|date:"SHORT_DATETIME_FORMAT" }}</td>
+            <td>
+              {% status_badge report.status report.get_status_display %}
+              {% if report.error_message %}
+                <p class="mt-1 max-w-xs text-xs text-rose-600 dark:text-rose-400">{{ report.error_message }}</p>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {% can "reporting.export" as may_export %}
+              {% if may_export and report.is_downloadable %}
+                <a href="{% url 'reporting:download' report.pk %}" class="btn-secondary btn-sm"
+                   title="{% translate 'Download again' %}">
+                  {% icon "download" "h-4 w-4" %}
+                </a>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% include "partials/pagination.html" %}
+{% else %}
+  {% include "partials/empty_state.html" with icon_name="history" title=_("No exports yet") subtitle=_("Run a report from the catalogue and it will appear here, file and all.") action_url=None %}
+{% endif %}

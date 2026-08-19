@@ -1,0 +1,72 @@
+{% load i18n surf_tags %}
+{% if movements %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">{% translate "When" %}</th>
+          <th scope="col">{% translate "Product" %}</th>
+          <th scope="col">{% translate "Movement" %}</th>
+          <th scope="col" class="text-end">{% translate "Quantity" %}</th>
+          <th scope="col" class="text-end">{% translate "Balance after" %}</th>
+          <th scope="col">{% translate "Reference" %}</th>
+          <th scope="col">{% translate "Recorded by" %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for movement in movements %}
+          <tr>
+            <td class="whitespace-nowrap">{{ movement.created_at|date:"d.m.Y H:i" }}</td>
+            <td>
+              <span class="font-medium text-slate-900 dark:text-slate-100">{{ movement.product.name }}</span>
+              <span class="block font-mono text-xs text-slate-400">{{ movement.product.sku }}</span>
+            </td>
+            <td>
+              <span class="badge-{% if movement.movement_type == 'damage' %}rose{% elif movement.movement_type == 'sale' %}sky{% elif movement.movement_type == 'purchase' %}emerald{% elif movement.movement_type == 'return' %}violet{% else %}slate{% endif %}">
+                {{ movement.get_movement_type_display }}
+              </span>
+            </td>
+            <td class="text-end font-medium tabular-nums {% if movement.is_incoming %}text-emerald-600 dark:text-emerald-400{% else %}text-rose-600 dark:text-rose-400{% endif %}">
+              {{ movement.signed_display }}
+            </td>
+            <td class="text-end tabular-nums">{{ movement.balance_after|floatformat:'-2' }}</td>
+            <td class="text-xs">
+              {% if movement.sale %}
+                <a href="{% url 'pos:detail' movement.sale.pk %}" class="font-mono text-brand-600 hover:underline dark:text-brand-300">
+                  {{ movement.sale.sale_number }}
+                </a>
+              {% elif movement.reference %}
+                <span class="font-mono text-slate-500 dark:text-slate-400">{{ movement.reference }}</span>
+              {% else %}
+                <span class="text-slate-400">—</span>
+              {% endif %}
+              {% if movement.note %}
+                <span class="block text-slate-500 dark:text-slate-400">{{ movement.note|truncatechars:70 }}</span>
+              {% endif %}
+            </td>
+            <td class="text-xs text-slate-500 dark:text-slate-400">
+              {% if movement.created_by %}
+                {{ movement.created_by.get_full_name|default:movement.created_by.username }}
+              {% else %}
+                {% translate "System" %}
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% include "partials/pagination.html" %}
+{% else %}
+  {% translate "No movements in this period" as empty_title %}
+  {% translate "Widen the date range, or record the first delivery." as empty_subtitle %}
+  {% can "pos.change" as may_change %}
+  {% if may_change %}
+    {% url 'pos:stock_adjust' as action_url %}
+    {% translate "Record a movement" as action_label %}
+    {% include "partials/empty_state.html" with icon_name="arrow-left-right" title=empty_title subtitle=empty_subtitle action_url=action_url action_label=action_label %}
+  {% else %}
+    {% include "partials/empty_state.html" with icon_name="arrow-left-right" title=empty_title subtitle=empty_subtitle %}
+  {% endif %}
+{% endif %}

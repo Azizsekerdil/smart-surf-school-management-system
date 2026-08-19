@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ lesson.lesson_code }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ lesson.lesson_code }} — {{ lesson.lesson_type.name }}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {{ lesson.date|date:"l, d F Y" }} · {{ lesson.start_time|time:"H:i" }}–{{ lesson.end_time|time:"H:i" }} · {{ lesson.spot }}
+  </p>
+{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-4 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'lessons:list' %}" class="hover:underline">{% translate "Lessons" %}</a>
+    <span class="mx-2">/</span>
+    <span class="text-slate-700 dark:text-slate-300">{{ lesson.lesson_code }}</span>
+  </nav>
+{% endblock %}
+
+{% block page_actions %}
+  {% can "lessons.change" as may_change %}
+  <a href="{% url 'lessons:day' %}?day={{ lesson.date|date:'Y-m-d' }}" class="btn-secondary">
+    {% icon "calendar-days" "h-4 w-4" %} {% translate "Day view" %}
+  </a>
+  {% if may_change and lesson.is_editable %}
+    <a href="{% url 'lessons:update' lesson.pk %}" class="btn-secondary">
+      {% icon "pencil" "h-4 w-4" %} {% translate "Edit" %}
+    </a>
+    <a href="{% url 'lessons:cancel' lesson.pk %}" class="btn-danger">
+      {% icon "circle-x" "h-4 w-4" %} {% translate "Cancel lesson" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  {% if conflicts %}
+    <div class="alert-error mb-5">
+      <p class="font-semibold">{% translate "This lesson cannot run as scheduled:" %}</p>
+      <ul class="mt-1 list-disc space-y-1 ps-5 text-sm">
+        {% for conflict in conflicts %}<li>{{ conflict }}</li>{% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+  {% if warnings %}
+    <div class="alert-warning mb-5">
+      <p class="font-semibold">{% translate "Worth checking:" %}</p>
+      <ul class="mt-1 list-disc space-y-1 ps-5 text-sm">
+        {% for warning in warnings %}<li>{{ warning }}</li>{% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+  {% if lesson.status == "cancelled" %}
+    <div class="alert-error mb-5">
+      <p class="font-semibold">{% translate "This lesson was cancelled." %}</p>
+      <p class="mt-1 text-sm">{{ lesson.cancellation_reason }}</p>
+      <p class="mt-1 text-xs">{{ lesson.cancelled_at|date:"d.m.Y H:i" }}</p>
+    </div>
+  {% endif %}
+
+  <div class="grid gap-5 lg:grid-cols-3">
+    {# ---------------------------------------------------------- summary #}
+    <div class="space-y-5 lg:col-span-1">
+      <div class="card">
+        <div class="card-header flex items-center justify-between">
+          <h2 class="card-title">{% translate "Lesson" %}</h2>
+          {% status_badge lesson.status lesson.get_status_display %}
+        </div>
+        <div class="card-body">
+          <dl class="space-y-3 text-sm">
+            <div class="flex justify-between gap-4">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Type" %}</dt>
+              <dd class="text-end font-medium text-slate-900 dark:text-slate-100">
+                <span class="inline-block h-2 w-2 rounded-full align-middle"
+                      style="background-color: {{ lesson.lesson_type.colour }}" aria-hidden="true"></span>
+                {{ lesson.lesson_type.name }}
+              </dd>
+            </div>
+            <div class="flex justify-between gap-4">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Level band" %}</dt>
+              <dd class="text-end">{{ lesson.lesson_type.get_min_level_display }} → {{ lesson.lesson_type.get_max_level_display }}</dd>
+            </div>
+            <div class="flex justify-between gap-4">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Duration" %}</dt>
+              <dd class="text-end">{{ lesson.duration_minutes|duration_hm }}</dd>
+            </div>
+            <div class="flex justify-between gap-4">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Instructor" %}</dt>
+              <dd class="text-end">{{ lesson.instructor }}</dd>
+            </div>
+            {% if lesson.assistant_instructors.all %}
+              <div class="flex justify-between gap-4">
+                <dt class="text-slate-500 dark:text-slate-400">{% translate "Assistants" %}</dt>
+                <dd class="text-end">
+                  {% for assistant in lesson.assistant_instructors.all %}{{ assistant }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                </dd>
+              </div>
+            {% endif %}
+            <div class="flex justify-between gap-4">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Seats" %}</dt>
+              <dd class="text-end tabular-nums">{{ lesson.booked_count }} / {{ lesson.capacity }}</dd>
+            </div>
+            <div class="flex justify-between gap-4">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Safety ceiling" %}</dt>
+              <dd class="text-end tabular-nums">
+                {{ lesson.max_students_allowed }}
+                {% if lesson.required_ratio_ok %}
+                  <span class="badge-emerald ms-1">{% translate "Within ratio" %}</span>
+                {% else %}
+                  <span class="badge-rose ms-1">{% translate "Ratio breached" %}</span>
+                {% endif %}
+              </dd>
+            </div>
+            <div class="flex justify-between gap-4">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Price per session" %}</dt>
+              <dd class="text-end tabular-nums">{{ lesson.price|money }}</dd>
+            </div>
+            <div class="flex justify-between gap-4">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Total for this group" %}</dt>
+              <dd class="text-end font-medium tabular-nums">{{ lesson.total_price|money }}</dd>
+            </div>
+          </dl>
+
+          {% if lesson.notes %}
+            <div class="mt-4 rounded-lg bg-slate-50 p-3 text-sm dark:bg-slate-800/60">
+              <p class="mb-1 font-medium text-slate-700 dark:text-slate-200">{% translate "Notes" %}</p>
+              <p class="whitespace-pre-line text-slate-600 dark:text-slate-300">{{ lesson.notes }}</p>
+            </div>
+          {% endif %}
+          {% can "lessons.change" as may_change %}
+          {% if may_change and lesson.internal_notes %}
+            <div class="mt-3 rounded-lg border border-dashed border-slate-300 p-3 text-sm dark:border-slate-600">
+              <p class="mb-1 font-medium text-slate-700 dark:text-slate-200">{% translate "Internal notes" %}</p>
+              <p class="whitespace-pre-line text-slate-600 dark:text-slate-300">{{ lesson.internal_notes }}</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      {# ------------------------------------------------ safety checklist #}
+      <div class="card">
+        <div class="card-header"><h2 class="card-title">{% translate "Safety checklist" %}</h2></div>
+        <div class="card-body space-y-3 text-sm">
+          <div class="flex items-start gap-3">
+            {% if lesson.safety_briefing_done %}
+              <span class="text-emerald-600 dark:text-emerald-400">{% icon "circle-check" "h-5 w-5" %}</span>
+            {% else %}
+              <span class="text-amber-600 dark:text-amber-400">{% icon "circle-alert" "h-5 w-5" %}</span>
+            {% endif %}
+            <div>
+              <p class="font-medium text-slate-900 dark:text-slate-100">{% translate "Safety briefing delivered" %}</p>
+              {% if lesson.safety_briefing_done %}
+                <p class="text-xs text-slate-500 dark:text-slate-400">
+                  {% blocktranslate with who=lesson.safety_checked_by|default:"—" when=lesson.safety_checked_at|date:"d.m.Y H:i" %}Confirmed by {{ who }} on {{ when }}{% endblocktranslate %}
+                </p>
+              {% else %}
+                <p class="text-xs text-slate-500 dark:text-slate-400">
+                  {% translate "Students cannot be checked in until a named staff member confirms it." %}
+                </p>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="flex items-start gap-3">
+            {% if lesson.required_ratio_ok %}
+              <span class="text-emerald-600 dark:text-emerald-400">{% icon "circle-check" "h-5 w-5" %}</span>
+            {% else %}
+              <span class="text-rose-600 dark:text-rose-400">{% icon "triangle-alert" "h-5 w-5" %}</span>
+            {% endif %}
+            <div>
+              <p class="font-medium text-slate-900 dark:text-slate-100">{% translate "Instructor to student ratio" %}</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400">
+                {% blocktranslate with booked=lesson.booked_count allowed=lesson.max_students_allowed staff=lesson.instructor_count %}{{ booked }} students, {{ staff }} instructor(s), ceiling {{ allowed }}{% endblocktranslate %}
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-start gap-3">
+            {% if lesson.conditions_snapshot %}
+              <span class="text-emerald-600 dark:text-emerald-400">{% icon "circle-check" "h-5 w-5" %}</span>
+            {% else %}
+              <span class="text-slate-400">{% icon "circle-alert" "h-5 w-5" %}</span>
+            {% endif %}
+            <div>
+              <p class="font-medium text-slate-900 dark:text-slate-100">{% translate "Surf conditions recorded" %}</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400">
+                {% translate "Frozen at lesson time and never recomputed." %}
+              </p>
+            </div>
+          </div>
+
+          {% can "lessons.change" as may_change %}
+          {% if may_change and lesson.is_editable %}
+            <div class="flex flex-wrap gap-2 pt-2">
+              {% if not lesson.safety_briefing_done %}
+                <form method="post" action="{% url 'lessons:safety_check' lesson.pk %}">
+                  {% csrf_token %}
+                  <button type="submit" class="btn-primary btn-sm">
+                    {% icon "shield-check" "h-4 w-4" %} {% translate "I delivered the briefing" %}
+                  </button>
+                </form>
+              {% endif %}
+              <form method="post" action="{% url 'lessons:capture_conditions' lesson.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn-secondary btn-sm">
+                  {% icon "waves" "h-4 w-4" %} {% translate "Capture conditions" %}
+                </button>
+              </form>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      {# ------------------------------------------ conditions snapshot #}
+      <div class="card">
+        <div class="card-header"><h2 class="card-title">{% translate "Conditions snapshot" %}</h2></div>
+        <div class="card-body">
+          {% if conditions %}
+            <dl class="grid grid-cols-2 gap-3 text-sm">
+              {% for key, value in conditions %}
+                <div>
+                  <dt class="text-xs uppercase text-slate-500 dark:text-slate-400">{{ key|cut:"_"|title }}</dt>
+                  <dd class="font-medium text-slate-900 dark:text-slate-100">{{ value }}</dd>
+                </div>
+              {% endfor %}
+            </dl>
+          {% else %}
+            <p class="text-sm text-slate-500 dark:text-slate-400">
+              {% translate "No conditions have been captured for this lesson yet." %}
+            </p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    {# ------------------------------------------------------------ roster #}
+    <div class="lg:col-span-2">
+      {% include "lessons/partials/roster.html" %}
+    </div>
+  </div>
+{% endblock %}

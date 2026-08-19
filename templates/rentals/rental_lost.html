@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Write off rental" %} {{ rental.rental_code }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Equipment not returned" %} — {{ rental.rental_code }}{% endblock %}
+
+{% block content %}
+  <div class="max-w-xl">
+    <div class="alert-error mb-5">
+      {% icon "triangle-alert" "h-5 w-5 shrink-0" %}
+      <div>
+        <p class="font-semibold">{% translate "This writes the gear off as lost." %}</p>
+        <p>
+          {% translate "The assets below are marked lost, the replacement charge is split across them, and the deposit is applied against it." %}
+        </p>
+      </div>
+    </div>
+
+    <div class="card mb-5">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Still out" %}</h2>
+      </div>
+      <ul class="divide-y divide-slate-100 dark:divide-slate-800">
+        {% for item in open_items %}
+          <li class="flex items-center justify-between px-5 py-3 text-sm">
+            <span>{{ item.equipment }}</span>
+            <span class="tabular-nums text-slate-500 dark:text-slate-400">{{ item.line_total|money }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <form method="post" class="card" novalidate>
+      {% csrf_token %}
+      <div class="card-body space-y-4">
+        {% if form.non_field_errors %}
+          <div class="alert-error">
+            {% icon "triangle-alert" "h-5 w-5 shrink-0" %}
+            <ul>{% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}</ul>
+          </div>
+        {% endif %}
+        {% for field in form %}
+          <div>
+            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}<p class="form-help">{{ field.help_text }}</p>{% endif %}
+            {% for error in field.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+          </div>
+        {% endfor %}
+      </div>
+      <div class="card-body flex justify-end gap-2 border-t border-slate-200 dark:border-slate-700">
+        <a href="{% url 'rentals:detail' rental.pk %}" class="btn-ghost">{% translate "Back" %}</a>
+        <button type="submit" class="btn-danger">
+          {% icon "triangle-alert" "h-4 w-4" %} {% translate "Write off as lost" %}
+        </button>
+      </div>
+    </form>
+  </div>
+{% endblock %}

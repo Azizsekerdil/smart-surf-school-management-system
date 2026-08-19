@@ -1,0 +1,91 @@
+{% load i18n surf_tags %}
+<div id="camp-grid">
+  {% if camps %}
+    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      {% for camp in camps %}
+        <article class="card flex flex-col overflow-hidden">
+          {% if camp.photo %}
+            <img src="{{ camp.photo.url }}" alt="{{ camp.name }}"
+                 class="h-36 w-full object-cover" loading="lazy">
+          {% else %}
+            <div class="flex h-36 w-full items-center justify-center bg-slate-100 text-slate-300 dark:bg-slate-800 dark:text-slate-600">
+              {% icon "tent" "h-10 w-10" %}
+            </div>
+          {% endif %}
+
+          <div class="flex flex-1 flex-col gap-3 p-5">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <a href="{% url 'surf_camps:detail' camp.pk %}"
+                   class="block truncate text-base font-semibold text-slate-900 hover:text-brand-600 dark:text-slate-50">
+                  {{ camp.name }}
+                </a>
+                <p class="mt-0.5 text-xs font-mono text-slate-500 dark:text-slate-400">{{ camp.code }}</p>
+              </div>
+              {% status_badge camp.status camp.get_status_display camp_status_colors %}
+            </div>
+
+            <dl class="space-y-1.5 text-sm text-slate-600 dark:text-slate-300">
+              <div class="flex items-center gap-2">
+                {% icon "calendar-days" "h-4 w-4 shrink-0 text-slate-400" %}
+                <dt class="sr-only">{% translate "Dates" %}</dt>
+                <dd>
+                  {{ camp.start_date|date:"d.m.Y" }} – {{ camp.end_date|date:"d.m.Y" }}
+                  <span class="text-slate-400">·</span>
+                  {% blocktranslate count days=camp.duration_days %}{{ days }} day{% plural %}{{ days }} days{% endblocktranslate %}
+                </dd>
+              </div>
+              <div class="flex items-center gap-2">
+                {% icon "map-pin" "h-4 w-4 shrink-0 text-slate-400" %}
+                <dt class="sr-only">{% translate "Spot" %}</dt>
+                <dd class="truncate">{{ camp.spot }}</dd>
+              </div>
+              <div class="flex items-center gap-2">
+                {% icon "graduation-cap" "h-4 w-4 shrink-0 text-slate-400" %}
+                <dt class="sr-only">{% translate "Level" %}</dt>
+                <dd class="truncate">{{ camp.level_label }}</dd>
+              </div>
+            </dl>
+
+            <div>
+              <div class="mb-1 flex items-center justify-between text-xs font-medium">
+                <span class="text-slate-500 dark:text-slate-400">
+                  {% blocktranslate with booked=camp.booked_count capacity=camp.capacity %}{{ booked }} of {{ capacity }} places{% endblocktranslate %}
+                </span>
+                <span class="{% if camp.places_left == 0 %}text-rose-600 dark:text-rose-400{% else %}text-slate-500 dark:text-slate-400{% endif %}">
+                  {% if camp.places_left == 0 %}
+                    {% translate "Full" %}
+                  {% else %}
+                    {% blocktranslate count left=camp.places_left %}{{ left }} place left{% plural %}{{ left }} places left{% endblocktranslate %}
+                  {% endif %}
+                </span>
+              </div>
+              <div class="h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+                {% widthratio camp.booked_count camp.capacity 100 as fill %}
+                <div class="h-full rounded-full {% if camp.places_left == 0 %}bg-rose-500{% elif camp.places_left <= 3 %}bg-amber-500{% else %}bg-emerald-500{% endif %}"
+                     style="width: {{ fill }}%"></div>
+              </div>
+            </div>
+
+            <div class="mt-auto flex items-center justify-between border-t border-slate-100 pt-3 dark:border-slate-800">
+              <span class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ camp.price|money }}</span>
+              <a href="{% url 'surf_camps:detail' camp.pk %}" class="btn-secondary btn-sm">
+                {% translate "Open" %} {% icon "chevron-right" "h-4 w-4" %}
+              </a>
+            </div>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+
+    {% include "partials/pagination.html" %}
+  {% else %}
+    {% can "surf_camps.add" as may_add %}
+    {% if may_add %}
+      {% url 'surf_camps:create' as create_url %}
+      {% include "partials/empty_state.html" with icon_name="tent" title=_("No camps match this filter") subtitle=_("Create a camp to start selling multi-day packages.") action_url=create_url action_label=_("New camp") %}
+    {% else %}
+      {% include "partials/empty_state.html" with icon_name="tent" title=_("No camps match this filter") subtitle=_("Try a different period or status.") %}
+    {% endif %}
+  {% endif %}
+</div>

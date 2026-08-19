@@ -1,0 +1,115 @@
+{% load i18n surf_tags %}
+{% comment %} Live conditions and the per-level suitability score used for the beach
+   briefing. Scores published by the surf-conditions module win; otherwise they
+   are interpolated from the shared thresholds in apps.core.enums. {% endcomment %}
+<div class="card">
+  <div class="card-header">
+    <h2 class="card-title flex items-center gap-2">{% icon "waves" "h-4 w-4 text-brand-500" %} {% translate "Surf conditions" %}</h2>
+    {% if surf.url %}
+      <a href="{{ surf.url }}" class="btn-ghost btn-sm">{% translate "Details" %} {% icon "chevron-right" "h-4 w-4" %}</a>
+    {% endif %}
+  </div>
+
+  {% if not surf or not surf.available %}
+    <div class="card-body">
+      <p class="text-sm text-slate-500 dark:text-slate-400">
+        {% translate "No condition reading has been recorded yet. Scores appear once the surf-conditions module has an observation for the spot." %}
+      </p>
+    </div>
+  {% else %}
+    <div class="card-body space-y-4">
+
+      <div class="flex flex-wrap items-baseline justify-between gap-2">
+        <p class="text-sm font-medium text-slate-900 dark:text-slate-100">{{ surf.spot }}</p>
+        {% if surf.observed_at %}
+          <p class="text-xs text-slate-400">
+            {% if surf.is_forecast %}
+              {% blocktranslate with when=surf.observed_at|date:"d.m.Y H:i" %}Forecast for {{ when }}{% endblocktranslate %}
+            {% else %}
+              {% blocktranslate with when=surf.observed_at|date:"d.m.Y H:i" %}Measured {{ when }}{% endblocktranslate %}
+            {% endif %}
+            {% if surf.is_stale %} · {% translate "may be out of date" %}{% endif %}
+          </p>
+        {% endif %}
+      </div>
+
+      {# --- raw readings ------------------------------------------------ #}
+      <dl class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div>
+          <dt class="text-xs text-slate-500 dark:text-slate-400">{% translate "Wave height" %}</dt>
+          <dd class="text-sm font-semibold tabular-nums text-slate-900 dark:text-slate-100">
+            {% if surf.wave_height_m %}{{ surf.wave_height_m|floatformat:1 }} m{% else %}—{% endif %}
+          </dd>
+        </div>
+        <div>
+          <dt class="text-xs text-slate-500 dark:text-slate-400">{% translate "Period" %}</dt>
+          <dd class="text-sm font-semibold tabular-nums text-slate-900 dark:text-slate-100">
+            {% if surf.wave_period_s %}{{ surf.wave_period_s|floatformat:0 }} s{% else %}—{% endif %}
+          </dd>
+        </div>
+        <div>
+          <dt class="text-xs text-slate-500 dark:text-slate-400">{% translate "Wind" %}</dt>
+          <dd class="text-sm font-semibold tabular-nums text-slate-900 dark:text-slate-100">
+            {% if surf.wind_speed_kmh %}{{ surf.wind_speed_kmh|floatformat:0 }} km/h{% else %}—{% endif %}
+          </dd>
+        </div>
+        <div>
+          <dt class="text-xs text-slate-500 dark:text-slate-400">{% translate "Water" %}</dt>
+          <dd class="text-sm font-semibold tabular-nums text-slate-900 dark:text-slate-100">
+            {% if surf.water_temp_c %}{{ surf.water_temp_c|floatformat:1 }} °C{% else %}—{% endif %}
+          </dd>
+        </div>
+      </dl>
+
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
+        {% if surf.wind_type_label %}
+          <span class="inline-flex items-center gap-1">{% icon "wind" "h-3.5 w-3.5" %} {{ surf.wind_type_label }}</span>
+        {% endif %}
+        {% if surf.tide_label %}
+          <span class="inline-flex items-center gap-1">{% icon "droplets" "h-3.5 w-3.5" %} {{ surf.tide_label }}</span>
+        {% endif %}
+        {% if surf.wetsuit and surf.water_temp_c %}
+          <span class="inline-flex items-center gap-1">
+            {% icon "thermometer" "h-3.5 w-3.5" %}
+            {% blocktranslate with suit=surf.wetsuit %}Wetsuit: {{ suit }}{% endblocktranslate %}
+          </span>
+        {% endif %}
+      </div>
+
+      {# --- per-level suitability --------------------------------------- #}
+      <div class="space-y-2">
+        {% for level in surf.levels %}
+          <div>
+            <div class="flex items-center justify-between gap-2 text-xs">
+              <span class="font-medium text-slate-700 dark:text-slate-300">{{ level.label }}</span>
+              <span class="tabular-nums
+                           {% if level.tone == 'danger' %}text-rose-600 dark:text-rose-400
+                           {% elif level.tone == 'warning' %}text-amber-600 dark:text-amber-400
+                           {% elif level.tone == 'ok' %}text-emerald-600 dark:text-emerald-400
+                           {% else %}text-slate-400{% endif %}">
+                {% if level.score is None %}—{% else %}{{ level.score }}/100{% endif %}
+              </span>
+            </div>
+            <div class="mt-1 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+              <div class="h-full rounded-full
+                          {% if level.tone == 'danger' %}bg-rose-500
+                          {% elif level.tone == 'warning' %}bg-amber-500
+                          {% elif level.tone == 'ok' %}bg-emerald-500
+                          {% else %}bg-slate-300{% endif %}"
+                   style="width: {{ level.score|default:0 }}%"></div>
+            </div>
+            {% if not level.safe %}
+              <p class="mt-1 flex items-center gap-1 text-xs font-medium text-rose-600 dark:text-rose-400">
+                {% icon "triangle-alert" "h-3 w-3" %} {{ level.reason }}
+              </p>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+
+      <p class="text-xs italic text-slate-400 dark:text-slate-500">
+        {% translate "Suitability is guidance from the recorded thresholds. The instructor on the beach makes the call." %}
+      </p>
+    </div>
+  {% endif %}
+</div>

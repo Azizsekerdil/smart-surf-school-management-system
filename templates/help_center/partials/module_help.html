@@ -1,0 +1,36 @@
+{% load i18n surf_tags %}
+{% comment %} Contextual help panel. Any screen can pull this in:
+   <div hx-get="{% templatetag openblock %} url 'help_center:module' 'bookings' {% templatetag closeblock %}"
+        hx-trigger="load"></div> {% endcomment %}
+<div class="card">
+  <div class="card-header">
+    <h2 class="card-title flex items-center gap-2">
+      {% icon "circle-help" "h-4 w-4" %} {% translate "Help for this screen" %}
+    </h2>
+    <a href="{% url 'help_center:home' %}" class="text-xs text-brand-600 hover:underline dark:text-brand-400">
+      {% translate "All help" %}
+    </a>
+  </div>
+  <div class="card-body">
+    {% if articles %}
+      <ul class="space-y-1">
+        {% for article in articles %}
+          <li>
+            <a href="{{ article.get_absolute_url }}"
+               class="flex items-start gap-2 rounded-lg px-2 py-1.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-brand-600 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-brand-400">
+              <span class="mt-0.5 shrink-0 text-slate-400">{% icon "file-text" "h-4 w-4" %}</span>
+              <span class="min-w-0">{{ article.title }}</span>
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="text-sm text-slate-500 dark:text-slate-400">
+        {% translate "No article covers this screen yet." %}
+        <a href="{% url 'help_center:search' %}" class="text-brand-600 hover:underline dark:text-brand-400">
+          {% translate "Search the manual" %}
+        </a>
+      </p>
+    {% endif %}
+  </div>
+</div>

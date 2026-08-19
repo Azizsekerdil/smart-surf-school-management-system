@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ plan.title }} · {% translate "Evacuation plans" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ plan.title }}{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="no-print mb-3 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'safety:dashboard' %}" class="hover:underline">{% translate "Safety" %}</a>
+    <span class="mx-1">/</span>
+    <a href="{% url 'safety:plan_list' %}" class="hover:underline">{% translate "Evacuation plans" %}</a>
+    <span class="mx-1">/</span>
+    <span class="text-slate-700 dark:text-slate-300">{{ plan.title }}</span>
+  </nav>
+{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+    <span>{{ plan.spot.name }}</span>
+    <span>·</span>
+    <span>{{ plan.get_responsible_role_display }}</span>
+    {% if not plan.is_active %}<span class="badge-slate">{% translate "Inactive" %}</span>{% endif %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <button type="button" onclick="window.print()" class="btn-secondary no-print">
+    {% icon "printer" "h-4 w-4" %} {% translate "Print" %}
+  </button>
+  {% can "safety.change" as may_change %}
+  {% if may_change %}
+    <a href="{% url 'safety:plan_update' plan.pk %}" class="btn-primary no-print">
+      {% icon "pencil" "h-4 w-4" %} {% translate "Edit" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+
+  {% if plan.is_drill_overdue %}
+    <div class="alert-error mb-5">
+      {% icon "triangle-alert" "h-5 w-5 shrink-0" %}
+      <p>{% blocktranslate with due=plan.next_drill_due|date:"d.m.Y" %}The drill for this plan was due on {{ due }}.{% endblocktranslate %}</p>
+    </div>
+  {% elif plan.has_never_been_drilled %}
+    <div class="alert-warning mb-5">
+      {% icon "circle-alert" "h-5 w-5 shrink-0" %}
+      <p>{% translate "This plan has never been drilled. Until it has, nobody knows whether it works." %}</p>
+    </div>
+  {% endif %}
+
+  <div class="grid gap-5 lg:grid-cols-3">
+    <div class="space-y-5 lg:col-span-2">
+
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">
+            {% icon "zap" "inline h-4 w-4 text-amber-500" %} {% translate "When this plan starts" %}
+          </h2>
+        </div>
+        <div class="card-body">
+          <p class="whitespace-pre-line text-sm text-slate-700 dark:text-slate-300">{{ plan.trigger_conditions }}</p>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">
+            {% icon "list-checks" "inline h-4 w-4 text-brand-500" %} {% translate "Steps" %}
+          </h2>
+          <span class="text-xs text-slate-500 dark:text-slate-400">
+            {% blocktranslate count counter=plan.step_count %}{{ counter }} step{% plural %}{{ counter }} steps{% endblocktranslate %}
+          </span>
+        </div>
+        <div class="card-body">
+          <ol class="space-y-2">
+            {% for step in plan.step_list %}
+              <li class="flex gap-3">
+                <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-50 text-xs font-semibold text-brand-700 dark:bg-brand-500/15 dark:text-brand-300">
+                  {{ forloop.counter }}
+                </span>
+                <span class="text-sm text-slate-700 dark:text-slate-300">{{ step }}</span>
+              </li>
+            {% endfor %}
+          </ol>
+        </div>
+      </section>
+    </div>
+
+    <div class="space-y-5">
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">{% translate "Assembly point" %}</h2>
+        </div>
+        <div class="card-body">
+          <p class="text-lg font-semibold text-slate-900 dark:text-slate-100">{{ plan.assembly_point }}</p>
+          <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            {% translate "Everyone is counted here. Nobody leaves before the count is complete." %}
+          </p>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">{% translate "Drills" %}</h2>
+        </div>
+        <div class="card-body">
+          <dl class="space-y-2 text-sm">
+            <div class="flex justify-between gap-3">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Last drill" %}</dt>
+              <dd class="text-slate-800 dark:text-slate-200">{{ plan.last_drill_date|date:"d.m.Y"|default:"—" }}</dd>
+            </div>
+            <div class="flex justify-between gap-3">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Next due" %}</dt>
+              <dd class="text-slate-800 dark:text-slate-200">{{ plan.next_drill_due|date:"d.m.Y"|default:"—" }}</dd>
+            </div>
+          </dl>
+          {% if plan.document %}
+            <a href="{{ plan.document.url }}" class="btn-secondary btn-sm mt-3" target="_blank" rel="noopener noreferrer">
+              {% icon "file-text" "h-4 w-4" %} {% translate "Signed document" %}
+            </a>
+          {% endif %}
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">
+            {% icon "life-buoy" "inline h-4 w-4 text-rose-500" %} {% translate "Emergency contacts" %}
+          </h2>
+        </div>
+        <div class="card-body space-y-2">
+          {% for contact in contacts %}
+            <div class="flex items-center justify-between gap-3">
+              <span class="min-w-0 truncate text-sm text-slate-700 dark:text-slate-300">{{ contact.name }}</span>
+              <a href="tel:{{ contact.phone }}" class="shrink-0 text-sm font-medium text-brand-600 hover:underline dark:text-brand-400">
+                {{ contact.phone }}
+              </a>
+            </div>
+          {% empty %}
+            <p class="text-sm text-amber-600 dark:text-amber-400">{% translate "No emergency contacts on file." %}</p>
+          {% endfor %}
+        </div>
+      </section>
+    </div>
+  </div>
+{% endblock %}

@@ -1,0 +1,486 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ instructor.full_name }} · {% translate "Instructors" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ instructor.full_name }}{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-3 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'instructors:list' %}" class="hover:text-brand-700 dark:hover:text-brand-300">{% translate "Instructors" %}</a>
+    <span class="mx-1">/</span>
+    <span class="text-slate-700 dark:text-slate-300">{{ instructor.instructor_code }}</span>
+  </nav>
+{% endblock %}
+
+{% block page_subtitle %}
+  <div class="mt-1 flex flex-wrap items-center gap-2">
+    {% status_badge instructor.max_level_taught instructor.get_max_level_taught_display level_colors %}
+    {% if not instructor.is_active %}
+      <span class="badge-slate">{% translate "Inactive" %}</span>
+    {% elif instructor.is_available_for_booking %}
+      <span class="badge-emerald">{% translate "Open for bookings" %}</span>
+    {% else %}
+      <span class="badge-amber">{% translate "Not bookable" %}</span>
+    {% endif %}
+    {% if instructor.has_valid_certifications %}
+      <span class="badge-emerald">{% translate "Certifications current" %}</span>
+    {% else %}
+      <span class="badge-rose">{% translate "Certification incomplete" %}</span>
+    {% endif %}
+    <span class="text-sm text-slate-500 dark:text-slate-400">{{ instructor.instructor_code }}</span>
+  </div>
+{% endblock %}
+
+{% block page_actions %}
+  {% can "instructors.change" as may_change %}
+  {% can "instructors.add" as may_add %}
+  {% can "instructors.delete" as may_delete %}
+  {% if may_change %}
+    <form method="post" action="{% url 'instructors:toggle_booking' instructor.pk %}" class="inline">
+      {% csrf_token %}
+      <input type="hidden" name="available" value="{% if instructor.is_available_for_booking %}0{% else %}1{% endif %}">
+      <button type="submit" class="btn-secondary">
+        {% if instructor.is_available_for_booking %}
+          {% icon "circle-x" "h-4 w-4" %} {% translate "Withdraw from bookings" %}
+        {% else %}
+          {% icon "circle-check" "h-4 w-4" %} {% translate "Open for bookings" %}
+        {% endif %}
+      </button>
+    </form>
+    <a href="{% url 'instructors:availability_editor' instructor.pk %}" class="btn-secondary">
+      {% icon "calendar-days" "h-4 w-4" %} {% translate "Availability" %}
+    </a>
+    <a href="{% url 'instructors:update' instructor.pk %}" class="btn-primary">
+      {% icon "pencil" "h-4 w-4" %} {% translate "Edit" %}
+    </a>
+  {% endif %}
+  {% if may_delete %}
+    <a href="{% url 'instructors:delete' instructor.pk %}" class="btn-ghost text-rose-600 dark:text-rose-400">
+      {% icon "trash-2" "h-4 w-4" %} {% translate "Delete" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  {# Capability flags are block-scoped, so they are declared once per block. #}
+  {% can "instructors.change" as may_change %}
+  {% can "instructors.add" as may_add %}
+  {% can "instructors.delete" as may_delete %}
+  {% can "instructors.approve" as may_approve %}
+  {% can "instructors.view_commission" as may_see_pay %}
+
+  {% if blockers %}
+    <div class="alert-error mb-5">
+      <span class="mt-0.5 shrink-0">{% icon "shield-alert" "h-5 w-5" %}</span>
+      <div class="flex-1">
+        <p class="font-semibold">{% translate "This instructor must not be assigned to lessons" %}</p>
+        <ul class="mt-1 list-disc space-y-0.5 ps-5">
+          {% for blocker in blockers %}<li>{{ blocker }}</li>{% endfor %}
+        </ul>
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="grid gap-5 lg:grid-cols-3">
+
+    {# ------------------------------------------------------------ left #}
+    <div class="space-y-5 lg:col-span-2">
+
+      {# --- profile --- #}
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">{% translate "Profile" %}</h2>
+        </div>
+        <div class="card-body flex flex-col gap-5 sm:flex-row">
+          {% if instructor.photo %}
+            <img src="{{ instructor.photo.url }}" alt="{{ instructor.full_name }}"
+                 class="h-28 w-28 shrink-0 rounded-xl object-cover">
+          {% else %}
+            <span class="flex h-28 w-28 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-2xl font-semibold text-brand-700 dark:bg-brand-500/10 dark:text-brand-300">
+              {{ instructor.initials }}
+            </span>
+          {% endif %}
+          <div class="min-w-0 flex-1">
+            {% if instructor.bio %}
+              <p class="text-sm text-slate-600 dark:text-slate-300">{{ instructor.bio|linebreaksbr }}</p>
+            {% else %}
+              <p class="text-sm italic text-slate-400">{% translate "No biography recorded." %}</p>
+            {% endif %}
+
+            <dl class="mt-4 grid gap-x-6 gap-y-3 sm:grid-cols-2">
+              <div>
+                <dt class="text-xs uppercase tracking-wide text-slate-400">{% translate "E-mail" %}</dt>
+                <dd class="text-sm text-slate-700 dark:text-slate-300">{{ instructor.user.email|default:"—" }}</dd>
+              </div>
+              <div>
+                <dt class="text-xs uppercase tracking-wide text-slate-400">{% translate "Phone" %}</dt>
+                <dd class="text-sm text-slate-700 dark:text-slate-300">{{ instructor.user.phone|default:"—" }}</dd>
+              </div>
+              <div>
+                <dt class="text-xs uppercase tracking-wide text-slate-400">{% translate "Hire date" %}</dt>
+                <dd class="text-sm text-slate-700 dark:text-slate-300">{{ instructor.hire_date|date:"d.m.Y"|default:"—" }}</dd>
+              </div>
+              <div>
+                <dt class="text-xs uppercase tracking-wide text-slate-400">{% translate "Maximum group size" %}</dt>
+                <dd class="text-sm text-slate-700 dark:text-slate-300">1:{{ instructor.max_students_per_lesson }}</dd>
+              </div>
+              <div>
+                <dt class="text-xs uppercase tracking-wide text-slate-400">{% translate "Languages" %}</dt>
+                <dd class="flex flex-wrap gap-1.5">
+                  {% for code in instructor.languages %}<span class="badge-slate">{{ code|upper }}</span>{% empty %}—{% endfor %}
+                </dd>
+              </div>
+              <div>
+                <dt class="text-xs uppercase tracking-wide text-slate-400">{% translate "Specialties" %}</dt>
+                <dd class="flex flex-wrap gap-1.5">
+                  {% for specialty in instructor.specialties %}<span class="badge-slate">{{ specialty }}</span>{% empty %}—{% endfor %}
+                </dd>
+              </div>
+              <div>
+                <dt class="text-xs uppercase tracking-wide text-slate-400">{% translate "Emergency contact" %}</dt>
+                <dd class="text-sm text-slate-700 dark:text-slate-300">
+                  {{ instructor.emergency_contact_name|default:"—" }}
+                  {% if instructor.emergency_contact_phone %}
+                    <span class="text-slate-500">· {{ instructor.emergency_contact_phone }}</span>
+                  {% endif %}
+                </dd>
+              </div>
+              {% if may_see_pay %}
+                <div>
+                  <dt class="text-xs uppercase tracking-wide text-slate-400">{% translate "Pay" %}</dt>
+                  <dd class="text-sm text-slate-700 dark:text-slate-300">
+                    {{ instructor.hourly_rate|money }} / {% translate "hour" %}
+                    <span class="text-slate-500">· {{ instructor.commission_percent }}% {% translate "commission" %}</span>
+                  </dd>
+                </div>
+              {% endif %}
+            </dl>
+          </div>
+        </div>
+      </section>
+
+      {# --- certifications --- #}
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">{% translate "Certifications" %}</h2>
+          {% if may_change %}
+            <a href="{% url 'instructors:certification_create' instructor.pk %}" class="btn-secondary btn-sm">
+              {% icon "plus" "h-4 w-4" %} {% translate "Add" %}
+            </a>
+          {% endif %}
+        </div>
+
+        {% if certification_summary.missing_groups %}
+          <div class="border-b border-slate-200 px-5 py-3 dark:border-slate-700">
+            <p class="text-sm text-rose-600 dark:text-rose-400">
+              {% translate "Missing or expired:" %}
+              {% for group in certification_summary.missing_groups %}{{ group }}{% if not forloop.last %}, {% endif %}{% endfor %}
+            </p>
+          </div>
+        {% endif %}
+
+        {% if certifications %}
+          <div class="table-wrap border-0">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>{% translate "Certificate" %}</th>
+                  <th>{% translate "Issuing body" %}</th>
+                  <th>{% translate "Issued" %}</th>
+                  <th>{% translate "Expires" %}</th>
+                  <th>{% translate "State" %}</th>
+                  <th class="text-end">{% translate "Actions" %}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for certification in certifications %}
+                  <tr>
+                    <td>
+                      <p class="font-medium text-slate-900 dark:text-slate-100">{{ certification.name }}</p>
+                      <p class="text-xs text-slate-500">{{ certification.get_kind_display }}{% if certification.certificate_number %} · {{ certification.certificate_number }}{% endif %}</p>
+                    </td>
+                    <td>{{ certification.issuing_body|default:"—" }}</td>
+                    <td class="whitespace-nowrap tabular-nums">{{ certification.issued_on|date:"d.m.Y" }}</td>
+                    <td class="whitespace-nowrap tabular-nums">
+                      {% if certification.expires_on %}
+                        {{ certification.expires_on|date:"d.m.Y" }}
+                        {% if certification.days_until_expiry >= 0 %}
+                          <span class="block text-xs text-slate-500">
+                            {% blocktranslate count counter=certification.days_until_expiry %}{{ counter }} day left{% plural %}{{ counter }} days left{% endblocktranslate %}
+                          </span>
+                        {% endif %}
+                      {% else %}
+                        {% translate "No expiry" %}
+                      {% endif %}
+                    </td>
+                    <td>{% status_badge certification.status certification.status_label cert_status_colors %}</td>
+                    <td class="text-end">
+                      <div class="flex justify-end gap-1">
+                        {% if certification.document %}
+                          <a href="{{ certification.document.url }}" class="btn-ghost btn-sm" target="_blank" rel="noopener">
+                            {% icon "file-text" "h-4 w-4" %}<span class="sr-only">{% translate "Evidence" %}</span>
+                          </a>
+                        {% endif %}
+                        {% if may_approve and not certification.is_verified and not certification.is_expired %}
+                          <form method="post" action="{% url 'instructors:certification_verify' certification.pk %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-ghost btn-sm text-emerald-600 dark:text-emerald-400">
+                              {% icon "check" "h-4 w-4" %} {% translate "Verify" %}
+                            </button>
+                          </form>
+                        {% endif %}
+                        {% if may_change %}
+                          <a href="{% url 'instructors:certification_update' certification.pk %}" class="btn-ghost btn-sm">
+                            {% icon "pencil" "h-4 w-4" %}<span class="sr-only">{% translate "Edit" %}</span>
+                          </a>
+                        {% endif %}
+                        {% if may_delete %}
+                          <form method="post" action="{% url 'instructors:certification_delete' certification.pk %}"
+                                onsubmit="return confirm('{% translate "Remove this certification?" %}');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-ghost btn-sm text-rose-600 dark:text-rose-400">
+                              {% icon "trash-2" "h-4 w-4" %}<span class="sr-only">{% translate "Delete" %}</span>
+                            </button>
+                          </form>
+                        {% endif %}
+                      </div>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="card-body">
+            {% include "partials/empty_state.html" with icon_name="shield-check" title=_("No certifications recorded") subtitle=_("A coach may not be assigned to lessons until their awards are on file.") %}
+          </div>
+        {% endif %}
+      </section>
+
+      {# --- weekly availability --- #}
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">{% translate "Weekly availability" %}</h2>
+          {% if may_change %}
+            <a href="{% url 'instructors:availability_editor' instructor.pk %}" class="btn-secondary btn-sm">
+              {% icon "pencil" "h-4 w-4" %} {% translate "Edit" %}
+            </a>
+          {% endif %}
+        </div>
+        <div class="card-body">
+          <div class="grid gap-2 sm:grid-cols-7">
+            {% for day in week %}
+              <div class="rounded-lg border border-slate-200 p-2 dark:border-slate-700">
+                <p class="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">{{ day.label|truncatechars:4 }}</p>
+                {% for slot in day.slots %}
+                  <p class="mb-1 rounded px-1.5 py-1 text-xs tabular-nums {% if slot.is_active %}bg-brand-50 text-brand-700 dark:bg-brand-500/10 dark:text-brand-300{% else %}bg-slate-100 text-slate-400 line-through dark:bg-slate-800{% endif %}">
+                    {{ slot.start_time|time:"H:i" }}–{{ slot.end_time|time:"H:i" }}
+                  </p>
+                {% empty %}
+                  <p class="text-xs text-slate-400">—</p>
+                {% endfor %}
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      </section>
+
+      {# --- upcoming lessons --- #}
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">{% translate "Upcoming lessons" %}</h2>
+        </div>
+        {% if upcoming_lessons %}
+          <ul class="divide-y divide-slate-100 dark:divide-slate-800">
+            {% for lesson in upcoming_lessons %}
+              <li class="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
+                <div class="min-w-0">
+                  <p class="truncate text-sm font-medium text-slate-900 dark:text-slate-100">
+                    {% if lesson.url %}<a href="{{ lesson.url }}" class="hover:text-brand-700">{{ lesson.label }}</a>{% else %}{{ lesson.label }}{% endif %}
+                  </p>
+                  <p class="text-xs text-slate-500 tabular-nums">
+                    {{ lesson.date|date:"d.m.Y" }}
+                    {% if lesson.start_time %}· {{ lesson.start_time|time:"H:i" }}{% if lesson.end_time %}–{{ lesson.end_time|time:"H:i" }}{% endif %}{% endif %}
+                  </p>
+                </div>
+                {% if lesson.status %}{% status_badge lesson.status %}{% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <div class="card-body">
+            {% include "partials/empty_state.html" with icon_name="calendar-days" title=_("No upcoming lessons") subtitle=_("Nothing is scheduled for this instructor yet.") %}
+          </div>
+        {% endif %}
+      </section>
+    </div>
+
+    {# ----------------------------------------------------------- right #}
+    <div class="space-y-5">
+
+      {# --- statistics --- #}
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">{% translate "At a glance" %}</h2>
+        </div>
+        <div class="card-body grid grid-cols-2 gap-4">
+          <div>
+            <p class="stat-label">{% translate "Rating" %}</p>
+            <p class="stat-value">
+              {% if instructor.rating_count %}{{ instructor.rating_average }}{% else %}—{% endif %}
+            </p>
+            <p class="text-xs text-slate-500">
+              {% blocktranslate count counter=instructor.rating_count %}{{ counter }} rating{% plural %}{{ counter }} ratings{% endblocktranslate %}
+            </p>
+          </div>
+          <div>
+            <p class="stat-label">{% translate "Lessons taught" %}</p>
+            <p class="stat-value">{{ instructor.total_lessons_taught }}</p>
+          </div>
+          <div>
+            <p class="stat-label">{% translate "Certifications" %}</p>
+            <p class="stat-value">{{ certification_summary.verified }}<span class="text-base text-slate-400">/{{ certification_summary.total }}</span></p>
+            <p class="text-xs text-slate-500">{% translate "verified" %}</p>
+          </div>
+          <div>
+            <p class="stat-label">{% translate "Expiring soon" %}</p>
+            <p class="stat-value {% if certification_summary.expiring or certification_summary.expired %}text-amber-600 dark:text-amber-400{% endif %}">
+              {{ certification_summary.expiring }}
+            </p>
+            {% if certification_summary.expired %}
+              <p class="text-xs text-rose-600 dark:text-rose-400">
+                {% blocktranslate count counter=certification_summary.expired %}{{ counter }} expired{% plural %}{{ counter }} expired{% endblocktranslate %}
+              </p>
+            {% endif %}
+          </div>
+        </div>
+      </section>
+
+      {# --- performance --- #}
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">{% translate "Performance" %}</h2>
+          <span class="text-xs text-slate-500">
+            {% blocktranslate with days=performance_days %}last {{ days }} days{% endblocktranslate %}
+          </span>
+        </div>
+        <div class="card-body space-y-3 text-sm">
+          <div class="flex items-center justify-between">
+            <span class="text-slate-500">{% translate "Lessons taught" %}</span>
+            <span class="font-medium tabular-nums text-slate-900 dark:text-slate-100">{{ performance.lessons_taught }}</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-slate-500">{% translate "Students taught" %}</span>
+            <span class="font-medium tabular-nums text-slate-900 dark:text-slate-100">{{ performance.students_taught }}</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-slate-500">{% translate "Cancelled" %}</span>
+            <span class="font-medium tabular-nums text-slate-900 dark:text-slate-100">{{ performance.lessons_cancelled }}</span>
+          </div>
+          {% if may_see_pay %}
+            <div class="flex items-center justify-between border-t border-slate-100 pt-3 dark:border-slate-800">
+              <span class="text-slate-500">{% translate "Revenue generated" %}</span>
+              <span class="font-medium tabular-nums text-slate-900 dark:text-slate-100">{{ performance.revenue_generated|money }}</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-slate-500">
+                {% translate "Commission" %}
+                {% if performance.is_estimated_commission %}
+                  <span class="badge-slate ms-1">{% translate "estimate" %}</span>
+                {% endif %}
+              </span>
+              <span class="font-medium tabular-nums text-slate-900 dark:text-slate-100">{{ performance.commission_earned|money }}</span>
+            </div>
+          {% endif %}
+          <div class="flex items-center justify-between border-t border-slate-100 pt-3 dark:border-slate-800">
+            <span class="text-slate-500">{% translate "Review average" %}</span>
+            <span class="font-medium tabular-nums text-slate-900 dark:text-slate-100">
+              {% if performance.review_count %}{{ performance.review_average }}{% else %}—{% endif %}
+            </span>
+          </div>
+        </div>
+      </section>
+
+      {# --- time off --- #}
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">{% translate "Time off" %}</h2>
+          {% if may_add %}
+            <a href="{% url 'instructors:timeoff_create' instructor.pk %}" class="btn-secondary btn-sm">
+              {% icon "plus" "h-4 w-4" %} {% translate "Request" %}
+            </a>
+          {% endif %}
+        </div>
+        {% if time_off_periods %}
+          <ul class="divide-y divide-slate-100 dark:divide-slate-800">
+            {% for period in time_off_periods %}
+              <li class="px-5 py-3">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <p class="text-sm tabular-nums text-slate-900 dark:text-slate-100">
+                    {{ period.start_date|date:"d.m.Y" }} – {{ period.end_date|date:"d.m.Y" }}
+                  </p>
+                  {% if period.is_approved %}
+                    <span class="badge-emerald">{% translate "Approved" %}</span>
+                  {% else %}
+                    <span class="badge-amber">{% translate "Pending" %}</span>
+                  {% endif %}
+                </div>
+                <p class="mt-0.5 text-xs text-slate-500">
+                  {{ period.get_reason_display }} · {% blocktranslate count counter=period.total_days %}{{ counter }} day{% plural %}{{ counter }} days{% endblocktranslate %}
+                </p>
+                {% if period.note %}<p class="mt-1 text-xs text-slate-500">{{ period.note }}</p>{% endif %}
+                {% if may_approve and not period.is_approved %}
+                  <form method="post" action="{% url 'instructors:timeoff_approve' period.pk %}" class="mt-2">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <button type="submit" class="btn-secondary btn-sm">
+                      {% icon "check" "h-4 w-4" %} {% translate "Approve" %}
+                    </button>
+                  </form>
+                {% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <div class="card-body">
+            <p class="text-sm text-slate-500 dark:text-slate-400">{% translate "No absence recorded." %}</p>
+          </div>
+        {% endif %}
+      </section>
+
+      {# --- reviews --- #}
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">{% translate "Performance reviews" %}</h2>
+          {% if may_change %}
+            <a href="{% url 'instructors:review_create' instructor.pk %}" class="btn-secondary btn-sm">
+              {% icon "plus" "h-4 w-4" %} {% translate "New" %}
+            </a>
+          {% endif %}
+        </div>
+        {% if reviews %}
+          <ul class="divide-y divide-slate-100 dark:divide-slate-800">
+            {% for review in reviews %}
+              <li class="px-5 py-3">
+                <div class="flex items-center justify-between gap-2">
+                  <p class="text-sm tabular-nums text-slate-700 dark:text-slate-300">
+                    {{ review.period_start|date:"d.m.Y" }} – {{ review.period_end|date:"d.m.Y" }}
+                  </p>
+                  <span class="badge-sky">{{ review.overall_score }} / 5</span>
+                </div>
+                <p class="mt-0.5 text-xs text-slate-500">
+                  {% blocktranslate with name=review.reviewer.get_display_name %}Reviewed by {{ name }}{% endblocktranslate %}
+                </p>
+                {% if review.strengths %}<p class="mt-1 text-xs text-slate-500">{{ review.strengths|truncatechars:120 }}</p>{% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <div class="card-body">
+            <p class="text-sm text-slate-500 dark:text-slate-400">{% translate "No reviews yet." %}</p>
+          </div>
+        {% endif %}
+      </section>
+    </div>
+  </div>
+{% endblock %}

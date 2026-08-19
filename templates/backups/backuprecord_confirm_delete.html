@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Delete backup" %} {{ backup.backup_code }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Delete this backup" %}{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-3 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'backups:list' %}" class="hover:underline">{% translate "Backup & Restore" %}</a>
+    <span class="mx-1">/</span>
+    <a href="{% url 'backups:detail' backup.pk %}" class="hover:underline">{{ backup.backup_code }}</a>
+    <span class="mx-1">/</span>
+    <span class="text-slate-700 dark:text-slate-300">{% translate "Delete" %}</span>
+  </nav>
+{% endblock %}
+
+{% block content %}
+  <div class="mx-auto max-w-2xl">
+    {% if can_be_deleted %}
+      <div class="alert-warning mb-5">
+        {% icon "triangle-alert" "h-5 w-5 shrink-0" %}
+        <p>
+          {% blocktranslate with size=backup.size_display %}The file is removed from the backup volume and {{ size }} is reclaimed. The record of the backup is kept, so the history stays complete.{% endblocktranslate %}
+        </p>
+      </div>
+    {% else %}
+      <div class="alert-error mb-5">
+        {% icon "lock" "h-5 w-5 shrink-0" %}
+        <div>
+          <p class="font-semibold">{% translate "This backup cannot be deleted." %}</p>
+          <p class="mt-1">{{ delete_block_reason }}</p>
+        </div>
+      </div>
+    {% endif %}
+
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">{{ backup.backup_code }}</h2>
+        {% status_badge backup.status backup.get_status_display status_colors %}
+      </div>
+      <div class="card-body">
+        <dl class="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+          <div>
+            <dt class="stat-label">{% translate "Taken" %}</dt>
+            <dd class="mt-0.5 text-sm text-slate-900 dark:text-slate-100">{{ backup.created_at|date:"d.m.Y H:i" }}</dd>
+          </div>
+          <div>
+            <dt class="stat-label">{% translate "Scope" %}</dt>
+            <dd class="mt-0.5 text-sm text-slate-900 dark:text-slate-100">{{ backup.get_scope_display }}</dd>
+          </div>
+          <div>
+            <dt class="stat-label">{% translate "Size" %}</dt>
+            <dd class="mt-0.5 text-sm tabular-nums text-slate-900 dark:text-slate-100">{{ backup.size_display }}</dd>
+          </div>
+          <div>
+            <dt class="stat-label">{% translate "Age" %}</dt>
+            <dd class="mt-0.5 text-sm text-slate-900 dark:text-slate-100">
+              {% blocktranslate with days=backup.age_days %}{{ days }} day(s){% endblocktranslate %}
+            </dd>
+          </div>
+        </dl>
+
+        <div class="mt-5 flex flex-wrap items-center justify-end gap-2">
+          <a href="{% url 'backups:detail' backup.pk %}" class="btn-secondary">
+            {% translate "Cancel" %}
+          </a>
+          {% if can_be_deleted %}
+            <form method="post" class="inline">
+              {% csrf_token %}
+              <button type="submit" class="btn-danger">
+                {% icon "trash-2" "h-4 w-4" %} {% translate "Delete this backup" %}
+              </button>
+            </form>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

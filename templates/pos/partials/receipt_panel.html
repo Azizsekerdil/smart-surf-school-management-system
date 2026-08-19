@@ -1,0 +1,75 @@
+{% load i18n surf_tags %}
+{# Shown in place of the cart the moment a sale completes. #}
+<div class="space-y-3">
+  <div class="card border-emerald-300 dark:border-emerald-500/40">
+    <div class="card-header bg-emerald-50 dark:bg-emerald-500/10">
+      <h2 class="card-title text-emerald-800 dark:text-emerald-200">
+        {% icon "circle-check" "inline h-5 w-5" %} {% translate "Sale completed" %}
+      </h2>
+      <span class="font-mono text-sm text-emerald-700 dark:text-emerald-300">{{ sale.sale_number }}</span>
+    </div>
+
+    <div class="card-body space-y-3">
+      <dl class="space-y-1.5 text-sm">
+        {% for item in sale.items.all %}
+          <div class="flex items-start justify-between gap-2">
+            <dt class="min-w-0 text-slate-600 dark:text-slate-400">
+              <span class="tabular-nums">{{ item.quantity|floatformat:'-2' }}×</span> {{ item.product.name }}
+            </dt>
+            <dd class="shrink-0 tabular-nums text-slate-900 dark:text-slate-100">{{ item.line_total|money }}</dd>
+          </div>
+        {% endfor %}
+      </dl>
+
+      <div class="space-y-1.5 border-t border-slate-200 pt-3 text-sm dark:border-slate-700">
+        <div class="flex justify-between gap-2">
+          <span class="text-slate-500 dark:text-slate-400">{% translate "Subtotal" %}</span>
+          <span class="tabular-nums">{{ sale.subtotal|money }}</span>
+        </div>
+        {% if sale.discount_amount %}
+          <div class="flex justify-between gap-2 text-emerald-600 dark:text-emerald-400">
+            <span>{% translate "Discount" %}</span>
+            <span class="tabular-nums">−{{ sale.discount_amount|money }}</span>
+          </div>
+        {% endif %}
+        <div class="flex justify-between gap-2 text-base font-semibold">
+          <span>{% translate "Total" %}</span>
+          <span class="tabular-nums">{{ sale.total_amount|money }}</span>
+        </div>
+        <div class="flex justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
+          <span>{% translate "Includes tax" %}</span>
+          <span class="tabular-nums">{{ sale.tax_amount|money }}</span>
+        </div>
+      </div>
+
+      <div class="space-y-1.5 border-t border-slate-200 pt-3 text-sm dark:border-slate-700">
+        <div class="flex justify-between gap-2">
+          <span class="text-slate-500 dark:text-slate-400">{{ sale.get_payment_method_display }}</span>
+          <span class="tabular-nums">{{ sale.paid_amount|money }}</span>
+        </div>
+        {% if sale.change_given %}
+          <div class="flex justify-between gap-2 text-base font-semibold text-amber-700 dark:text-amber-300">
+            <span>{% translate "Change to give" %}</span>
+            <span class="tabular-nums">{{ sale.change_given|money }}</span>
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="flex flex-wrap gap-2 pt-1">
+        <a href="{% url 'pos:receipt' sale.pk %}" target="_blank" rel="noopener" class="btn-primary flex-1">
+          {% icon "printer" "h-4 w-4" %} {% translate "Print receipt" %}
+        </a>
+        {% can "pos.view" as may_view %}
+        {% if may_view %}
+          <a href="{% url 'pos:detail' sale.pk %}" class="btn-secondary">
+            {% icon "eye" "h-4 w-4" %} {% translate "Open" %}
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div id="pos-cart-next">
+    {% include "pos/partials/cart.html" %}
+  </div>
+</div>

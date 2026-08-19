@@ -1,0 +1,92 @@
+{% load i18n surf_tags %}
+{% comment %} Live go / no-go panel for one spot. Other modules pull this in over HTMX:
+   hx-get="{% url 'safety:spot_panel' spot.pk %}?level=beginner" {% endcomment %}
+<section class="card" aria-labelledby="safety-panel-heading">
+  <div class="card-header">
+    <h2 class="card-title" id="safety-panel-heading">
+      {% icon "shield-check" "inline h-4 w-4 text-brand-500" %}
+      {% blocktranslate with level=level_label %}Safety check — {{ level }}{% endblocktranslate %}
+    </h2>
+    <a href="{% url 'safety:dashboard' %}" class="btn-ghost btn-sm">{% translate "Safety" %}</a>
+  </div>
+
+  <div class="card-body space-y-4">
+    {% if verdict.blocking %}
+      <div class="alert-error">
+        {% icon "shield-alert" "h-5 w-5 shrink-0" %}
+        <div>
+          <p class="font-semibold">{% translate "Do not put a group in the water here." %}</p>
+          <ul class="mt-1 list-disc space-y-0.5 ps-5">
+            {% for reason in verdict.blocking %}<li>{{ reason }}</li>{% endfor %}
+          </ul>
+        </div>
+      </div>
+    {% elif verdict.warnings %}
+      <div class="alert-warning">
+        {% icon "circle-alert" "h-5 w-5 shrink-0" %}
+        <div>
+          <p class="font-semibold">{% translate "Usable, with these points briefed" %}</p>
+          <ul class="mt-1 list-disc space-y-0.5 ps-5">
+            {% for reason in verdict.warnings %}<li>{{ reason }}</li>{% endfor %}
+          </ul>
+        </div>
+      </div>
+    {% else %}
+      <div class="alert-success">
+        {% icon "circle-check" "h-5 w-5 shrink-0" %}
+        <p>{% translate "No blockers and nothing outstanding for this level right now." %}</p>
+      </div>
+    {% endif %}
+
+    {% if verdict.warnings and verdict.blocking %}
+      <div class="alert-warning">
+        {% icon "circle-alert" "h-5 w-5 shrink-0" %}
+        <div>
+          <p class="font-semibold">{% translate "Also worth briefing" %}</p>
+          <ul class="mt-1 list-disc space-y-0.5 ps-5">
+            {% for reason in verdict.warnings %}<li>{{ reason }}</li>{% endfor %}
+          </ul>
+        </div>
+      </div>
+    {% endif %}
+
+    <div>
+      <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+        {% translate "Lifeguard cover now" %}
+      </h3>
+      {% if cover %}
+        <ul class="mt-1 space-y-1 text-sm text-slate-700 dark:text-slate-300">
+          {% for shift in cover %}
+            <li>{{ shift.lifeguard.get_display_name }} · {{ shift.start_time|time:"H:i" }}–{{ shift.end_time|time:"H:i" }}</li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="mt-1 text-sm text-amber-600 dark:text-amber-400">
+          {% translate "No confirmed shift covers this moment." %}
+        </p>
+      {% endif %}
+    </div>
+
+    {% if pending_warnings %}
+      <div class="ai-surface p-4">
+        <div class="mb-2 flex flex-wrap items-center gap-2">
+          {% ai_chip %}
+          <span class="text-xs font-medium uppercase tracking-wide text-violet-700 dark:text-violet-300">
+            {% translate "Awaiting staff confirmation" %}
+          </span>
+        </div>
+        <p class="mb-2 text-xs text-slate-600 dark:text-slate-400">
+          {% translate "Not counted in the verdict above. Confirm one on the warnings screen to make it count." %}
+        </p>
+        <ul class="space-y-1 text-sm text-slate-700 dark:text-slate-300">
+          {% for warning in pending_warnings %}
+            <li>{{ warning.title }} — {{ warning.get_severity_display }}</li>
+          {% endfor %}
+        </ul>
+        <a href="{% url 'safety:warning_list' %}" class="btn-secondary btn-sm mt-3">
+          {% translate "Review suggestions" %}
+        </a>
+      </div>
+    {% endif %}
+  </div>
+</section>

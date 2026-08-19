@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+{% load i18n static surf_tags %}
+
+{% block title %}{% translate "Surf conditions" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Surf conditions" %}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "What the water is doing, and which levels it suits. Scores are computed from the readings, not written by AI." %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'surf_conditions:history' %}{% if selected_spot %}?spot={{ selected_spot.pk }}{% endif %}"
+     class="btn-secondary">
+    {% icon "history" "h-4 w-4" %} {% translate "Reading history" %}
+  </a>
+  {% can "surf_conditions.add" as may_add %}
+  {% if may_add %}
+    <a href="{% url 'surf_conditions:create' %}{% if selected_spot %}?spot={{ selected_spot.pk }}{% endif %}"
+       class="btn-primary">
+      {% icon "plus" "h-4 w-4" %} {% translate "Log a reading" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+
+  {% if not selected_spot %}
+    {% can "locations.add" as may_add_spot %}
+    {% if may_add_spot %}{% url 'locations:create' as add_spot_url %}{% endif %}
+    {% include "partials/empty_state.html" with icon_name="map-pin" title=_("No active surf spot") subtitle=_("Surf conditions are read for a spot. Add one under Surf Locations first — the beach bearing it records is what makes wind classification possible.") action_url=add_spot_url action_label=_("Add a surf spot") %}
+  {% else %}
+
+    {% if licence_note %}
+      <div class="alert-warning mb-5">
+        {% icon "triangle-alert" "h-5 w-5 shrink-0" %}
+        <div>
+          <p class="font-semibold">{% translate "Data source changed for licensing reasons" %}</p>
+          <p class="mt-0.5">{{ licence_note }}</p>
+        </div>
+      </div>
+    {% endif %}
+
+    {# --- spot selector --------------------------------------------------- #}
+    <form method="get" action="{% url 'surf_conditions:dashboard' %}" class="card mb-5 p-4">
+      <div class="flex flex-wrap items-end gap-3">
+        <div class="min-w-[14rem] flex-1">
+          <label class="form-label" for="spot-select">{% translate "Surf spot" %}</label>
+          <select name="spot" id="spot-select" class="form-select"
+                  x-data x-on:change="$el.form.submit()">
+            {% for option in spots %}
+              <option value="{{ option.pk }}" {% if option.pk == selected_spot.pk %}selected{% endif %}>
+                {{ option.code }} · {{ option.name }}{% if option.is_primary %} ({% translate "default" %}){% endif %}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="text-sm text-slate-500 dark:text-slate-400">
+          <p>
+            {% blocktranslate with facing=selected_spot.facing_compass offshore=selected_spot.offshore_compass %}Beach faces {{ facing }} · offshore blows from {{ offshore }}{% endblocktranslate %}
+          </p>
+          <p>
+            {% blocktranslate with tide=selected_spot.get_ideal_tide_display levels=selected_spot.level_range_display %}Ideal tide {{ tide }} · suits {{ levels }}{% endblocktranslate %}
+          </p>
+        </div>
+        <noscript>
+          <button type="submit" class="btn-primary">{% translate "Show" %}</button>
+        </noscript>
+      </div>
+    </form>
+
+    <div class="space-y-5">
+
+      {# --- now + computed scores ---------------------------------------- #}
+      {% include "surf_conditions/partials/now_card.html" with spot=selected_spot %}
+
+      {# --- AI narrative, loaded separately ------------------------------- #}
+      {% can "ai.view" as may_see_ai %}
+      {% if may_see_ai and condition %}
+        <div hx-get="{% url 'surf_conditions:ai_briefing' selected_spot.pk %}"
+             hx-trigger="load"
+             hx-swap="innerHTML"></div>
+      {% endif %}
+
+      {# --- 7-day strip --------------------------------------------------- #}
+      {% include "surf_conditions/partials/forecast_strip.html" %}
+
+      {# --- hourly chart --------------------------------------------------- #}
+      <section class="card" aria-labelledby="chart-heading">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title" id="chart-heading">
+              {% icon "chart-line" "inline h-4 w-4 text-brand-500" %} {% translate "Next 48 hours" %}
+            </h2>
+            <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+              {% translate "Wave height against wind speed — the two numbers that decide whether a lesson runs." %}
+            </p>
+          </div>
+        </div>
+        <div class="card-body">
+          {% if chart.has_wave_data or chart.has_wind_data %}
+            <div class="h-72">
+              <canvas id="conditions-chart"
+                      role="img"
+                      aria-label="{% translate 'Hourly wave height and wind speed for the next 48 hours' %}"></canvas>
+            </div>
+          {% else %}
+            <p class="text-sm text-slate-500 dark:text-slate-400">
+              {% translate "No hourly series is stored yet. Refresh the conditions to build it." %}
+            </p>
+          {% endif %}
+        </div>
+      </section>
+
+      {# --- data source ---------------------------------------------------- #}
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">
+            {% icon "database" "inline h-4 w-4 text-slate-400" %} {% translate "Data source" %}
+          </h2>
+          <button type="button" class="btn-secondary btn-sm"
+                  hx-get="{% url 'surf_conditions:provider_health' %}"
+                  hx-target="#provider-health"
+                  hx-swap="innerHTML">
+            {% icon "activity" "h-4 w-4" %} {% translate "Check now" %}
+          </button>
+        </div>
+        <div class="card-body">
+          <p class="text-sm text-slate-600 dark:text-slate-400">{{ attribution }}</p>
+          {% if not provides_marine_data %}
+            <p class="mt-2 text-sm text-amber-700 dark:text-amber-300">
+              {% translate "This source publishes no wave model, so wind and weather are stored but no surf score is computed." %}
+            </p>
+          {% endif %}
+          <div id="provider-health" class="mt-3"></div>
+        </div>
+      </section>
+    </div>
+  {% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+  {% if selected_spot and chart %}
+    {% if chart.has_wave_data or chart.has_wind_data %}
+      <script src="{% static 'vendor/chartjs/chart.umd.js' %}" defer></script>
+      <script>
+        // Deferred scripts run in document order, and DOMContentLoaded fires
+        // after all of them — so Chart and window.surfChartDefaults both exist.
+        document.addEventListener('DOMContentLoaded', function () {
+          var canvas = document.getElementById('conditions-chart');
+          if (!canvas || typeof Chart === 'undefined') { return; }
+
+          var series = {{ chart|to_json }};
+          var text = {{ chart_text|to_json }};
+          var palette = window.surfChartColors || ['#0083ce', '#10b981', '#f59e0b'];
+          var options = window.surfChartDefaults ? window.surfChartDefaults() : {};
+
+          options.scales = options.scales || {};
+          options.scales.y = Object.assign({}, options.scales.y, {
+            position: 'left',
+            title: { display: true, text: text.wave },
+          });
+          options.scales.wind = Object.assign({}, options.scales.y, {
+            position: 'right',
+            title: { display: true, text: text.wind },
+            grid: { drawOnChartArea: false },
+          });
+
+          var datasets = [];
+          if (series.has_wave_data) {
+            datasets.push({
+              label: text.wave,
+              data: series.wave_height_m,
+              borderColor: palette[0],
+              backgroundColor: palette[0] + '33',
+              yAxisID: 'y',
+              tension: 0.3,
+              fill: true,
+              spanGaps: true,
+              pointRadius: 0,
+            });
+          }
+          if (series.has_wind_data) {
+            datasets.push({
+              label: text.wind,
+              data: series.wind_speed_kmh,
+              borderColor: palette[1],
+              backgroundColor: 'transparent',
+              yAxisID: 'wind',
+              tension: 0.3,
+              spanGaps: true,
+              pointRadius: 0,
+            });
+          }
+          if (series.has_gust_data) {
+            datasets.push({
+              label: text.gust,
+              data: series.wind_gust_kmh,
+              borderColor: palette[2] || '#f59e0b',
+              backgroundColor: 'transparent',
+              borderDash: [4, 4],
+              yAxisID: 'wind',
+              tension: 0.3,
+              spanGaps: true,
+              pointRadius: 0,
+            });
+          }
+
+          new Chart(canvas.getContext('2d'), {
+            type: 'line',
+            data: { labels: series.labels, datasets: datasets },
+            options: options,
+          });
+        });
+      </script>
+    {% endif %}
+  {% endif %}
+{% endblock %}

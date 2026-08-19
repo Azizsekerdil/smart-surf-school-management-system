@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Import equipment" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Import equipment" %}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "Upload a CSV, check the preview, then confirm. Nothing is written until you confirm." %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'equipment:import_template' %}" class="btn-secondary">
+    {% icon "file-spreadsheet" "h-4 w-4" %} {% translate "Download template" %}
+  </a>
+  <a href="{% url 'equipment:list' %}" class="btn-secondary">{% translate "Back to inventory" %}</a>
+{% endblock %}
+
+{% block content %}
+  <div class="grid gap-5 lg:grid-cols-3">
+    <div class="space-y-5 lg:col-span-2">
+
+      {% if not result %}
+        {# ------------------------------------------------ step 1: upload #}
+        <section class="card">
+          <div class="card-header">
+            <h2 class="card-title">{% translate "1. Choose a file" %}</h2>
+          </div>
+          <div class="card-body">
+            <form method="post" enctype="multipart/form-data" class="space-y-4">
+              {% csrf_token %}
+              <input type="hidden" name="step" value="upload">
+              <div>
+                <label class="form-label" for="{{ form.file.id_for_label }}">{{ form.file.label }}</label>
+                {{ form.file }}
+                {% if form.file.help_text %}<p class="form-help">{{ form.file.help_text }}</p>{% endif %}
+                {% for error in form.file.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+              </div>
+              <button type="submit" class="btn-primary">
+                {% icon "upload" "h-4 w-4" %} {% translate "Preview import" %}
+              </button>
+            </form>
+          </div>
+        </section>
+      {% else %}
+        {# ------------------------------------------------ step 2: preview #}
+        <section class="card">
+          <div class="card-header flex items-center justify-between gap-3">
+            <h2 class="card-title">
+              {% if preview %}{% translate "2. Check the preview" %}{% else %}{% translate "Import finished" %}{% endif %}
+            </h2>
+            <div class="flex flex-wrap gap-1.5">
+              <span class="badge-emerald">{% blocktranslate with n=result.created %}{{ n }} new{% endblocktranslate %}</span>
+              <span class="badge-sky">{% blocktranslate with n=result.updated %}{{ n }} updated{% endblocktranslate %}</span>
+              {% if result.errors %}
+                <span class="badge-rose">{% blocktranslate with n=result.errors %}{{ n }} with errors{% endblocktranslate %}</span>
+              {% endif %}
+            </div>
+          </div>
+          <div class="card-body space-y-4">
+            {% if result.errors %}
+              <div class="alert-warning" role="status">
+                {% icon "triangle-alert" "h-4 w-4 shrink-0" %}
+                <span>{% translate "Rows with errors are skipped. Fix them in the file and import them again." %}</span>
+              </div>
+            {% endif %}
+
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th scope="col">{% translate "Line" %}</th>
+                    <th scope="col">{% translate "Action" %}</th>
+                    <th scope="col">{% translate "Asset code" %}</th>
+                    <th scope="col">{% translate "Name" %}</th>
+                    <th scope="col">{% translate "Category" %}</th>
+                    <th scope="col">{% translate "Message" %}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for row in result.rows %}
+                    <tr>
+                      <td class="tabular-nums">{{ row.line_number }}</td>
+                      <td>
+                        {% if row.action == "create" %}
+                          <span class="badge-emerald">{% translate "Create" %}</span>
+                        {% elif row.action == "update" %}
+                          <span class="badge-sky">{% translate "Update" %}</span>
+                        {% else %}
+                          <span class="badge-rose">{% translate "Error" %}</span>
+                        {% endif %}
+                      </td>
+                      <td class="font-mono text-xs">{{ row.asset_code|default:"—" }}</td>
+                      <td>{{ row.name|default:"—" }}</td>
+                      <td>{{ row.category|default:"—" }}</td>
+                      <td class="text-xs {% if row.is_error %}text-rose-600 dark:text-rose-400{% endif %}">
+                        {{ row.message|default:"" }}
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+
+            {% if preview %}
+              <form method="post" class="flex flex-wrap items-center gap-2">
+                {% csrf_token %}
+                <input type="hidden" name="step" value="confirm">
+                <button type="submit" class="btn-primary" {% if not result.has_importable_rows %}disabled{% endif %}>
+                  {% icon "check" "h-4 w-4" %} {% translate "Confirm import" %}
+                </button>
+                <a href="{% url 'equipment:import' %}" class="btn-secondary">{% translate "Start over" %}</a>
+              </form>
+              {% if not result.has_importable_rows %}
+                <p class="text-sm text-rose-600 dark:text-rose-400">
+                  {% translate "No row can be imported as it stands. Fix the file and upload it again." %}
+                </p>
+              {% endif %}
+            {% else %}
+              <a href="{% url 'equipment:list' %}" class="btn-primary">
+                {% icon "package" "h-4 w-4" %} {% translate "Go to inventory" %}
+              </a>
+            {% endif %}
+          </div>
+        </section>
+      {% endif %}
+    </div>
+
+    {# ----------------------------------------------------------- helper #}
+    <div class="space-y-5">
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">{% translate "Expected columns" %}</h2>
+        </div>
+        <div class="card-body">
+          <p class="mb-3 text-sm text-slate-600 dark:text-slate-300">
+            {% blocktranslate with limit=max_rows %}Header row required. Up to {{ limit }} rows per upload. A row with an existing asset code updates that item instead of creating a new one.{% endblocktranslate %}
+          </p>
+          <ul class="flex flex-wrap gap-1.5">
+            {% for column in columns %}
+              <li class="badge-slate font-mono text-[0.7rem]">{{ column }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">{% translate "Category codes" %}</h2>
+        </div>
+        <div class="card-body">
+          {% if categories %}
+            <ul class="space-y-1 text-sm">
+              {% for category in categories %}
+                <li class="flex items-center justify-between gap-3">
+                  <span class="truncate text-slate-600 dark:text-slate-300">{{ category.full_path }}</span>
+                  <code class="font-mono text-xs text-slate-500">{{ category.code }}</code>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="text-sm text-slate-500 dark:text-slate-400">
+              {% translate "No categories yet — create them before importing." %}
+              <a href="{% url 'equipment:category_list' %}" class="font-semibold underline">{% translate "Categories" %}</a>
+            </p>
+          {% endif %}
+        </div>
+      </section>
+    </div>
+  </div>
+{% endblock %}

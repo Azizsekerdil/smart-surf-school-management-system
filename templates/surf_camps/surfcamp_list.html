@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Surf Camps" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Surf Camps" %}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="text-sm text-slate-500 dark:text-slate-400">
+    {% translate "Multi-day packages: programme, participants, rooms and transfers." %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  {% can "surf_camps.add" as may_add %}
+  {% if may_add %}
+    <a href="{% url 'surf_camps:create' %}" class="btn-primary">
+      {% icon "plus" "h-4 w-4" %} {% translate "New camp" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <form class="card mb-5"
+        hx-get="{% url 'surf_camps:list' %}"
+        hx-target="#camp-grid"
+        hx-swap="outerHTML"
+        hx-push-url="true"
+        hx-trigger="submit, change from:select, keyup changed delay:400ms from:input[name='q']">
+    <div class="grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div class="lg:col-span-2">
+        <label class="form-label" for="camp-search">{% translate "Search" %}</label>
+        <input type="search" id="camp-search" name="q" value="{{ search_term|default:'' }}"
+               class="form-input" placeholder="{% translate 'Name, code or accommodation' %}">
+      </div>
+      <div>
+        <label class="form-label" for="camp-period">{% translate "Period" %}</label>
+        <select id="camp-period" name="period" class="form-select">
+          <option value="upcoming" {% if current_period == "upcoming" %}selected{% endif %}>{% translate "Upcoming" %}</option>
+          <option value="running" {% if current_period == "running" %}selected{% endif %}>{% translate "Running now" %}</option>
+          <option value="past" {% if current_period == "past" %}selected{% endif %}>{% translate "Finished" %}</option>
+          <option value="all" {% if current_period == "all" %}selected{% endif %}>{% translate "All camps" %}</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label" for="camp-status">{% translate "Status" %}</label>
+        <select id="camp-status" name="status" class="form-select">
+          <option value="">{% translate "All statuses" %}</option>
+          {% for value, label in filter_form.fields.status.choices %}
+            {% if value %}
+              <option value="{{ value }}" {% if current_status == value %}selected{% endif %}>{{ label }}</option>
+            {% endif %}
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 px-4 py-3 dark:border-slate-700">
+      <label class="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+        <input type="checkbox" name="archived" value="1" {% if show_archived %}checked{% endif %}
+               class="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500 dark:border-slate-600">
+        {% translate "Include archived camps" %}
+      </label>
+      <button type="submit" class="btn-secondary btn-sm">
+        {% icon "filter" "h-4 w-4" %} {% translate "Apply" %}
+      </button>
+    </div>
+  </form>
+
+  {% include "surf_camps/partials/camp_cards.html" %}
+{% endblock %}

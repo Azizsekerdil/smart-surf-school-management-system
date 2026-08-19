@@ -1,0 +1,36 @@
+{% load i18n surf_tags %}
+{% can "crm.change" as may_change %}
+<div id="lead-board" class="overflow-x-auto pb-2">
+  <div class="flex min-w-max gap-4">
+    {% for column in columns %}
+      <section class="w-72 shrink-0 rounded-xl bg-slate-100/70 p-3 transition dark:bg-slate-800/50"
+               data-lead-column="{{ column.status }}"
+               data-lost-prompt="{% translate 'Why was this lead lost?' %}"
+               aria-label="{{ column.label }}">
+        <header class="mb-3 flex items-baseline justify-between gap-2 px-1">
+          <h2 class="text-sm font-semibold text-slate-800 dark:text-slate-100">{{ column.label }}</h2>
+          <span class="text-xs tabular-nums text-slate-500 dark:text-slate-400">
+            {{ column.count }} · {{ column.value|money }}
+          </span>
+        </header>
+
+        <div class="space-y-2">
+          {% for lead in column.leads %}
+            {% include "crm/partials/lead_card.html" with lead=lead column=column may_change=may_change %}
+          {% empty %}
+            <p class="rounded-lg border border-dashed border-slate-300 px-3 py-6 text-center text-xs text-slate-400 dark:border-slate-600">
+              {% translate "Empty" %}
+            </p>
+          {% endfor %}
+
+          {% if column.truncated %}
+            <a href="{% url 'crm:lead_list' %}?status={{ column.status }}"
+               class="block rounded-lg border border-dashed border-slate-300 px-3 py-2 text-center text-xs font-medium text-brand-600 hover:bg-white dark:border-slate-600 dark:hover:bg-slate-800">
+              {% blocktranslate with shown=column_limit total=column.count %}Showing {{ shown }} of {{ total }} — open the table{% endblocktranslate %}
+            </a>
+          {% endif %}
+        </div>
+      </section>
+    {% endfor %}
+  </div>
+</div>

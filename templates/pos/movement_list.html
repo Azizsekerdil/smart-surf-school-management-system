@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Stock ledger" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Stock ledger" %}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "Append-only. Every shelf count in the system is the sum of these rows — a mistake is corrected by adding, never by editing." %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'pos:product_list' %}" class="btn-secondary">
+    {% icon "package" "h-4 w-4" %} {% translate "Products" %}
+  </a>
+  {% can "pos.change" as may_change %}
+  {% if may_change %}
+    <a href="{% url 'pos:stock_adjust' %}" class="btn-primary">
+      {% icon "plus" "h-4 w-4" %} {% translate "Record a movement" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <div class="mb-5 grid gap-4 lg:grid-cols-3">
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Stock at cost" %}</p>
+      <p class="stat-value">{{ valuation.cost_value|money }}</p>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {% blocktranslate with units=valuation.units %}{{ units }} units on the shelves{% endblocktranslate %}
+      </p>
+    </div>
+
+    <div class="card lg:col-span-2">
+      <div class="card-header">
+        <h2 class="card-title">{% icon "triangle-alert" "inline h-4 w-4 text-amber-500" %} {% translate "Needs reordering" %}</h2>
+        <a href="{% url 'pos:product_list' %}?stock=low" class="text-sm text-brand-600 hover:underline dark:text-brand-300">
+          {% translate "See all" %}
+        </a>
+      </div>
+      <div class="card-body">
+        {% if low_stock %}
+          <ul class="grid gap-2 sm:grid-cols-2">
+            {% for product in low_stock %}
+              <li class="flex items-center justify-between gap-2 text-sm">
+                <span class="min-w-0 truncate text-slate-700 dark:text-slate-300">{{ product.name }}</span>
+                <span class="shrink-0">
+                  {% if product.is_out_of_stock %}
+                    <span class="badge-rose">{% translate "Out" %}</span>
+                  {% else %}
+                    <span class="badge-amber">{{ product.stock_display }}</span>
+                  {% endif %}
+                </span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-sm text-slate-500 dark:text-slate-400">
+            {% translate "Every tracked product is above its reorder point." %}
+          </p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <form method="get" action="{% url 'pos:movement_list' %}"
+        class="card mb-5 p-4"
+        hx-get="{% url 'pos:movement_list' %}"
+        hx-target="#movement-results"
+        hx-swap="innerHTML"
+        hx-push-url="true"
+        hx-trigger="submit, change from:select">
+    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div>
+        <label class="form-label" for="id_q">{% translate "Search" %}</label>
+        <div class="relative">
+          <span class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3 text-slate-400">
+            {% icon "search" "h-4 w-4" %}
+          </span>
+          <input type="search" name="q" id="id_q" value="{{ search_term }}"
+                 class="form-input ps-9" placeholder="{% translate 'Product, reference or note…' %}">
+        </div>
+      </div>
+      <div>
+        <label class="form-label" for="{{ filter_form.movement_type.id_for_label }}">{{ filter_form.movement_type.label }}</label>
+        {{ filter_form.movement_type }}
+      </div>
+      <div>
+        <label class="form-label" for="{{ filter_form.product.id_for_label }}">{{ filter_form.product.label }}</label>
+        {{ filter_form.product }}
+      </div>
+      <div>
+        <label class="form-label" for="id_range">{% translate "Period" %}</label>
+        <select name="range" id="id_range" class="form-select">
+          <option value="today" {% if range_key == "today" %}selected{% endif %}>{% translate "Today" %}</option>
+          <option value="7" {% if range_key == "7" %}selected{% endif %}>{% translate "Last 7 days" %}</option>
+          <option value="30" {% if range_key == "30" %}selected{% endif %}>{% translate "Last 30 days" %}</option>
+          <option value="90" {% if range_key == "90" %}selected{% endif %}>{% translate "Last 3 months" %}</option>
+          <option value="365" {% if range_key == "365" %}selected{% endif %}>{% translate "Last year" %}</option>
+          <option value="all" {% if range_key == "all" %}selected{% endif %}>{% translate "All time" %}</option>
+        </select>
+      </div>
+    </div>
+    <div class="mt-3 flex flex-wrap items-center justify-end gap-2">
+      {% if has_filters %}
+        <a href="{% url 'pos:movement_list' %}" class="btn-secondary">
+          {% icon "rotate-ccw" "h-4 w-4" %} {% translate "Reset" %}
+        </a>
+      {% endif %}
+      <button type="submit" class="btn-primary">
+        {% icon "filter" "h-4 w-4" %} {% translate "Apply" %}
+      </button>
+    </div>
+  </form>
+
+  <div id="movement-results">
+    {% include "pos/partials/movement_results.html" %}
+  </div>
+{% endblock %}

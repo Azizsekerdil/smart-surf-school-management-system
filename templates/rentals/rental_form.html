@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Check out equipment" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Check out equipment" %}{% endblock %}
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "Pick the customer, scan each asset, agree the period, take the deposit." %}
+  </p>
+{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-4 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'rentals:list' %}" class="hover:underline">{% translate "Rentals" %}</a>
+    <span class="mx-1">/</span>
+    <span class="text-slate-700 dark:text-slate-300">{% translate "New rental" %}</span>
+  </nav>
+{% endblock %}
+
+{% block content %}
+  <form method="post" action="{% url 'rentals:create' %}" id="checkout-form" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="alert-error mb-5">
+        {% icon "triangle-alert" "h-5 w-5 shrink-0" %}
+        <ul class="space-y-1">
+          {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+    <div class="grid gap-5 lg:grid-cols-5">
+      {# ------------------------------------------------------ left: contract #}
+      <div class="space-y-5 lg:col-span-2">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">{% translate "Who" %}</h2>
+          </div>
+          <div class="card-body space-y-4">
+            {% include "rentals/partials/entity_picker.html" with target="customer" field=form.customer label_field=form.customer_label picker_label=_("Customer") required=True hint=_("Search by name, phone or e-mail.") %}
+            {% include "rentals/partials/entity_picker.html" with target="student" field=form.student label_field=form.student_label picker_label=_("Student (optional)") hint=_("Set when the gear is for a student in a lesson.") %}
+            {% include "rentals/partials/entity_picker.html" with target="booking" field=form.booking label_field=form.booking_label picker_label=_("Booking (optional)") hint=_("Links the hire to a lesson or camp booking.") %}
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">{% translate "Period & money" %}</h2>
+          </div>
+          <div class="card-body space-y-4"
+               hx-post="{% url 'rentals:basket_preview' %}"
+               hx-trigger="change"
+               hx-include="#checkout-form"
+               hx-target="#basket"
+               hx-swap="innerHTML">
+            <div>
+              <label class="form-label" for="{{ form.period_type.id_for_label }}">
+                {% translate "Rate" %}
+              </label>
+              {{ form.period_type }}
+              {% for error in form.period_type.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+            </div>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label class="form-label" for="{{ form.start_at.id_for_label }}">
+                  {% translate "Handed over" %}
+                </label>
+                {{ form.start_at }}
+                {% for error in form.start_at.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+              </div>
+              <div>
+                <label class="form-label" for="{{ form.expected_return_at.id_for_label }}">
+                  {% translate "Due back" %}
+                </label>
+                {{ form.expected_return_at }}
+                {% for error in form.expected_return_at.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+              </div>
+            </div>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label class="form-label" for="{{ form.deposit_amount.id_for_label }}">
+                  {% translate "Deposit" %}
+                </label>
+                {{ form.deposit_amount }}
+                <p class="form-help">{{ form.deposit_amount.help_text }}</p>
+                {% for error in form.deposit_amount.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+              </div>
+              <div>
+                <label class="form-label" for="{{ form.discount_amount.id_for_label }}">
+                  {% translate "Discount" %}
+                </label>
+                {{ form.discount_amount }}
+                {% for error in form.discount_amount.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+              </div>
+            </div>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label class="form-label" for="{{ form.paid_amount.id_for_label }}">
+                  {% translate "Paid now" %}
+                </label>
+                {{ form.paid_amount }}
+                <p class="form-help">{{ form.paid_amount.help_text }}</p>
+                {% for error in form.paid_amount.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+              </div>
+              <div>
+                <label class="form-label" for="{{ form.payment_method.id_for_label }}">
+                  {% translate "Payment method" %}
+                </label>
+                {{ form.payment_method }}
+              </div>
+            </div>
+            <label class="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-300">
+              {{ form.id_document_held }}
+              <span>
+                {% translate "Identity document held at the counter" %}
+                <span class="block text-xs text-slate-500 dark:text-slate-400">
+                  {% translate "Required for a hire to anyone under 18." %}
+                </span>
+              </span>
+            </label>
+            <div>
+              <label class="form-label" for="{{ form.notes.id_for_label }}">{% translate "Notes" %}</label>
+              {{ form.notes }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {# ----------------------------------------------------- right: basket #}
+      <div class="space-y-5 lg:col-span-3">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">{% translate "Equipment" %}</h2>
+          </div>
+          <div class="card-body">
+            <label class="form-label" for="asset-code">{% translate "Scan or type an asset code" %}</label>
+            <div class="flex gap-2">
+              <div class="relative flex-1">
+                <span class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3 text-slate-400">
+                  {% icon "barcode" "h-4 w-4" %}
+                </span>
+                <input type="text" name="asset_code" id="asset-code" autocomplete="off" autofocus
+                       class="form-input ps-9"
+                       placeholder="{% translate 'e.g. SB-0042' %}"
+                       onkeydown="if (event.key === 'Enter') { event.preventDefault(); }"
+                       hx-post="{% url 'rentals:basket_add' %}"
+                       hx-trigger="keyup[key=='Enter']"
+                       hx-include="#checkout-form"
+                       hx-target="#basket"
+                       hx-swap="innerHTML">
+              </div>
+              <button type="button" class="btn-secondary"
+                      hx-post="{% url 'rentals:basket_add' %}"
+                      hx-include="#checkout-form"
+                      hx-target="#basket"
+                      hx-swap="innerHTML">
+                {% icon "plus" "h-4 w-4" %} {% translate "Add" %}
+              </button>
+            </div>
+            <p class="form-help">
+              {% translate "Each line is checked against the hire window before it is added." %}
+            </p>
+          </div>
+        </div>
+
+        <div id="basket">
+          {% include "rentals/partials/checkout_basket.html" %}
+        </div>
+      </div>
+    </div>
+  </form>
+{% endblock %}
+
+{% block extra_scripts %}
+  <script>
+    // Entity pickers: write the chosen row into the hidden field the form posts.
+    function surfPickEntity(el) {
+      var target = el.dataset.target;
+      var idField = document.getElementById('id_' + target);
+      if (idField) { idField.value = el.dataset.id; }
+      var labelField = document.getElementById('id_' + target + '_label');
+      if (labelField) { labelField.value = el.dataset.label; }
+      var display = document.getElementById(target + '_display');
+      if (display) { display.textContent = el.dataset.label; }
+      var results = document.getElementById(target + '_results');
+      if (results) { results.innerHTML = ''; }
+      var search = document.getElementById(target + '_search');
+      if (search) { search.value = ''; }
+    }
+
+    function surfClearEntity(target, emptyLabel) {
+      var idField = document.getElementById('id_' + target);
+      if (idField) { idField.value = ''; }
+      var labelField = document.getElementById('id_' + target + '_label');
+      if (labelField) { labelField.value = ''; }
+      var display = document.getElementById(target + '_display');
+      if (display) { display.textContent = emptyLabel; }
+    }
+
+    // Keep the scan field ready for the next asset after every basket update.
+    document.body.addEventListener('htmx:afterSwap', function (event) {
+      if (event.target && event.target.id === 'basket') {
+        var input = document.getElementById('asset-code');
+        if (input) { input.value = ''; input.focus(); }
+      }
+    });
+  </script>
+{% endblock %}

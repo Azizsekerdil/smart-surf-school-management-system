@@ -1,0 +1,65 @@
+{% load i18n surf_tags %}
+<div id="campaign-table">
+  {% if campaigns %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">{% translate "Code" %}</th>
+            <th scope="col">{% translate "Campaign" %}</th>
+            <th scope="col">{% translate "Channel" %}</th>
+            <th scope="col">{% translate "Status" %}</th>
+            <th scope="col">{% translate "Dates" %}</th>
+            <th scope="col" class="text-end">{% translate "Spend / budget" %}</th>
+            <th scope="col" class="text-end">{% translate "Revenue" %}</th>
+            <th scope="col" class="text-end">{% translate "ROI" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for campaign in campaigns %}
+            <tr>
+              <td class="font-mono text-xs">{{ campaign.code }}</td>
+              <td>
+                <a href="{% url 'crm:campaign_detail' campaign.pk %}"
+                   class="font-medium text-slate-900 hover:text-brand-600 dark:text-slate-100">{{ campaign.name }}</a>
+                {% if campaign.target_segment %}
+                  <span class="block text-xs text-slate-400">{{ campaign.target_segment.name }}</span>
+                {% endif %}
+              </td>
+              <td class="text-xs">{{ campaign.get_channel_display }}</td>
+              <td>{% status_badge campaign.status campaign.get_status_display %}</td>
+              <td class="whitespace-nowrap text-xs">
+                {{ campaign.start_date|date:"d.m.Y" }} – {{ campaign.end_date|date:"d.m.Y" }}
+              </td>
+              <td class="text-end tabular-nums">
+                <span class="{% if campaign.is_over_budget %}font-medium text-rose-600 dark:text-rose-400{% endif %}">
+                  {{ campaign.actual_spend|money }}
+                </span>
+                <span class="block text-xs text-slate-400">{{ campaign.budget|money }}</span>
+              </td>
+              <td class="text-end tabular-nums">{{ campaign.revenue_attributed|money }}</td>
+              <td class="text-end tabular-nums">
+                {% if campaign.roi is not None %}
+                  <span class="{% if campaign.roi > 0 %}stat-delta-up{% else %}stat-delta-down{% endif %}">
+                    {{ campaign.roi|pct }}
+                  </span>
+                {% else %}
+                  <span class="text-xs text-slate-400">—</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% include "partials/pagination.html" %}
+  {% else %}
+    {% can "crm.add" as may_add %}
+    {% url 'crm:campaign_create' as campaign_create_url %}
+    {% if may_add %}
+      {% include "partials/empty_state.html" with icon_name="send" title=_("No campaigns yet") subtitle=_("Plan one against a segment and record what it earns.") action_url=campaign_create_url action_label=_("New campaign") %}
+    {% else %}
+      {% include "partials/empty_state.html" with icon_name="send" title=_("No campaigns yet") %}
+    {% endif %}
+  {% endif %}
+</div>

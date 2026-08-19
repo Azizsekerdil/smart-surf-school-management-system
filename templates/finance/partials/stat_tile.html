@@ -1,0 +1,44 @@
+{% load i18n surf_tags %}
+{% comment %}
+  A money tile with a like-for-like comparison against the previous period.
+  Include it with: label, value, previous, change and icon_name.
+  Pass lower_is_better=True for costs, so a rise renders red rather than green.
+{% endcomment %}
+<div class="stat-card">
+  <div class="flex items-start justify-between gap-3">
+    <div class="min-w-0">
+      <p class="stat-label">{{ label }}</p>
+      <p class="stat-value truncate">{{ value|money }}</p>
+    </div>
+    {% if icon_name %}
+      <span class="shrink-0 rounded-lg bg-slate-100 p-2 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+        {% icon icon_name "h-5 w-5" %}
+      </span>
+    {% endif %}
+  </div>
+
+  {% if change is not None %}
+    <p class="mt-2 flex items-center gap-1">
+      {% if change > 0 %}
+        <span class="{% if lower_is_better %}stat-delta-down{% else %}stat-delta-up{% endif %} inline-flex items-center gap-1">
+          {% icon "trending-up" "h-3.5 w-3.5" %}{{ change|pct }}
+        </span>
+      {% elif change < 0 %}
+        <span class="{% if lower_is_better %}stat-delta-up{% else %}stat-delta-down{% endif %} inline-flex items-center gap-1">
+          {% icon "trending-down" "h-3.5 w-3.5" %}{{ change|pct }}
+        </span>
+      {% else %}
+        <span class="text-xs font-medium text-slate-500 dark:text-slate-400 inline-flex items-center gap-1">
+          {% icon "minus" "h-3.5 w-3.5" %}{% translate "No change" %}
+        </span>
+      {% endif %}
+      <span class="text-xs text-slate-400">
+        {% blocktranslate with previous=previous|money %}vs {{ previous }}{% endblocktranslate %}
+      </span>
+    </p>
+  {% elif previous is not None %}
+    <p class="mt-2 text-xs text-slate-400">
+      {% blocktranslate with previous=previous|money %}vs {{ previous }} previously{% endblocktranslate %}
+    </p>
+  {% endif %}
+</div>

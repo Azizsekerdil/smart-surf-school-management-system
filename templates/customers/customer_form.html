@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ title }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block page_actions %}
+  {% if customer %}
+    <a href="{% url 'customers:detail' customer.pk %}" class="btn-ghost">
+      {% icon "chevron-left" "h-4 w-4" %} {% translate "Back to customer" %}
+    </a>
+  {% else %}
+    <a href="{% url 'customers:list' %}" class="btn-ghost">
+      {% icon "chevron-left" "h-4 w-4" %} {% translate "Back to list" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <form method="post" enctype="multipart/form-data" class="space-y-5" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="alert-error">
+        {% icon "circle-alert" "h-5 w-5 shrink-0" %}
+        <div>
+          {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+          {% if form.duplicate_match %}
+            <p class="mt-2">
+              <a href="{% url 'customers:detail' form.duplicate_match.pk %}" class="underline">
+                {% translate "Open the existing record" %}
+              </a>
+            </p>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+
+    <section class="card">
+      <div class="card-header"><h2 class="card-title">{% translate "Identity" %}</h2></div>
+      <div class="card-body grid gap-4 sm:grid-cols-2">
+        {% for field in form %}
+          {% if field.name == "first_name" or field.name == "last_name" or field.name == "email" or field.name == "phone" or field.name == "birth_date" or field.name == "gender" or field.name == "nationality" or field.name == "preferred_language" or field.name == "photo" %}
+            <div {% if field.name == "photo" %}class="sm:col-span-2"{% endif %}>
+              <label class="form-label" for="{{ field.id_for_label }}">
+                {{ field.label }}{% if field.field.required %} <span class="text-rose-500">*</span>{% endif %}
+              </label>
+              {{ field }}
+              {% if field.help_text %}<p class="form-help">{{ field.help_text }}</p>{% endif %}
+              {% for error in field.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+            </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Emergency contact" %}</h2>
+        <span class="text-xs text-slate-500 dark:text-slate-400">{% translate "Required for customers under 18" %}</span>
+      </div>
+      <div class="card-body grid gap-4 sm:grid-cols-3">
+        {% for field in form %}
+          {% if field.name == "emergency_contact_name" or field.name == "emergency_contact_phone" or field.name == "emergency_contact_relation" %}
+            <div>
+              <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field }}
+              {% if field.help_text %}<p class="form-help">{{ field.help_text }}</p>{% endif %}
+              {% for error in field.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+            </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header"><h2 class="card-title">{% translate "Address" %}</h2></div>
+      <div class="card-body grid gap-4 sm:grid-cols-2">
+        {% for field in form %}
+          {% if field.name == "address_line1" or field.name == "address_line2" or field.name == "city" or field.name == "state" or field.name == "postal_code" or field.name == "country" %}
+            <div>
+              <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field }}
+              {% if field.help_text %}<p class="form-help">{{ field.help_text }}</p>{% endif %}
+              {% for error in field.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+            </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header"><h2 class="card-title">{% translate "Commercial" %}</h2></div>
+      <div class="card-body grid gap-4 sm:grid-cols-2">
+        <div>
+          <label class="form-label" for="{{ form.source.id_for_label }}">{{ form.source.label }}</label>
+          {{ form.source }}
+          {% for error in form.source.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        </div>
+        <div>
+          <label class="form-label" for="{{ form.tags.id_for_label }}">{{ form.tags.label }}</label>
+          {{ form.tags }}
+          <p class="form-help">{{ form.tags.help_text }}</p>
+          {% for error in form.tags.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="sm:col-span-2">
+          <label class="form-label" for="{{ form.notes.id_for_label }}">{{ form.notes.label }}</label>
+          {{ form.notes }}
+          {% for error in form.notes.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="flex flex-col gap-2 sm:col-span-2">
+          <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+            {{ form.marketing_consent }} {{ form.marketing_consent.label }}
+          </label>
+          <p class="form-help">{{ form.marketing_consent.help_text }}</p>
+          <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+            {{ form.is_active }} {{ form.is_active.label }}
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-body flex flex-wrap items-center justify-between gap-3">
+        <label class="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+          {{ form.allow_duplicate }} {{ form.allow_duplicate.label }}
+        </label>
+        <div class="flex items-center gap-2">
+          <a href="{% if customer %}{% url 'customers:detail' customer.pk %}{% else %}{% url 'customers:list' %}{% endif %}"
+             class="btn-secondary">{% translate "Cancel" %}</a>
+          <button type="submit" class="btn-primary">
+            {% icon "save" "h-4 w-4" %} {{ submit_label }}
+          </button>
+        </div>
+      </div>
+    </section>
+  </form>
+{% endblock %}

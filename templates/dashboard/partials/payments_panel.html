@@ -1,0 +1,54 @@
+{% load i18n surf_tags %}
+{% comment %} Money owed on active bookings, biggest balance first. The finance module is
+   the system of record for payments; this panel is the operational reminder. {% endcomment %}
+<div class="card">
+  <div class="card-header">
+    <h2 class="card-title flex items-center gap-2">{% icon "receipt" "h-4 w-4 text-amber-500" %} {% translate "Pending payments" %}</h2>
+    {% if links.finance_dashboard %}
+      <a href="{{ links.finance_dashboard }}" class="btn-ghost btn-sm">{% translate "Finance" %} {% icon "chevron-right" "h-4 w-4" %}</a>
+    {% endif %}
+  </div>
+
+  {% if unpaid_bookings is None %}
+    <div class="card-body">
+      <p class="text-sm text-slate-500 dark:text-slate-400">{% translate "The bookings module is not available." %}</p>
+    </div>
+  {% else %}
+    <div class="card-body space-y-3">
+      <div class="flex flex-wrap items-baseline justify-between gap-2">
+        <p class="text-sm text-slate-500 dark:text-slate-400">{% translate "Outstanding on active bookings" %}</p>
+        <p class="text-lg font-semibold tabular-nums text-slate-900 dark:text-slate-50">{{ outstanding_total|money }}</p>
+      </div>
+
+      {% if overdue_invoices %}
+        <p class="flex items-center gap-2 text-xs text-rose-600 dark:text-rose-400">
+          {% icon "circle-alert" "h-3.5 w-3.5" %}
+          {% blocktranslate count counter=overdue_invoices %}{{ counter }} overdue invoice{% plural %}{{ counter }} overdue invoices{% endblocktranslate %}
+        </p>
+      {% endif %}
+
+      {% if unpaid_bookings %}
+        <ul class="divide-y divide-slate-100 dark:divide-slate-800">
+          {% for booking in unpaid_bookings %}
+            <li class="flex items-center justify-between gap-3 py-2">
+              <div class="min-w-0">
+                <p class="truncate text-sm text-slate-800 dark:text-slate-200">
+                  {{ booking.booking_code }} · {{ booking.customer }}
+                </p>
+                <p class="truncate text-xs text-slate-500 dark:text-slate-400">{{ booking.activity_label }}</p>
+              </div>
+              <div class="shrink-0 text-end">
+                <p class="text-sm font-semibold tabular-nums text-amber-600 dark:text-amber-400">{{ booking.balance_due|money }}</p>
+                <p class="text-xs text-slate-400">{{ booking.get_payment_status_display }}</p>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
+          {% icon "circle-check" "h-4 w-4" %} {% translate "Every active booking is settled." %}
+        </p>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>

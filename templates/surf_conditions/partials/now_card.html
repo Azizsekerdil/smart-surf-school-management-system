@@ -1,0 +1,219 @@
+{% load i18n surf_tags %}
+{% comment %}
+  The "now" card. Swapped whole by the refresh button (hx-swap="outerHTML"), so
+  it carries its own id and re-includes the score gauges.
+{% endcomment %}
+<div id="now-card" class="space-y-5">
+
+  {% if condition %}
+    {% if condition.is_stale %}
+      <div class="alert-warning">
+        {% icon "clock" "h-5 w-5 shrink-0" %}
+        <div>
+          <p class="font-semibold">{% translate "This reading is out of date." %}</p>
+          <p class="mt-0.5">
+            {% blocktranslate with minutes=condition.age_minutes %}Last observation was {{ minutes }} minutes ago. Conditions change inside an hour — refresh, or look at the water.{% endblocktranslate %}
+          </p>
+        </div>
+      </div>
+    {% elif condition.is_forecast %}
+      <div class="alert-info">
+        {% icon "info" "h-5 w-5 shrink-0" %}
+        <p>{% translate "No fresh observation is available, so the nearest forecast hour is shown. It is a model output, not a measurement." %}</p>
+      </div>
+    {% endif %}
+
+    {% if condition.has_lightning %}
+      <div class="alert-error">
+        {% icon "zap" "h-5 w-5 shrink-0" %}
+        <div>
+          <p class="font-semibold">{% translate "Lightning reported — the water is closed." %}</p>
+          <p class="mt-0.5">{% translate "No session runs at any level until the storm has passed." %}</p>
+        </div>
+      </div>
+    {% endif %}
+
+    <section class="card" aria-labelledby="now-heading">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title" id="now-heading">
+            {% icon "waves" "inline h-4 w-4 text-brand-500" %} {% translate "Right now" %}
+          </h2>
+          <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+            {% blocktranslate with when=condition.recorded_at|date:"d.m.Y H:i" source=provider_label %}Reading of {{ when }} from {{ source }}{% endblocktranslate %}
+            {% if condition.source == "manual" %} · {% translate "logged by staff" %}{% endif %}
+          </p>
+        </div>
+        <div class="flex items-center gap-2">
+          {% can "surf_conditions.change" as may_refresh %}
+          {% if may_refresh %}
+            <button type="button"
+                    class="btn-secondary btn-sm"
+                    hx-post="{% url 'surf_conditions:refresh' spot.pk %}"
+                    hx-target="#now-card"
+                    hx-swap="outerHTML"
+                    hx-indicator="#refresh-spinner">
+              {% icon "refresh-cw" "h-4 w-4" %}
+              <span>{% translate "Refresh now" %}</span>
+              <span id="refresh-spinner" class="htmx-indicator">{% icon "loader-circle" "h-4 w-4 animate-spin" %}</span>
+            </button>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="card-body">
+        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+
+          {# --- wave ------------------------------------------------------ #}
+          <div class="rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+            <p class="flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400">
+              {% icon "waves" "h-4 w-4 text-sky-500" %} {% translate "Wave" %}
+            </p>
+            {% if condition.wave_height_m is not None %}
+              <p class="mt-1 text-2xl font-semibold tabular-nums text-slate-900 dark:text-slate-50">
+                {{ condition.wave_height_m|floatformat:1 }} <span class="text-base font-normal">m</span>
+              </p>
+              <p class="text-xs text-slate-500 dark:text-slate-400">
+                {{ condition.wave_height_ft|floatformat:1 }} ft
+                {% if condition.effective_period_s is not None %}
+                  · {{ condition.effective_period_s|floatformat:1 }} s
+                {% endif %}
+                {% if condition.swell_direction_deg is not None %}
+                  · {{ condition.swell_compass }}
+                {% endif %}
+              </p>
+            {% else %}
+              <p class="mt-1 text-2xl font-semibold text-slate-400">—</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400">
+                {% translate "The active source has no wave model." %}
+              </p>
+            {% endif %}
+          </div>
+
+          {# --- wind ------------------------------------------------------ #}
+          <div class="rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+            <p class="flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400">
+              {% icon "wind" "h-4 w-4 text-emerald-500" %} {% translate "Wind" %}
+            </p>
+            {% if condition.wind_speed_kmh is not None %}
+              <p class="mt-1 text-2xl font-semibold tabular-nums text-slate-900 dark:text-slate-50">
+                {{ condition.wind_speed_kmh|floatformat:0 }} <span class="text-base font-normal">km/h</span>
+              </p>
+              <p class="text-xs text-slate-500 dark:text-slate-400">
+                {{ condition.wind_knots|floatformat:0 }} kt · {{ condition.wind_compass }}
+                {% if condition.wind_gust_kmh is not None %}
+                  · {% blocktranslate with gust=condition.wind_gust_kmh|floatformat:0 %}gusts {{ gust }}{% endblocktranslate %}
+                {% endif %}
+              </p>
+              {% if condition.wind_type %}
+                {% comment %} Offshore grooms the wave face, onshore destroys it — the
+                   colour says which of the two the school is looking at. {% endcomment %}
+                <p class="mt-1.5">
+                  <span class="{% if condition.wind_type == 'offshore' or condition.wind_type == 'glassy' %}badge-emerald{% elif condition.wind_type == 'cross_offshore' %}badge-sky{% elif condition.wind_type == 'cross_shore' %}badge-amber{% else %}badge-rose{% endif %}">
+                    {{ condition.get_wind_type_display }}
+                  </span>
+                </p>
+              {% endif %}
+            {% else %}
+              <p class="mt-1 text-2xl font-semibold text-slate-400">—</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400">{% translate "No wind reading." %}</p>
+            {% endif %}
+          </div>
+
+          {# --- tide ------------------------------------------------------ #}
+          <div class="rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+            <p class="flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400">
+              {% icon "droplets" "h-4 w-4 text-cyan-500" %} {% translate "Tide" %}
+            </p>
+            <p class="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-50">
+              {{ condition.get_tide_state_display }}
+            </p>
+            <p class="text-xs text-slate-500 dark:text-slate-400">
+              {% translate "Modelled tide — derived from the sea-level model, not a tide station." %}
+            </p>
+            {% if condition.sea_level_height_msl_m is not None %}
+              <p class="mt-1 text-xs tabular-nums text-slate-500 dark:text-slate-400">
+                {% blocktranslate with level=condition.sea_level_height_msl_m|floatformat:2 %}{{ level }} m above mean sea level{% endblocktranslate %}
+              </p>
+            {% endif %}
+          </div>
+
+          {# --- temperature ---------------------------------------------- #}
+          <div class="rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+            <p class="flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400">
+              {% icon "thermometer" "h-4 w-4 text-rose-500" %} {% translate "Temperature" %}
+            </p>
+            <p class="mt-1 text-2xl font-semibold tabular-nums text-slate-900 dark:text-slate-50">
+              {% if condition.water_temperature_c is not None %}
+                {{ condition.water_temperature_c|floatformat:1 }} <span class="text-base font-normal">°C</span>
+              {% else %}<span class="text-slate-400">—</span>{% endif %}
+            </p>
+            <p class="text-xs text-slate-500 dark:text-slate-400">
+              {% translate "Water" %}{% if condition.air_temperature_c is not None %} · {% blocktranslate with air=condition.air_temperature_c|floatformat:1 %}air {{ air }} °C{% endblocktranslate %}{% endif %}
+            </p>
+            <p class="mt-1.5 text-xs font-medium text-slate-700 dark:text-slate-300">
+              {% blocktranslate with suit=condition.recommended_wetsuit %}Wetsuit: {{ suit }}{% endblocktranslate %}
+            </p>
+          </div>
+        </div>
+
+        {# --- sky, light and visibility ---------------------------------- #}
+        <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
+          <div class="flex items-center gap-2">
+            {% icon condition.weather_icon "h-4 w-4 shrink-0 text-slate-400" %}
+            <div>
+              <dt class="text-xs text-slate-500 dark:text-slate-400">{% translate "Weather" %}</dt>
+              <dd class="font-medium text-slate-800 dark:text-slate-200">
+                {{ condition.weather_description|default:"—" }}
+              </dd>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            {% icon "sunrise" "h-4 w-4 shrink-0 text-amber-500" %}
+            <div>
+              <dt class="text-xs text-slate-500 dark:text-slate-400">{% translate "Sunrise" %}</dt>
+              <dd class="font-medium tabular-nums text-slate-800 dark:text-slate-200">
+                {% if condition.sunrise %}{{ condition.sunrise|time:"H:i" }}{% else %}—{% endif %}
+              </dd>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            {% icon "sunset" "h-4 w-4 shrink-0 text-orange-500" %}
+            <div>
+              <dt class="text-xs text-slate-500 dark:text-slate-400">{% translate "Sunset" %}</dt>
+              <dd class="font-medium tabular-nums text-slate-800 dark:text-slate-200">
+                {% if condition.sunset %}{{ condition.sunset|time:"H:i" }}{% else %}—{% endif %}
+              </dd>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            {% icon "sun" "h-4 w-4 shrink-0 text-yellow-500" %}
+            <div>
+              <dt class="text-xs text-slate-500 dark:text-slate-400">{% translate "UV index" %}</dt>
+              <dd class="font-medium tabular-nums text-slate-800 dark:text-slate-200">
+                {% if condition.uv_index is not None %}{{ condition.uv_index|floatformat:0 }}{% else %}—{% endif %}
+              </dd>
+            </div>
+          </div>
+        </dl>
+      </div>
+    </section>
+
+    {% include "surf_conditions/partials/score_gauges.html" %}
+
+  {% else %}
+    {% include "partials/empty_state.html" with icon_name="waves" title=_("No conditions stored for this spot yet") subtitle=_("Press “Refresh now” to pull the first reading, or run manage.py refresh_conditions from the scheduler.") %}
+    {% can "surf_conditions.change" as may_refresh %}
+    {% if may_refresh and spot %}
+      <div class="mt-4 flex justify-center">
+        <button type="button"
+                class="btn-primary"
+                hx-post="{% url 'surf_conditions:refresh' spot.pk %}"
+                hx-target="#now-card"
+                hx-swap="outerHTML">
+          {% icon "refresh-cw" "h-4 w-4" %} {% translate "Refresh now" %}
+        </button>
+      </div>
+    {% endif %}
+  {% endif %}
+</div>

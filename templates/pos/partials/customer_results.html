@@ -1,0 +1,27 @@
+{% load i18n surf_tags %}
+{% if customers %}
+  <ul class="max-h-56 divide-y divide-slate-100 overflow-y-auto rounded-lg border border-slate-200 dark:divide-slate-800 dark:border-slate-700">
+    {% for customer in customers %}
+      <li>
+        <button type="button"
+                class="flex w-full items-center justify-between gap-2 px-3 py-2 text-start text-sm hover:bg-slate-50 dark:hover:bg-slate-800"
+                hx-post="{% url 'pos:cart_customer' %}"
+                hx-vals='{"customer": "{{ customer.pk }}"}'
+                hx-target="#pos-cart"
+                hx-swap="innerHTML">
+          <span class="min-w-0">
+            <span class="block truncate font-medium text-slate-900 dark:text-slate-100">{{ customer.full_name }}</span>
+            <span class="block truncate text-xs text-slate-500 dark:text-slate-400">
+              {{ customer.customer_code }}{% if customer.phone %} · {{ customer.phone }}{% endif %}
+            </span>
+          </span>
+          {% icon "plus" "h-4 w-4 shrink-0 text-brand-500" %}
+        </button>
+      </li>
+    {% endfor %}
+  </ul>
+{% elif term|length >= 2 %}
+  <p class="rounded-lg border border-dashed border-slate-300 px-3 py-3 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+    {% blocktranslate %}No customer matches “{{ term }}”. The sale can stay anonymous.{% endblocktranslate %}
+  </p>
+{% endif %}

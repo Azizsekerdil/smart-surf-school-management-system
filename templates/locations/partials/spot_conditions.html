@@ -1,0 +1,101 @@
+{% load i18n surf_tags %}
+{% comment %}
+  Integration point for the surf-conditions module.
+
+  If that module registers a URL named ``surf_conditions:spot_panel`` taking the
+  spot's pk, HTMX loads the live reading into this container on page load and
+  every five minutes. Until then the panel shows what this break *wants*, which
+  is the reference a coach compares the forecast against. `{% url ... as var %}`
+  never raises, so the page stays correct either way.
+{% endcomment %}
+{% url 'surf_conditions:spot_panel' spot.pk as live_panel_url %}
+{% url 'surf_conditions:dashboard' as conditions_dashboard_url %}
+
+<section class="card" aria-labelledby="conditions-heading">
+  <div class="card-header">
+    <h2 class="card-title" id="conditions-heading">
+      {% icon "waves" "inline h-4 w-4 text-sky-500" %} {% translate "Conditions" %}
+    </h2>
+    {% if conditions_dashboard_url %}
+      <a href="{{ conditions_dashboard_url }}" class="btn-ghost btn-sm">
+        {% translate "Surf conditions" %} {% icon "chevron-right" "h-4 w-4" %}
+      </a>
+    {% endif %}
+  </div>
+
+  <div class="card-body">
+    <div id="spot-live-conditions"
+         data-spot-id="{{ spot.pk }}"
+         data-spot-slug="{{ spot.slug }}"
+         {% if live_panel_url %}
+           hx-get="{{ live_panel_url }}"
+           hx-trigger="load, every 300s"
+           hx-swap="innerHTML"
+         {% endif %}>
+
+      {% if live_panel_url %}
+        <div class="space-y-2" aria-busy="true">
+          <div class="skeleton h-4 w-1/3"></div>
+          <div class="skeleton h-4 w-2/3"></div>
+          <div class="skeleton h-4 w-1/2"></div>
+        </div>
+      {% else %}
+        <p class="mb-4 text-sm text-slate-500 dark:text-slate-400">
+          {% translate "Live readings appear here once the Surf Conditions module reports for this spot. These are the targets it will be compared against." %}
+        </p>
+      {% endif %}
+    </div>
+
+    {# --- the spot's own reference values, always shown ------------------- #}
+    <dl class="mt-4 grid gap-3 sm:grid-cols-2">
+      <div class="rounded-lg border border-slate-200 p-3 dark:border-slate-700">
+        <dt class="text-xs font-medium text-slate-500 dark:text-slate-400">
+          {% icon "wind" "inline h-3.5 w-3.5" %} {% translate "Ideal wind" %}
+        </dt>
+        <dd class="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
+          {{ spot.get_ideal_wind_display }}
+        </dd>
+        <dd class="text-xs text-slate-500 dark:text-slate-400">
+          {% blocktranslate with compass=spot.offshore_compass deg=spot.offshore_direction_deg|floatformat:0 %}Offshore blows from {{ compass }} ({{ deg }}°){% endblocktranslate %}
+        </dd>
+      </div>
+
+      <div class="rounded-lg border border-slate-200 p-3 dark:border-slate-700">
+        <dt class="text-xs font-medium text-slate-500 dark:text-slate-400">
+          {% icon "droplets" "inline h-3.5 w-3.5" %} {% translate "Ideal tide" %}
+        </dt>
+        <dd class="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
+          {{ spot.get_ideal_tide_display }}
+        </dd>
+        <dd class="text-xs text-slate-500 dark:text-slate-400">
+          {% translate "Hazards below list the tides they apply to." %}
+        </dd>
+      </div>
+
+      <div class="rounded-lg border border-slate-200 p-3 dark:border-slate-700">
+        <dt class="text-xs font-medium text-slate-500 dark:text-slate-400">
+          {% icon "compass" "inline h-3.5 w-3.5" %} {% translate "Ideal swell direction" %}
+        </dt>
+        <dd class="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
+          {% if spot.ideal_swell_direction_deg is not None %}
+            {{ spot.swell_compass }} ({{ spot.ideal_swell_direction_deg|floatformat:0 }}°)
+          {% else %}
+            {% translate "Not recorded" %}
+          {% endif %}
+        </dd>
+      </div>
+
+      <div class="rounded-lg border border-slate-200 p-3 dark:border-slate-700">
+        <dt class="text-xs font-medium text-slate-500 dark:text-slate-400">
+          {% icon "anchor" "inline h-3.5 w-3.5" %} {% translate "Beach faces" %}
+        </dt>
+        <dd class="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
+          {{ spot.facing_compass }} ({{ spot.beach_facing_deg|floatformat:0 }}°)
+        </dd>
+        <dd class="text-xs text-slate-500 dark:text-slate-400">
+          {% translate "Wind is classified against this bearing." %}
+        </dd>
+      </div>
+    </dl>
+  </div>
+</section>

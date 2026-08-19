@@ -1,0 +1,51 @@
+{% load i18n surf_tags %}
+{# The tappable product grid. Swapped on its own so the scanner keeps focus. #}
+{% if products %}
+  <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+    {% for product in products %}
+      <button type="button"
+              hx-post="{% url 'pos:cart_add' %}"
+              hx-vals='{"product": "{{ product.pk }}"}'
+              hx-target="#pos-cart"
+              hx-swap="innerHTML"
+              {% if product.is_out_of_stock %}disabled{% endif %}
+              class="card flex flex-col items-start gap-1 p-3 text-start transition
+                     hover:border-brand-400 hover:shadow-md
+                     disabled:cursor-not-allowed disabled:opacity-50
+                     {% if product.is_out_of_stock %}border-rose-200 dark:border-rose-500/30{% elif product.is_low_stock %}border-amber-300 dark:border-amber-500/40{% endif %}"
+              aria-label="{% blocktranslate with name=product.name price=product.sale_price|money %}Add {{ name }}, {{ price }}{% endblocktranslate %}">
+        <span class="flex w-full items-start justify-between gap-2">
+          <span class="line-clamp-2 text-sm font-medium text-slate-900 dark:text-slate-100">{{ product.name }}</span>
+          {% if product.photo_url %}
+            <img src="{{ product.photo_url }}" alt="" class="h-9 w-9 shrink-0 rounded-lg object-cover">
+          {% else %}
+            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-400 dark:bg-slate-800">
+              {% icon product.category.icon|default:"package" "h-4 w-4" %}
+            </span>
+          {% endif %}
+        </span>
+
+        <span class="font-mono text-[0.68rem] uppercase tracking-wide text-slate-400">{{ product.sku }}</span>
+
+        <span class="mt-auto flex w-full items-center justify-between gap-2 pt-1">
+          <span class="text-base font-semibold tabular-nums text-slate-900 dark:text-slate-50">
+            {{ product.sale_price|money }}
+          </span>
+          {% if not product.track_stock %}
+            <span class="badge-slate">{% translate "Untracked" %}</span>
+          {% elif product.is_out_of_stock %}
+            <span class="badge-rose">{% translate "Out of stock" %}</span>
+          {% elif product.is_low_stock %}
+            <span class="badge-amber">{{ product.stock_display }}</span>
+          {% else %}
+            <span class="badge-emerald">{{ product.stock_display }}</span>
+          {% endif %}
+        </span>
+      </button>
+    {% endfor %}
+  </div>
+{% else %}
+  {% translate "Nothing matches this filter" as empty_title %}
+  {% translate "Clear the search box or choose another category. Products with stock tracking off always stay sellable." as empty_subtitle %}
+  {% include "partials/empty_state.html" with icon_name="package" title=empty_title subtitle=empty_subtitle %}
+{% endif %}

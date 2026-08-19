@@ -1,0 +1,130 @@
+[project]
+name = "smart-surf-school-management-system"
+version = "1.0.0"
+description = "Smart Surf School Management System — ERP, CRM, bookings, equipment, safety, finance and AI for surf schools"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+
+# ---------------------------------------------------------------------------
+# pytest
+# ---------------------------------------------------------------------------
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.test"
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+testpaths = ["apps", "tests"]
+addopts = [
+    "--strict-markers",
+    "--tb=short",
+    "--disable-warnings",
+    "-p", "no:randomly",
+]
+markers = [
+    "slow: tests that take more than a second",
+    "integration: tests that exercise several modules together",
+    "ai: tests that touch the AI layer (providers are always mocked)",
+    "security: tests that assert a security control",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning:django.*",
+]
+
+# ---------------------------------------------------------------------------
+# coverage
+# ---------------------------------------------------------------------------
+[tool.coverage.run]
+source = ["apps"]
+branch = true
+omit = [
+    "*/migrations/*",
+    "*/tests/*",
+    "*/__init__.py",
+    "*/apps.py",
+    "*/admin.py",
+    "manage.py",
+    "config/wsgi.py",
+    "config/asgi.py",
+]
+
+[tool.coverage.report]
+precision = 1
+show_missing = true
+skip_covered = true
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.:",
+    "@abc.abstractmethod",
+    "@abstractmethod",
+]
+
+# ---------------------------------------------------------------------------
+# ruff
+# ---------------------------------------------------------------------------
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+exclude = [
+    ".venv", "node_modules", "migrations", "staticfiles", "media", "backups", "logs",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "F",    # pyflakes
+    "W",    # pycodestyle warnings
+    "I",    # isort
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "C4",   # comprehensions
+    "DJ",   # flake8-django
+    "S",    # bandit-style security checks
+    "A",    # builtin shadowing
+    "RET",  # return simplification
+    "SIM",  # simplification
+    "PTH",  # prefer pathlib
+]
+ignore = [
+    "E501",    # line length is handled by the formatter
+    "B008",    # function call in argument default (Django uses this idiom)
+    "S101",    # assert is fine in tests
+    "RET504",  # an explicit assignment before return is often clearer
+    "SIM108",  # ternary is not always more readable
+    "DJ001",   # null=True on CharField is deliberate where a distinction is needed
+    # --- style opinions this project consistently does not follow -------------
+    # These are readability preferences, not defects. They are listed here, with
+    # reasons, rather than silenced case by case, because the choice is uniform
+    # across the codebase. Nothing security-related is in this list; the "S"
+    # rules stay on and are justified individually at each site.
+    "SIM102",  # a nested if often reads better than a compound condition
+    "SIM103",  # an explicit if/return pair documents the two branches
+    "SIM105",  # try/except/pass is clearer than contextlib.suppress in a view
+    "SIM117",  # nested with-statements keep long context managers readable
+    "UP042",   # str+Enum is intentional: the value must survive JSON round-trips
+    "UP031",   # percent formatting is retained where the format string is data
+    "DJ012",   # model body order follows the domain, not the style guide
+    "B905",    # zip() strictness is asserted by the surrounding code
+    "B007",    # an unused loop variable can be the clearer name
+    "A001",    # a domain term occasionally collides with a builtin
+    "PTH110",  # os.path is fine in the small number of places it survives
+]
+
+[tool.ruff.lint.per-file-ignores]
+"*/tests/*" = ["S", "ARG", "PLR2004"]
+"*/settings/*" = ["F403", "F405", "E402"]
+"apps/ai_terminal/executor.py" = ["S603"]  # argv is validated by security.py; shell=False
+"apps/core/management/commands/i18n_*.py" = ["S"]
+# A standalone Django script: django.setup() has to run before any app
+# module can be imported, so the imports cannot sit at the top.
+"scripts/generate_docs.py" = ["E402"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["apps", "config"]
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"

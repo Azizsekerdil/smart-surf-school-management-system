@@ -1,0 +1,636 @@
+{% extends "base.html" %}
+{% load i18n static surf_tags %}
+
+{% block title %}{% translate "Analytics" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Analytics" %}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% blocktranslate with period=range_label %}{{ period }}, compared against the equally long period before it.{% endblocktranslate %}
+  </p>
+{% endblock %}
+
+{% block extra_head %}
+  <script src="{% static 'vendor/chartjs/chart.umd.js' %}" defer></script>
+{% endblock %}
+
+{% block page_actions %}
+  {% can "analytics.export" as may_export %}
+  {% if may_export %}
+    <a href="{% url 'analytics:export' %}{% if export_query %}?{{ export_query }}{% endif %}" class="btn-secondary">
+      {% icon "download" "h-4 w-4" %} {% translate "Export CSV" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+
+  {# ------------------------------------------------------------- filters #}
+  <form method="get" action="{% url 'analytics:dashboard' %}" class="card mb-5 p-4">
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div>
+        <label for="{{ filter_form.range.id_for_label }}" class="form-label">{{ filter_form.range.label }}</label>
+        {{ filter_form.range }}
+      </div>
+      <div>
+        <label for="{{ filter_form.start.id_for_label }}" class="form-label">{{ filter_form.start.label }}</label>
+        {{ filter_form.start }}
+        <p class="form-help">{% translate "Used when the period is “Custom range”." %}</p>
+      </div>
+      <div>
+        <label for="{{ filter_form.end.id_for_label }}" class="form-label">{{ filter_form.end.label }}</label>
+        {{ filter_form.end }}
+      </div>
+      <div>
+        <label for="{{ filter_form.horizon.id_for_label }}" class="form-label">{{ filter_form.horizon.label }}</label>
+        {{ filter_form.horizon }}
+      </div>
+      <div class="flex items-end gap-2">
+        <input type="hidden" name="metric" value="{{ selected_metric }}">
+        <button type="submit" class="btn-primary w-full">
+          {% icon "filter" "h-4 w-4" %} {% translate "Apply" %}
+        </button>
+      </div>
+    </div>
+  </form>
+
+  {# ------------------------------------------------------- AI narrative #}
+  {% if ai_enabled %}
+    <div id="ai-narrative"
+         hx-get="{% url 'analytics:narrative' %}{% if export_query %}?{{ export_query }}{% endif %}"
+         hx-trigger="load"
+         hx-swap="innerHTML"></div>
+  {% endif %}
+
+  {# -------------------------------------------------------------- tiles #}
+  <div class="mb-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+    {% include "analytics/partials/kpi_tile.html" with metric=metrics.revenue icon_name="banknote" %}
+    {% include "analytics/partials/kpi_tile.html" with metric=metrics.bookings icon_name="calendar-days" %}
+    {% include "analytics/partials/kpi_tile.html" with metric=metrics.occupancy icon_name="users" %}
+    {% include "analytics/partials/kpi_tile.html" with metric=metrics.customers icon_name="user-round" %}
+    {% include "analytics/partials/kpi_tile.html" with metric=metrics.equipment icon_name="package" %}
+    {% include "analytics/partials/kpi_tile.html" with metric=metrics.rentals icon_name="arrow-left-right" %}
+  </div>
+
+  {# -------------------------------------------------- secondary figures #}
+  <div class="mb-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="card p-4">
+      <p class="stat-label">{% translate "Cancellation rate" %}</p>
+      <p class="mt-1 text-xl font-semibold tabular-nums {% if metrics.bookings.cancellation_rate > 15 %}text-rose-600 dark:text-rose-400{% else %}text-slate-900 dark:text-slate-50{% endif %}">
+        {{ metrics.bookings.cancellation_rate|pct }}
+      </p>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {% blocktranslate with n=metrics.bookings.cancelled %}{{ n }} cancelled{% endblocktranslate %}
+      </p>
+    </div>
+    <div class="card p-4">
+      <p class="stat-label">{% translate "No-show rate" %}</p>
+      <p class="mt-1 text-xl font-semibold tabular-nums {% if metrics.bookings.no_show_rate > 10 %}text-rose-600 dark:text-rose-400{% else %}text-slate-900 dark:text-slate-50{% endif %}">
+        {{ metrics.bookings.no_show_rate|pct }}
+      </p>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {% blocktranslate with n=metrics.bookings.no_show %}{{ n }} did not turn up{% endblocktranslate %}
+      </p>
+    </div>
+    <div class="card p-4">
+      <p class="stat-label">{% translate "Average lead time" %}</p>
+      <p class="mt-1 text-xl font-semibold tabular-nums text-slate-900 dark:text-slate-50">
+        {% if metrics.bookings.average_lead_days is None %}—
+        {% else %}{% blocktranslate with n=metrics.bookings.average_lead_days|floatformat:1 %}{{ n }} days{% endblocktranslate %}{% endif %}
+      </p>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {% blocktranslate with n=metrics.bookings.lead_time_sample %}From {{ n }} scheduled bookings{% endblocktranslate %}
+      </p>
+    </div>
+    <div class="card p-4">
+      <p class="stat-label">{% translate "Repeat rate" %}</p>
+      <p class="mt-1 text-xl font-semibold tabular-nums text-slate-900 dark:text-slate-50">
+        {{ metrics.customers.repeat_rate|pct }}
+      </p>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {% blocktranslate with new=metrics.customers.new returning=metrics.customers.returning %}{{ new }} new · {{ returning }} returning{% endblocktranslate %}
+      </p>
+    </div>
+  </div>
+
+  {# ------------------------------------------------------- revenue line #}
+  <div class="card mb-5">
+    <div class="card-header">
+      <div>
+        <h2 class="card-title">{% translate "Revenue over time" %}</h2>
+        <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+          {% if metrics.revenue.source == 'finance' %}
+            {% translate "Source: payments recorded in the finance ledger." %}
+          {% elif metrics.revenue.source == 'none' %}
+            {% translate "No revenue source is available yet." %}
+          {% else %}
+            {% translate "Source: amounts recorded against bookings, rentals and shop sales." %}
+          {% endif %}
+        </p>
+      </div>
+      <span class="text-sm font-semibold tabular-nums text-slate-900 dark:text-slate-50">
+        {{ metrics.revenue.current|money }}
+      </span>
+    </div>
+    <div class="card-body">
+      {% if metrics.revenue.no_data %}
+        {% include "partials/empty_state.html" with icon_name="banknote" title=_("No revenue recorded") subtitle=_("Nothing was taken in this period, or the finance and booking modules hold no rows yet.") %}
+      {% else %}
+        <div class="h-72"><canvas id="chart-revenue"></canvas></div>
+        {% if metrics.revenue.breakdown|length > 1 %}
+          <dl class="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-xs text-slate-500 dark:text-slate-400">
+            {% for row in metrics.revenue.breakdown %}
+              <div class="flex items-center gap-1.5">
+                <dt>{{ row.label }}</dt>
+                <dd class="font-medium tabular-nums text-slate-700 dark:text-slate-200">{{ row.amount|money }}</dd>
+              </div>
+            {% endfor %}
+          </dl>
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+
+  {# ---------------------------------------------------------- forecast #}
+  <div class="card mb-5">
+    <div class="card-header">
+      <div>
+        <h2 class="card-title">{% translate "Revenue forecast" %}</h2>
+        <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+          {% blocktranslate with days=forecast.horizon_days history=forecast.history_days %}Projected {{ days }} days ahead from {{ history }} days of daily history.{% endblocktranslate %}
+        </p>
+      </div>
+      <div class="text-end">
+        <p class="text-sm font-semibold tabular-nums text-slate-900 dark:text-slate-50">{{ forecast.projected_total|money }}</p>
+        <p class="text-xs text-slate-500 dark:text-slate-400">
+          {% if forecast.confidence == 'high' %}<span class="badge-emerald">{% translate "High confidence" %}</span>
+          {% elif forecast.confidence == 'medium' %}<span class="badge-amber">{% translate "Medium confidence" %}</span>
+          {% elif forecast.confidence == 'low' %}<span class="badge-rose">{% translate "Low confidence" %}</span>
+          {% else %}<span class="badge-slate">{% translate "Not available" %}</span>{% endif %}
+        </p>
+      </div>
+    </div>
+    <div class="card-body">
+      {% if forecast.low_confidence and forecast.warnings %}
+        <div class="alert-warning mb-4">
+          {% icon "triangle-alert" "h-5 w-5 shrink-0" %}
+          <div>
+            <p class="font-medium">{% translate "Do not plan on this projection." %}</p>
+            <ul class="mt-1 list-inside list-disc space-y-0.5">
+              {% for item in forecast.warnings %}<li>{{ item.message }}</li>{% endfor %}
+            </ul>
+          </div>
+        </div>
+      {% endif %}
+
+      {% if forecast.no_data %}
+        {% include "partials/empty_state.html" with icon_name="chart-line" title=_("Nothing to project") subtitle=_("There is no revenue history to extrapolate from yet.") %}
+      {% else %}
+        <div class="h-72"><canvas id="chart-forecast"></canvas></div>
+        <dl class="mt-4 grid grid-cols-2 gap-4 text-xs sm:grid-cols-4">
+          <div>
+            <dt class="stat-label">{% translate "Daily average projected" %}</dt>
+            <dd class="mt-0.5 font-semibold tabular-nums text-slate-900 dark:text-slate-50">{{ forecast.daily_average|money }}</dd>
+          </div>
+          <div>
+            <dt class="stat-label">{% translate "Method" %}</dt>
+            <dd class="mt-0.5 font-semibold text-slate-900 dark:text-slate-50">
+              {% if forecast.method == 'linear' %}{% translate "Least-squares trend" %}
+              {% elif forecast.method == 'mean' %}{% translate "Historical average" %}
+              {% elif forecast.method == 'naive' %}{% translate "Last value carried forward" %}
+              {% else %}—{% endif %}
+            </dd>
+          </div>
+          <div>
+            <dt class="stat-label">{% translate "Fit (r²)" %}</dt>
+            <dd class="mt-0.5 font-semibold tabular-nums text-slate-900 dark:text-slate-50">
+              {% if forecast.r_squared is None %}—{% else %}{{ forecast.r_squared|floatformat:2 }}{% endif %}
+            </dd>
+          </div>
+          <div>
+            <dt class="stat-label">{% translate "History used" %}</dt>
+            <dd class="mt-0.5 font-semibold tabular-nums text-slate-900 dark:text-slate-50">
+              {% blocktranslate with n=forecast.n need=forecast.required_points %}{{ n }} of {{ need }} needed{% endblocktranslate %}
+            </dd>
+          </div>
+        </dl>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ------------------------------------------------------- chart grid #}
+  <div class="mb-5 grid gap-4 lg:grid-cols-2">
+    <div class="card">
+      <div class="card-header"><h2 class="card-title">{% translate "Bookings by status" %}</h2></div>
+      <div class="card-body">
+        {% if metrics.bookings.no_data %}
+          {% include "partials/empty_state.html" with icon_name="calendar-days" title=_("No bookings in this period") %}
+        {% else %}
+          <div class="h-64"><canvas id="chart-bookings"></canvas></div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Occupancy by lesson type" %}</h2>
+        <span class="text-xs text-slate-500 dark:text-slate-400">
+          {% blocktranslate with seats=metrics.occupancy.seats capacity=metrics.occupancy.capacity %}{{ seats }} of {{ capacity }} seats{% endblocktranslate %}
+        </span>
+      </div>
+      <div class="card-body">
+        {% if metrics.occupancy.no_data %}
+          {% include "partials/empty_state.html" with icon_name="users" title=_("No lessons scheduled") subtitle=_("Occupancy needs at least one lesson with a capacity in this period.") %}
+        {% else %}
+          <div class="h-64"><canvas id="chart-occupancy"></canvas></div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "New vs. returning customers" %}</h2>
+      </div>
+      <div class="card-body">
+        {% if metrics.customers.no_data %}
+          {% include "partials/empty_state.html" with icon_name="user-round" title=_("No customer activity") %}
+        {% else %}
+          <div class="h-64"><canvas id="chart-customers"></canvas></div>
+          <p class="mt-3 text-xs text-slate-500 dark:text-slate-400">
+            {% blocktranslate with total=metrics.customers.total_on_file %}{{ total }} customers on file in total.{% endblocktranslate %}
+          </p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Equipment utilisation" %}</h2>
+        <span class="text-xs text-slate-500 dark:text-slate-400">
+          {% blocktranslate with hours=metrics.equipment.operating_hours_per_day|floatformat:0 %}Against a {{ hours }}-hour operating day{% endblocktranslate %}
+        </span>
+      </div>
+      <div class="card-body">
+        {% if metrics.equipment.no_data %}
+          {% include "partials/empty_state.html" with icon_name="package" title=_("No rentable equipment") subtitle=_("Mark items as rentable in the equipment module to measure utilisation.") %}
+        {% else %}
+          <div class="h-64"><canvas id="chart-equipment"></canvas></div>
+          <p class="mt-3 text-xs text-slate-500 dark:text-slate-400">
+            {% blocktranslate with used=metrics.equipment.items_used idle=metrics.equipment.items_idle %}{{ used }} items were hired out, {{ idle }} never left the rack.{% endblocktranslate %}
+          </p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Booking channels" %}</h2>
+        {% if metrics.channels.leading_channel %}
+          <span class="badge-sky">{{ metrics.channels.leading_channel }}</span>
+        {% endif %}
+      </div>
+      <div class="card-body">
+        {% if metrics.channels.no_data %}
+          {% include "partials/empty_state.html" with icon_name="globe" title=_("No bookings to attribute") %}
+        {% else %}
+          <div class="h-64"><canvas id="chart-channels"></canvas></div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Student levels" %}</h2>
+        <span class="text-xs text-slate-500 dark:text-slate-400">
+          {% if metrics.levels.scope == 'period' %}{% translate "Students who booked in this period" %}
+          {% elif metrics.levels.scope == 'all_active' %}{% translate "No bookings in this period — showing the whole active roster" %}
+          {% else %}{% translate "Unavailable" %}{% endif %}
+        </span>
+      </div>
+      <div class="card-body">
+        {% if metrics.levels.current == 0 %}
+          {% include "partials/empty_state.html" with icon_name="graduation-cap" title=_("No students on record") %}
+        {% else %}
+          <div class="h-64"><canvas id="chart-levels"></canvas></div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {# ------------------------------------------------------ time-of-week #}
+  <div class="mb-5 grid gap-4 lg:grid-cols-3">
+    <div class="card lg:col-span-2">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Busiest hours" %}</h2>
+        {% if metrics.hours.peak_hour %}
+          <span class="text-xs text-slate-500 dark:text-slate-400">
+            {% blocktranslate with hour=metrics.hours.peak_hour seats=metrics.hours.peak_seats %}Peak at {{ hour }} with {{ seats }} seats{% endblocktranslate %}
+          </span>
+        {% endif %}
+      </div>
+      <div class="card-body">
+        {% if metrics.hours.no_data %}
+          {% include "partials/empty_state.html" with icon_name="clock" title=_("No lessons in this period") subtitle=_("Hour-of-day demand is read from scheduled lesson start times.") %}
+        {% else %}
+          <div class="h-56"><canvas id="chart-hours"></canvas></div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Busiest weekdays" %}</h2>
+        {% if metrics.weekdays.peak_weekday %}
+          <span class="badge-sky">{{ metrics.weekdays.peak_weekday }}</span>
+        {% endif %}
+      </div>
+      <div class="card-body">
+        {% if metrics.weekdays.no_data %}
+          {% include "partials/empty_state.html" with icon_name="calendar" title=_("No lessons in this period") %}
+        {% else %}
+          <div class="h-56"><canvas id="chart-weekdays"></canvas></div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {# ------------------------------------------------------- instructors #}
+  {% if metrics.instructors.by_instructor %}
+    <div class="card mb-5">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Instructors" %}</h2>
+        <span class="text-xs text-slate-500 dark:text-slate-400">
+          {% blocktranslate with n=metrics.instructors.lessons_per_instructor|floatformat:1 %}{{ n }} lessons each on average{% endblocktranslate %}
+          {% if metrics.instructors.average_rating %}
+            · {% blocktranslate with rating=metrics.instructors.average_rating|floatformat:2 count=metrics.instructors.rating_count %}{{ rating }} out of 5 from {{ count }} ratings{% endblocktranslate %}
+          {% endif %}
+        </span>
+      </div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>{% translate "Instructor" %}</th>
+              <th class="text-end">{% translate "Lessons" %}</th>
+              <th class="text-end">{% translate "Seats offered" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in metrics.instructors.by_instructor %}
+              <tr>
+                <td class="font-medium text-slate-900 dark:text-slate-100">{{ row.label }}</td>
+                <td class="text-end tabular-nums">{{ row.lessons }}</td>
+                <td class="text-end tabular-nums">{{ row.capacity }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% if metrics.instructors.unassigned_lessons %}
+        <div class="border-t border-slate-200 px-5 py-3 text-xs text-amber-600 dark:border-slate-700 dark:text-amber-400">
+          {% blocktranslate count counter=metrics.instructors.unassigned_lessons %}{{ counter }} lesson in this period has no instructor assigned.{% plural %}{{ counter }} lessons in this period have no instructor assigned.{% endblocktranslate %}
+        </div>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {# ------------------------------------------------ statistical summary #}
+  <div class="card" id="statistical-summary">
+    {% include "analytics/partials/statistical_summary.html" %}
+  </div>
+
+  {% comment %} Server-computed chart payload. `to_json` escapes < > & so nothing here can
+     break out of the script element. {% endcomment %}
+  <script id="analytics-chart-data" type="application/json">{{ chart_data|to_json }}</script>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var node = document.getElementById('analytics-chart-data');
+    if (!node || typeof Chart === 'undefined' || typeof window.surfChartDefaults !== 'function') {
+      return;
+    }
+
+    var data;
+    try {
+      data = JSON.parse(node.textContent);
+    } catch (error) {
+      return;
+    }
+
+    var palette = window.surfChartColors;
+    var base = window.surfChartDefaults();
+
+    function build(id, config) {
+      var canvas = document.getElementById(id);
+      if (!canvas) return;
+      new Chart(canvas.getContext('2d'), config);
+    }
+
+    function options(extra) {
+      // Shallow merge of the two keys a chart ever overrides. Passing
+      // `scales: null` drops axes entirely, which is what a doughnut needs.
+      extra = extra || {};
+      var merged = Object.assign({}, base, extra);
+      merged.plugins = Object.assign({}, base.plugins, extra.plugins || {});
+      if (extra.scales === null) {
+        delete merged.scales;
+      } else {
+        merged.scales = Object.assign({}, base.scales, extra.scales || {});
+      }
+      return merged;
+    }
+
+    /* --- revenue with a moving-average overlay ---------------------- */
+    build('chart-revenue', {
+      type: 'line',
+      data: {
+        labels: data.revenue.labels,
+        datasets: [
+          {
+            label: data.labels.revenue,
+            data: data.revenue.values,
+            borderColor: palette[0],
+            backgroundColor: palette[0] + '22',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.3,
+            pointRadius: data.revenue.labels.length > 45 ? 0 : 2,
+          },
+          {
+            label: data.labels.moving_average,
+            data: data.revenue.moving_average,
+            borderColor: palette[2],
+            borderWidth: 2,
+            borderDash: [6, 4],
+            fill: false,
+            tension: 0.3,
+            pointRadius: 0,
+            spanGaps: false,
+          },
+        ],
+      },
+      options: options(),
+    });
+
+    /* --- forecast: actual then projected ---------------------------- */
+    var historyLength = data.forecast.history_values.length;
+    var pad = new Array(historyLength).fill(null);
+    // Anchor the projection to the last actual point so the two lines join up
+    // instead of leaving a visual gap that reads as missing data.
+    if (historyLength > 0) {
+      pad[historyLength - 1] = data.forecast.history_values[historyLength - 1];
+    }
+    build('chart-forecast', {
+      type: 'line',
+      data: {
+        labels: data.forecast.history_labels.concat(data.forecast.labels),
+        datasets: [
+          {
+            label: data.labels.history,
+            data: data.forecast.history_values,
+            borderColor: palette[0],
+            backgroundColor: palette[0] + '22',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.3,
+            pointRadius: 0,
+          },
+          {
+            label: data.labels.forecast,
+            /* The projection is drawn dashed, and in a warning colour when the
+               engine flagged it as unreliable, so the chart itself carries the
+               caveat the text panel states. */
+            data: pad.concat(data.forecast.values),
+            borderColor: data.forecast.low_confidence ? palette[3] : palette[1],
+            borderWidth: 2,
+            borderDash: [6, 4],
+            fill: false,
+            tension: 0.3,
+            pointRadius: 0,
+          },
+        ],
+      },
+      options: options(),
+    });
+
+    /* --- bookings by status ----------------------------------------- */
+    build('chart-bookings', {
+      type: 'doughnut',
+      data: {
+        labels: data.bookings_by_status.labels,
+        datasets: [{
+          data: data.bookings_by_status.values,
+          backgroundColor: palette,
+          borderWidth: 0,
+        }],
+      },
+      options: options({ scales: null, plugins: { legend: { position: 'right', labels: base.plugins.legend.labels } } }),
+    });
+
+    /* --- occupancy by lesson type ----------------------------------- */
+    build('chart-occupancy', {
+      type: 'bar',
+      data: {
+        labels: data.occupancy_by_type.labels,
+        datasets: [{
+          label: data.labels.occupancy,
+          data: data.occupancy_by_type.values,
+          backgroundColor: palette[1],
+          borderRadius: 4,
+        }],
+      },
+      options: options({ indexAxis: 'y', plugins: { legend: { display: false } } }),
+    });
+
+    /* --- new vs returning ------------------------------------------- */
+    build('chart-customers', {
+      type: 'doughnut',
+      data: {
+        labels: data.customers.labels,
+        datasets: [{
+          data: data.customers.values,
+          backgroundColor: [palette[4], palette[1]],
+          borderWidth: 0,
+        }],
+      },
+      options: options({ scales: null, plugins: { legend: { position: 'right', labels: base.plugins.legend.labels } } }),
+    });
+
+    /* --- equipment hours -------------------------------------------- */
+    build('chart-equipment', {
+      type: 'bar',
+      data: {
+        labels: data.equipment.labels,
+        datasets: [{
+          label: data.labels.hours,
+          data: data.equipment.values,
+          backgroundColor: palette[5],
+          borderRadius: 4,
+        }],
+      },
+      options: options({ indexAxis: 'y', plugins: { legend: { display: false } } }),
+    });
+
+    /* --- channels ---------------------------------------------------- */
+    build('chart-channels', {
+      type: 'doughnut',
+      data: {
+        labels: data.channels.labels,
+        datasets: [{
+          data: data.channels.values,
+          backgroundColor: palette,
+          borderWidth: 0,
+        }],
+      },
+      options: options({ scales: null, plugins: { legend: { position: 'right', labels: base.plugins.legend.labels } } }),
+    });
+
+    /* --- student levels ---------------------------------------------- */
+    build('chart-levels', {
+      type: 'bar',
+      data: {
+        labels: data.levels.labels,
+        datasets: [{
+          label: data.labels.customers,
+          data: data.levels.values,
+          backgroundColor: palette[6],
+          borderRadius: 4,
+        }],
+      },
+      options: options({ plugins: { legend: { display: false } } }),
+    });
+
+    /* --- busiest hours strip ------------------------------------------ */
+    build('chart-hours', {
+      type: 'bar',
+      data: {
+        labels: data.hours.labels,
+        datasets: [{
+          label: data.labels.seats,
+          data: data.hours.values,
+          backgroundColor: palette[0],
+          borderRadius: 3,
+        }],
+      },
+      options: options({ plugins: { legend: { display: false } } }),
+    });
+
+    /* --- busiest weekdays --------------------------------------------- */
+    build('chart-weekdays', {
+      type: 'bar',
+      data: {
+        labels: data.weekdays.labels,
+        datasets: [{
+          label: data.labels.seats,
+          data: data.weekdays.values,
+          backgroundColor: palette[7],
+          borderRadius: 4,
+        }],
+      },
+      options: options({ indexAxis: 'y', plugins: { legend: { display: false } } }),
+    });
+  });
+</script>
+{% endblock %}

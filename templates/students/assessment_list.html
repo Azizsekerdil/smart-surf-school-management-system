@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Skill assessments" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Skill assessments" %}{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'students:list' %}" class="btn-ghost">
+    {% icon "chevron-left" "h-4 w-4" %} {% translate "All students" %}
+  </a>
+{% endblock %}
+
+{% block content %}
+  <form method="get"
+        action="{% url 'students:assessment_list' %}"
+        class="card mb-5"
+        hx-get="{% url 'students:assessment_list' %}"
+        hx-target="#assessment-results"
+        hx-select="#assessment-results"
+        hx-swap="outerHTML"
+        hx-trigger="change from:select"
+        hx-push-url="true">
+    <div class="card-body grid gap-4 sm:grid-cols-3">
+      <div>
+        <label class="form-label" for="filter-level">{% translate "Level reached" %}</label>
+        <select name="level" id="filter-level" class="form-select">
+          <option value="">{% translate "Any level" %}</option>
+          {% for value, label in levels %}
+            <option value="{{ value }}" {% if value == current_level %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="form-label" for="filter-instructor">{% translate "Instructor" %}</label>
+        <select name="instructor" id="filter-instructor" class="form-select">
+          <option value="">{% translate "Any instructor" %}</option>
+          {% for pk, label in instructors %}
+            <option value="{{ pk }}" {% if pk|stringformat:"s" == current_instructor %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="flex items-end">
+        <a href="{% url 'students:assessment_list' %}" class="btn-ghost btn-sm">{% translate "Reset" %}</a>
+      </div>
+    </div>
+  </form>
+
+  {% include "students/partials/assessment_table.html" %}
+{% endblock %}

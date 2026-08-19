@@ -1,0 +1,79 @@
+{% load i18n surf_tags %}
+<div id="lead-table">
+  {% if leads %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">{% translate "Name" %}</th>
+            <th scope="col">{% translate "Contact" %}</th>
+            <th scope="col">{% translate "Status" %}</th>
+            <th scope="col">{% translate "Source" %}</th>
+            <th scope="col" class="text-end">{% translate "Value" %}</th>
+            <th scope="col" class="text-end">{% translate "Weighted" %}</th>
+            <th scope="col">{% translate "Next action" %}</th>
+            <th scope="col">{% translate "Owner" %}</th>
+            <th scope="col"><span class="sr-only">{% translate "Actions" %}</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for lead in leads %}
+            <tr>
+              <td>
+                <a href="{% url 'crm:lead_detail' lead.pk %}"
+                   class="font-medium text-slate-900 hover:text-brand-600 dark:text-slate-100">{{ lead.full_name }}</a>
+                {% if lead.interaction_count %}
+                  <span class="ms-1 text-xs text-slate-400">({{ lead.interaction_count }})</span>
+                {% endif %}
+              </td>
+              <td>
+                <span class="block truncate text-xs">{{ lead.email|default:"—" }}</span>
+                <span class="block truncate text-xs text-slate-400">{{ lead.phone|default:"—" }}</span>
+              </td>
+              <td>{% status_badge lead.status lead.get_status_display %}</td>
+              <td class="text-xs">{{ lead.get_source_display }}</td>
+              <td class="text-end tabular-nums">{{ lead.expected_value|money }}</td>
+              <td class="text-end tabular-nums text-slate-500 dark:text-slate-400">{{ lead.weighted_value|money }}</td>
+              <td>
+                {% if lead.next_action %}
+                  <span class="block truncate text-xs">{{ lead.next_action }}</span>
+                  {% if lead.next_action_at %}
+                    <span class="block text-xs {% if lead.is_action_overdue %}font-medium text-rose-600 dark:text-rose-400{% else %}text-slate-400{% endif %}">
+                      {{ lead.next_action_at|date:"d.m.Y H:i" }}
+                    </span>
+                  {% endif %}
+                {% else %}
+                  <span class="text-xs text-slate-400">—</span>
+                {% endif %}
+              </td>
+              <td class="text-xs">
+                {% if lead.assigned_to %}{{ lead.assigned_to.get_display_name }}
+                {% else %}<span class="text-amber-600 dark:text-amber-400">{% translate "Unassigned" %}</span>{% endif %}
+              </td>
+              <td class="text-end">
+                <div class="flex items-center justify-end gap-1">
+                  {% can "crm.change" as may_change %}
+                  {% if may_change %}
+                    <a href="{% url 'crm:lead_update' lead.pk %}" class="btn-icon text-slate-500 hover:text-brand-600"
+                       aria-label="{% translate 'Edit' %}">{% icon "pencil" "h-4 w-4" %}</a>
+                  {% endif %}
+                  <a href="{% url 'crm:lead_detail' lead.pk %}" class="btn-icon text-slate-500 hover:text-brand-600"
+                     aria-label="{% translate 'Open' %}">{% icon "chevron-right" "h-4 w-4" %}</a>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% include "partials/pagination.html" %}
+  {% else %}
+    {% can "crm.add" as may_add %}
+    {% url 'crm:lead_create' as lead_create_url %}
+    {% if may_add %}
+      {% include "partials/empty_state.html" with icon_name="user-plus" title=_("No leads match") subtitle=_("Change the filters, or add the first lead.") action_url=lead_create_url action_label=_("New lead") %}
+    {% else %}
+      {% include "partials/empty_state.html" with icon_name="user-plus" title=_("No leads match") subtitle=_("Change the filters and try again.") %}
+    {% endif %}
+  {% endif %}
+</div>

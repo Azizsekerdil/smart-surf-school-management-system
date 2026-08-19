@@ -1,0 +1,54 @@
+# =============================================================================
+# Smart Surf School Management System — runtime dependencies
+# Python 3.11 · Windows 11 native (all packages must have pure-python or
+# prebuilt Windows wheels — no C compiler / GTK / system libs required)
+# =============================================================================
+
+# --- Core framework ----------------------------------------------------------
+Django>=5.2,<6.0                       # BSD-3-Clause
+djangorestframework>=3.15,<4.0         # BSD-3-Clause
+django-filter>=24.3                    # BSD-3-Clause
+drf-spectacular>=0.27                  # BSD-3-Clause  (OpenAPI 3 schema)
+djangorestframework-simplejwt>=5.3     # MIT           (API token auth)
+django-cors-headers>=4.4               # MIT
+django-htmx>=1.19                      # MIT           (HTMX request helpers)
+django-environ>=0.11                   # MIT           (.env loading)
+whitenoise>=6.7                        # MIT           (static file serving)
+
+# --- Database ----------------------------------------------------------------
+# SQLite is built into Python (development / test).
+# PostgreSQL is the production target; psycopg 3 ships Windows wheels.
+psycopg[binary]>=3.2,<4.0              # LGPL-3.0 (driver, dynamically linked — no code copied)
+
+# --- Async / background tasks (optional, degrade gracefully) ------------------
+celery>=5.4,<6.0                       # BSD-3-Clause
+redis>=5.0                             # MIT
+django-celery-beat>=2.7                # BSD-3-Clause
+
+# --- Media / files -----------------------------------------------------------
+Pillow>=10.4                           # MIT-CMU
+segno>=1.6                             # BSD-3-Clause (QR codes; unambiguous licence, pure python)
+python-barcode>=0.15                   # MIT
+
+# --- Reporting / export ------------------------------------------------------
+reportlab>=4.2                         # BSD-3-Clause (open-source toolkit)
+openpyxl>=3.1                          # MIT
+XlsxWriter>=3.2                        # BSD-2-Clause
+
+# --- Analytics ---------------------------------------------------------------
+numpy>=1.26,<3.0                       # BSD-3-Clause
+python-dateutil>=2.9                   # Apache-2.0 / BSD-3-Clause
+
+# --- HTTP / integrations -----------------------------------------------------
+httpx>=0.27                            # BSD-3-Clause
+requests>=2.32                         # Apache-2.0
+tenacity>=9.0                          # Apache-2.0
+
+# --- Security ----------------------------------------------------------------
+cryptography>=43.0                     # Apache-2.0 / BSD-3-Clause (secret-at-rest encryption)
+django-axes>=6.5                       # MIT (brute-force login protection)
+argon2-cffi>=23.1                      # MIT (Argon2id password hashing)
+bleach>=6.1                            # Apache-2.0 (HTML sanitising)
+
+# --- Content -----------------------------------------------------------------
+Markdown>=3.7                          # BSD-3-Clause (Help Center / Training content)

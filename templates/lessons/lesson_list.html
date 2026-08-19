@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Lessons" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Lessons" %}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% blocktranslate with start=range_start|date:"d.m.Y" end=range_end|date:"d.m.Y" %}Timetable from {{ start }} to {{ end }}{% endblocktranslate %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'lessons:day' %}" class="btn-secondary">
+    {% icon "calendar-days" "h-4 w-4" %} {% translate "Day view" %}
+  </a>
+  <a href="{% url 'lessons:type_list' %}" class="btn-secondary">
+    {% icon "list-checks" "h-4 w-4" %} {% translate "Lesson types" %}
+  </a>
+  {% can "lessons.add" as may_add %}
+  {% if may_add %}
+    <a href="{% url 'lessons:create' %}" class="btn-primary">
+      {% icon "plus" "h-4 w-4" %} {% translate "Schedule a lesson" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <div class="card mb-5">
+    <div class="card-body">
+      <form method="get"
+            hx-get="{% url 'lessons:list' %}"
+            hx-target="#lesson-table"
+            hx-swap="outerHTML"
+            hx-trigger="submit, change from:select, change from:input[type=date]"
+            hx-indicator="#lesson-loading"
+            class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="lg:col-span-2">
+          <label class="form-label" for="{{ filter_form.q.id_for_label }}">{% translate "Search" %}</label>
+          {{ filter_form.q }}
+        </div>
+        <div>
+          <label class="form-label" for="{{ filter_form.status.id_for_label }}">{% translate "Status" %}</label>
+          {{ filter_form.status }}
+        </div>
+        <div>
+          <label class="form-label" for="{{ filter_form.lesson_type.id_for_label }}">{% translate "Lesson type" %}</label>
+          {{ filter_form.lesson_type }}
+        </div>
+        <div>
+          <label class="form-label" for="{{ filter_form.instructor.id_for_label }}">{% translate "Instructor" %}</label>
+          {{ filter_form.instructor }}
+        </div>
+        <div>
+          <label class="form-label" for="{{ filter_form.spot.id_for_label }}">{% translate "Surf spot" %}</label>
+          {{ filter_form.spot }}
+        </div>
+        <div>
+          <label class="form-label" for="{{ filter_form.start.id_for_label }}">{% translate "From" %}</label>
+          {{ filter_form.start }}
+        </div>
+        <div>
+          <label class="form-label" for="{{ filter_form.end.id_for_label }}">{% translate "To" %}</label>
+          {{ filter_form.end }}
+        </div>
+        <div class="flex items-end gap-2 lg:col-span-4">
+          <button type="submit" class="btn-primary">
+            {% icon "filter" "h-4 w-4" %} {% translate "Apply filters" %}
+          </button>
+          <a href="{% url 'lessons:list' %}" class="btn-ghost">{% translate "Reset" %}</a>
+          <span id="lesson-loading" class="htmx-indicator text-sm text-slate-500">{% translate "Loading…" %}</span>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {% include "lessons/partials/lesson_table.html" %}
+{% endblock %}

@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "My training progress" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "My training progress" %}{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-4 flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400"
+       aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'training:home' %}" class="hover:text-brand-600 dark:hover:text-brand-400">
+      {% translate "Training Center" %}
+    </a>
+    {% icon "chevron-right" "h-4 w-4" %}
+    <span class="text-slate-700 dark:text-slate-300">{% translate "My progress" %}</span>
+  </nav>
+{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'training:home' %}" class="btn-secondary">
+    {% icon "school" "h-4 w-4" %} {% translate "All courses" %}
+  </a>
+{% endblock %}
+
+{% block content %}
+  {# --- headline numbers -------------------------------------------------- #}
+  <div class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="stat-card flex items-center gap-4">
+      {% include "training/partials/progress_ring.html" with percent=overall.percent ring_class="h-16 w-16" %}
+      <div>
+        <p class="stat-label">{% translate "Overall" %}</p>
+        <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">
+          {% blocktranslate with done=overall.steps_completed total=overall.steps_total %}{{ done }}/{{ total }} steps{% endblocktranslate %}
+        </p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Completed" %}</p>
+      <p class="stat-value text-emerald-600 dark:text-emerald-400">{{ overall.courses_completed }}</p>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {% blocktranslate with total=overall.courses_total %}of {{ total }} courses{% endblocktranslate %}
+      </p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "In progress" %}</p>
+      <p class="stat-value">{{ overall.courses_in_progress }}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Not started" %}</p>
+      <p class="stat-value">{{ overall.courses_not_started }}</p>
+      {% if overall.remaining_minutes %}
+        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          {% blocktranslate with minutes=overall.remaining_minutes %}about {{ minutes }} minutes left{% endblocktranslate %}
+        </p>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if summaries %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">{% translate "Course" %}</th>
+            <th scope="col">{% translate "Status" %}</th>
+            <th scope="col">{% translate "Progress" %}</th>
+            <th scope="col">{% translate "Last worked on" %}</th>
+            <th scope="col"><span class="sr-only">{% translate "Actions" %}</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for summary in summaries %}
+            <tr>
+              <td>
+                <a href="{{ summary.course.get_absolute_url }}"
+                   class="font-medium text-slate-900 hover:text-brand-600 dark:text-slate-100 dark:hover:text-brand-400">
+                  {{ summary.course.title }}
+                </a>
+                <div class="mt-0.5 flex flex-wrap items-center gap-1.5">
+                  <span class="badge-{{ summary.course.difficulty_color }}">
+                    {{ summary.course.get_difficulty_display }}
+                  </span>
+                  <span class="text-xs text-slate-500 dark:text-slate-400">
+                    {{ summary.course.estimated_minutes|duration_hm }}
+                  </span>
+                </div>
+              </td>
+              <td>
+                {% if summary.is_completed %}
+                  <span class="badge-emerald">{% icon "circle-check" "h-3 w-3" %} {{ summary.status_label }}</span>
+                {% elif summary.is_started %}
+                  <span class="badge-sky">{{ summary.status_label }}</span>
+                {% else %}
+                  <span class="badge-slate">{{ summary.status_label }}</span>
+                {% endif %}
+              </td>
+              <td>
+                <div class="flex items-center gap-2">
+                  <div class="h-2 w-24 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+                    <div class="h-full rounded-full {% if summary.percent >= 100 %}bg-emerald-500{% else %}bg-brand-500{% endif %}"
+                         style="width: {{ summary.percent }}%"></div>
+                  </div>
+                  <span class="tabular-nums text-xs text-slate-500 dark:text-slate-400">
+                    {{ summary.completed_steps }}/{{ summary.total_steps }}
+                  </span>
+                </div>
+              </td>
+              <td class="whitespace-nowrap">
+                {% if summary.progress.last_activity_at %}
+                  {{ summary.progress.last_activity_at|date:"d.m.Y H:i" }}
+                {% else %}
+                  <span class="text-slate-400">—</span>
+                {% endif %}
+              </td>
+              <td class="text-end">
+                {% if summary.next_step and not summary.is_completed %}
+                  <a href="{% url 'training:step' summary.next_step.pk %}" class="btn-primary btn-sm">
+                    {% icon "play" "h-4 w-4" %}
+                    {% if summary.is_started %}{% translate "Continue" %}{% else %}{% translate "Start" %}{% endif %}
+                  </a>
+                {% else %}
+                  <a href="{{ summary.course.get_absolute_url }}" class="btn-secondary btn-sm">
+                    {% icon "eye" "h-4 w-4" %} {% translate "Review" %}
+                  </a>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    {% translate "Nothing to work through yet" as empty_title %}
+    {% translate "No training courses are available to your role, or none have been loaded." as empty_subtitle %}
+    {% include "partials/empty_state.html" with icon_name="school" title=empty_title subtitle=empty_subtitle %}
+  {% endif %}
+{% endblock %}

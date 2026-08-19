@@ -1,0 +1,28 @@
+{% load i18n surf_tags %}
+{% if rows %}
+  <ul class="divide-y divide-slate-100 dark:divide-slate-800">
+    {% for row in rows %}
+      <li class="flex flex-wrap items-center justify-between gap-3 py-3">
+        <div class="min-w-0">
+          <p class="truncate font-medium text-slate-900 dark:text-slate-100">{{ row }}</p>
+          <p class="text-xs text-slate-500 dark:text-slate-400">{{ row.created_at|date:"d.m.Y H:i" }}</p>
+        </div>
+        <div class="flex items-center gap-2">
+          {% if row.status %}{% status_badge row.status row.get_status_display %}{% endif %}
+          {% if row.total_amount %}<span class="tabular-nums text-sm">{{ row.total_amount|money }}</span>{% endif %}
+        </div>
+      </li>
+    {% endfor %}
+  </ul>
+  {% can "rentals.view" as may_view_rentals %}
+  {% url 'rentals:list' as rentals_url %}
+  {% if may_view_rentals and rentals_url %}
+    <p class="mt-4 text-sm">
+      <a href="{{ rentals_url }}?customer={{ customer.pk }}" class="text-brand-700 hover:underline dark:text-brand-300">
+        {% translate "Open all rentals for this customer" %}
+      </a>
+    </p>
+  {% endif %}
+{% else %}
+  {% include "partials/empty_state.html" with icon_name="arrow-left-right" title=_("No rentals yet") subtitle=_("Boards and wetsuits taken out by this customer will appear here.") %}
+{% endif %}

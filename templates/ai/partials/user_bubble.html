@@ -1,0 +1,14 @@
+{% load i18n surf_tags %}
+{# One user turn. Usage: {% include "ai/partials/user_bubble.html" with text=message.content when=message.created_at %} #}
+<article class="flex justify-end" aria-label="{% translate 'Your message' %}">
+  <div class="max-w-[46rem]">
+    <div class="rounded-xl rounded-ee-sm bg-brand-600 px-4 py-3 text-sm leading-relaxed text-white shadow-card">
+      {{ text|linebreaksbr }}
+    </div>
+    <p class="mt-1 flex items-center justify-end gap-1.5 text-[0.7rem] text-slate-400 dark:text-slate-500">
+      {% icon "user" "h-3 w-3" %}
+      <span>{% translate "You" %}</span>
+      {% if when %}<span aria-hidden="true">·</span><time datetime="{{ when|date:'c' }}">{{ when|date:"d.m.Y H:i" }}</time>{% endif %}
+    </p>
+  </div>
+</article>

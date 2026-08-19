@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+{% load i18n static surf_tags %}
+
+{% block title %}{% translate "Backup & Restore" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Backup & Restore" %}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "Every copy of the system, where it is stored and whether it has been proven intact." %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  {% can "backups.manage" as may_manage %}
+  {% if may_manage %}
+    <a href="{% url 'backups:settings' %}" class="btn-secondary">
+      {% icon "settings" "h-4 w-4" %} {% translate "Retention policy" %}
+    </a>
+  {% endif %}
+  <a href="{% url 'backups:restore_list' %}" class="btn-secondary">
+    {% icon "history" "h-4 w-4" %} {% translate "Restore history" %}
+  </a>
+{% endblock %}
+
+{% block content %}
+  {# --- health verdict ---------------------------------------------------- #}
+  {% if stats.health == "critical" %}
+    <div class="alert-error mb-5">
+      {% icon "triangle-alert" "h-5 w-5 shrink-0" %}
+      <div>
+        <p class="font-semibold">{% translate "This school is not protected." %}</p>
+        <p>{{ stats.health_message }}</p>
+      </div>
+    </div>
+  {% elif stats.health == "warning" %}
+    <div class="alert-warning mb-5">
+      {% icon "circle-alert" "h-5 w-5 shrink-0" %}
+      <div>
+        <p class="font-semibold">{% translate "Backups need attention." %}</p>
+        <p>{{ stats.health_message }}</p>
+      </div>
+    </div>
+  {% else %}
+    <div class="alert-success mb-5">
+      {% icon "shield-check" "h-5 w-5 shrink-0" %}
+      <p>{{ stats.health_message }}</p>
+    </div>
+  {% endif %}
+
+  {# --- headline numbers -------------------------------------------------- #}
+  <div class="mb-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Backups on record" %}</p>
+      <p class="stat-value">{{ stats.total }}</p>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {% blocktranslate with verified=stats.verified %}{{ verified }} verified{% endblocktranslate %}
+      </p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Storage used" %}</p>
+      <p class="stat-value">{{ stats.total_display }}</p>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {% blocktranslate with free=stats.free_display %}{{ free }} free on the backup volume{% endblocktranslate %}
+      </p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Most recent copy" %}</p>
+      {% if stats.last_successful %}
+        <p class="stat-value">
+          {% blocktranslate with days=stats.last_successful_age_days %}{{ days }} d{% endblocktranslate %}
+        </p>
+        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          <a href="{% url 'backups:detail' stats.last_successful.pk %}" class="font-mono hover:underline">
+            {{ stats.last_successful.backup_code }}
+          </a>
+        </p>
+      {% else %}
+        <p class="stat-value text-rose-600 dark:text-rose-400">—</p>
+        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{% translate "Nothing has succeeded yet" %}</p>
+      {% endif %}
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Problems" %}</p>
+      <p class="stat-value {% if stats.corrupt or stats.missing_files %}text-rose-600 dark:text-rose-400{% endif %}">
+        {{ stats.corrupt|add:stats.missing_files }}
+      </p>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {% blocktranslate with corrupt=stats.corrupt missing=stats.missing_files %}{{ corrupt }} corrupt · {{ missing }} missing from disk{% endblocktranslate %}
+      </p>
+    </div>
+  </div>
+
+  <div class="mb-5 grid gap-5 lg:grid-cols-3">
+    {# --- take a backup now ---------------------------------------------- #}
+    {% can "backups.add" as may_add %}
+    <div class="card lg:col-span-2">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Create a backup now" %}</h2>
+        <span class="text-xs text-slate-500 dark:text-slate-400">{{ stats.engine }}</span>
+      </div>
+      <div class="card-body">
+        {% if may_add %}
+          <form method="post" action="{% url 'backups:create' %}"
+                x-data="{ busy: false }" @submit="busy = true">
+            {% csrf_token %}
+            <div class="grid gap-3 sm:grid-cols-2">
+              {% include "backups/partials/field.html" with field=create_form.scope %}
+              {% include "backups/partials/field.html" with field=create_form.notes %}
+            </div>
+            <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
+              <p class="text-xs text-slate-500 dark:text-slate-400">
+                {% blocktranslate with root=stats.backup_root %}Written to {{ root }}{% endblocktranslate %}
+              </p>
+              <button type="submit" class="btn-primary" :disabled="busy">
+                <span x-show="!busy" class="inline-flex items-center gap-2">
+                  {% icon "database-backup" "h-4 w-4" %} {% translate "Back up now" %}
+                </span>
+                <span x-show="busy" x-cloak class="inline-flex items-center gap-2">
+                  {% icon "loader-circle" "h-4 w-4 animate-spin" %} {% translate "Working — do not close this page" %}
+                </span>
+              </button>
+            </div>
+          </form>
+        {% else %}
+          <p class="text-sm text-slate-500 dark:text-slate-400">
+            {% translate "Your role can review backups but not create them." %}
+          </p>
+        {% endif %}
+      </div>
+    </div>
+
+    {# --- storage split --------------------------------------------------- #}
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Storage by scope" %}</h2>
+        {% icon "hard-drive" "h-4 w-4 text-slate-400" %}
+      </div>
+      <div class="card-body">
+        {% if storage_rows %}
+          <div class="relative h-44">
+            <canvas id="storage-chart"
+                    data-labels="{{ chart_labels|to_json }}"
+                    data-values="{{ chart_values|to_json }}"></canvas>
+          </div>
+          <dl class="mt-4 space-y-1.5">
+            {% for row in storage_rows %}
+              <div class="flex items-center justify-between text-sm">
+                <dt class="text-slate-600 dark:text-slate-300">{{ row.label }}</dt>
+                <dd class="tabular-nums text-slate-900 dark:text-slate-100">
+                  {{ row.count }} · <span class="text-slate-500 dark:text-slate-400">{{ row.bytes|filesizeformat }}</span>
+                </dd>
+              </div>
+            {% endfor %}
+          </dl>
+        {% else %}
+          <p class="text-sm text-slate-500 dark:text-slate-400">
+            {% translate "No completed backup is taking up space yet." %}
+          </p>
+        {% endif %}
+        <p class="mt-4 border-t border-slate-200 pt-3 text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
+          {% blocktranslate with daily=retention.daily weekly=retention.weekly monthly=retention.monthly %}Keeping {{ daily }} daily, {{ weekly }} weekly and {{ monthly }} monthly copies.{% endblocktranslate %}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  {# --- filters ---------------------------------------------------------- #}
+  <form method="get" action="{% url 'backups:list' %}"
+        class="card mb-5 p-4"
+        hx-get="{% url 'backups:list' %}"
+        hx-target="#backup-results"
+        hx-swap="innerHTML"
+        hx-push-url="true"
+        hx-trigger="submit, change from:select">
+    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div>
+        <label class="form-label" for="id_q">{% translate "Search" %}</label>
+        <div class="relative">
+          <span class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3 text-slate-400">
+            {% icon "search" "h-4 w-4" %}
+          </span>
+          <input type="search" name="q" id="id_q" value="{{ search_term }}"
+                 class="form-input ps-9"
+                 placeholder="{% translate 'Backup code or note…' %}">
+        </div>
+      </div>
+      {% include "backups/partials/field.html" with field=filter_form.backup_type %}
+      {% include "backups/partials/field.html" with field=filter_form.scope %}
+      {% include "backups/partials/field.html" with field=filter_form.status %}
+    </div>
+    <div class="mt-3 flex items-center justify-end gap-2">
+      {% if has_filters %}
+        <a href="{% url 'backups:list' %}" class="btn-secondary">
+          {% icon "rotate-ccw" "h-4 w-4" %} {% translate "Reset" %}
+        </a>
+      {% endif %}
+      <button type="submit" class="btn-primary">
+        {% icon "filter" "h-4 w-4" %} {% translate "Apply" %}
+      </button>
+    </div>
+  </form>
+
+  {# --- results ---------------------------------------------------------- #}
+  <div id="backup-results">
+    {% include "backups/partials/backup_table.html" %}
+  </div>
+{% endblock %}
+
+{% block extra_scripts %}
+  {% if storage_rows %}
+    <script src="{% static 'vendor/chartjs/chart.umd.js' %}"></script>
+    <script>
+      (function () {
+        var canvas = document.getElementById('storage-chart');
+        if (!canvas || typeof Chart === 'undefined') { return; }
+
+        var labels = JSON.parse(canvas.dataset.labels);
+        var values = JSON.parse(canvas.dataset.values);
+
+        function humanBytes(value) {
+          var units = ['B', 'KB', 'MB', 'GB', 'TB'];
+          var size = Number(value) || 0;
+          var index = 0;
+          while (size >= 1024 && index < units.length - 1) { size /= 1024; index += 1; }
+          return (index === 0 ? size : size.toFixed(1)) + ' ' + units[index];
+        }
+
+        var defaults = window.surfChartDefaults();
+        // A doughnut has no axes; keeping them would draw an empty grid.
+        delete defaults.scales;
+        defaults.plugins.tooltip.callbacks = {
+          label: function (context) {
+            return context.label + ': ' + humanBytes(context.parsed);
+          }
+        };
+        defaults.plugins.legend.position = 'bottom';
+
+        new Chart(canvas, {
+          type: 'doughnut',
+          data: {
+            labels: labels,
+            datasets: [{
+              data: values,
+              backgroundColor: window.surfChartColors,
+              borderWidth: 0
+            }]
+          },
+          options: defaults
+        });
+      })();
+    </script>
+  {% endif %}
+{% endblock %}

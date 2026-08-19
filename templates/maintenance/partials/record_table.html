@@ -1,0 +1,68 @@
+{% load i18n surf_tags %}
+
+{% if records %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">{% translate "Record" %}</th>
+          <th scope="col">{% translate "Equipment" %}</th>
+          <th scope="col">{% translate "Damage" %}</th>
+          <th scope="col">{% translate "Severity" %}</th>
+          <th scope="col">{% translate "Status" %}</th>
+          <th scope="col">{% translate "Reported" %}</th>
+          <th scope="col">{% translate "Assigned to" %}</th>
+          <th scope="col" class="text-end">{% translate "Cost" %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for record in records %}
+          <tr>
+            <td>
+              <a href="{% url 'maintenance:detail' record.pk %}"
+                 class="font-medium text-brand-600 hover:underline dark:text-brand-400">
+                {{ record.record_code }}
+              </a>
+              {% if record.made_unusable and record.is_open %}
+                <span class="ms-1 inline-flex items-center gap-1 text-xs font-medium text-rose-600 dark:text-rose-400">
+                  {% icon "triangle-alert" "h-3.5 w-3.5" %}{% translate "Out of service" %}
+                </span>
+              {% endif %}
+            </td>
+            <td>
+              <span class="block">{{ record.equipment }}</span>
+              {% if record.equipment.category %}
+                <span class="text-xs text-slate-500 dark:text-slate-400">{{ record.equipment.category }}</span>
+              {% endif %}
+            </td>
+            <td>{{ record.get_damage_type_display }}</td>
+            <td>{% include "maintenance/partials/severity_badge.html" with value=record.severity label=record.get_severity_display %}</td>
+            <td>{% include "maintenance/partials/status_badge.html" with value=record.status label=record.get_status_display %}</td>
+            <td>
+              <span class="block tabular-nums">{{ record.reported_at|date:"d.m.Y H:i" }}</span>
+              {% if record.is_open %}
+                <span class="text-xs text-slate-500 dark:text-slate-400">
+                  {% blocktranslate with days=record.age_days %}{{ days }} days open{% endblocktranslate %}
+                </span>
+              {% endif %}
+            </td>
+            <td>
+              {% if record.assigned_to %}
+                {{ record.assigned_to.get_display_name }}
+              {% else %}
+                <span class="text-slate-400">{% translate "Unassigned" %}</span>
+              {% endif %}
+            </td>
+            <td class="text-end tabular-nums">{{ record.total_cost|money }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% include "partials/pagination.html" %}
+{% else %}
+  {% translate "No maintenance records match these filters" as empty_title %}
+  {% translate "Change the tab or clear the filters to see more." as empty_subtitle %}
+  {% include "partials/empty_state.html" with icon_name="wrench" title=empty_title subtitle=empty_subtitle %}
+{% endif %}

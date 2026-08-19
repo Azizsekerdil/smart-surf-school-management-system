@@ -1,0 +1,75 @@
+{% load i18n surf_tags %}
+{# Seven days at a glance: size, wind, and the hours worth booking a lesson in. #}
+<section class="card" aria-labelledby="forecast-heading">
+  <div class="card-header">
+    <div>
+      <h2 class="card-title" id="forecast-heading">
+        {% icon "calendar-days" "inline h-4 w-4 text-brand-500" %} {% translate "Next 7 days" %}
+      </h2>
+      <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+        {% translate "Best window is the longest run of daylight hours within 10 points of the day's peak score." %}
+      </p>
+    </div>
+  </div>
+
+  <div class="card-body">
+    {% if forecasts %}
+      <div class="-mx-1 flex gap-3 overflow-x-auto px-1 pb-2">
+        {% for day in forecasts %}
+          <div class="w-44 shrink-0 rounded-xl border border-slate-200 p-3 dark:border-slate-700">
+            <p class="text-sm font-semibold text-slate-900 dark:text-slate-100">
+              {% if day.date == today %}{% translate "Today" %}{% else %}{{ day.date|date:"D" }}{% endif %}
+            </p>
+            <p class="text-xs text-slate-500 dark:text-slate-400">{{ day.date|date:"d.m" }}</p>
+
+            <p class="mt-2 flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
+              {% icon day.weather_icon "h-4 w-4 shrink-0" %}
+              <span class="truncate">{{ day.weather_description|default:"—" }}</span>
+            </p>
+
+            <dl class="mt-2 space-y-1 text-xs">
+              <div class="flex items-center justify-between gap-2">
+                <dt class="text-slate-500 dark:text-slate-400">{% translate "Wave" %}</dt>
+                <dd class="tabular-nums font-medium text-slate-800 dark:text-slate-200">
+                  {% if day.wave_height_max is not None %}
+                    {{ day.wave_height_min|floatformat:1 }}–{{ day.wave_height_max|floatformat:1 }} m
+                  {% else %}—{% endif %}
+                </dd>
+              </div>
+              <div class="flex items-center justify-between gap-2">
+                <dt class="text-slate-500 dark:text-slate-400">{% translate "Wind" %}</dt>
+                <dd class="tabular-nums font-medium text-slate-800 dark:text-slate-200">
+                  {% if day.wind_speed_max is not None %}
+                    {% blocktranslate with speed=day.wind_speed_max|floatformat:0 %}max {{ speed }} km/h{% endblocktranslate %}
+                  {% else %}—{% endif %}
+                </dd>
+              </div>
+            </dl>
+
+            {% if day.has_best_window %}
+              <div class="mt-2 rounded-lg bg-slate-50 p-2 dark:bg-slate-800/60">
+                <p class="flex items-center gap-1 text-[0.68rem] uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  {% icon "clock" "h-3 w-3" %} {% translate "Best window" %}
+                </p>
+                <p class="mt-0.5 text-sm font-semibold tabular-nums text-slate-900 dark:text-slate-100">
+                  {{ day.best_window_display }}
+                </p>
+                {% if day.best_level %}
+                  <p class="text-[0.68rem] text-slate-500 dark:text-slate-400">
+                    {{ day.get_best_level_display }}{% if day.best_score is not None %} · {{ day.best_score }}/100{% endif %}
+                  </p>
+                {% endif %}
+              </div>
+            {% else %}
+              <p class="mt-2 text-xs text-slate-400">{% translate "No scoreable window." %}</p>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="text-sm text-slate-500 dark:text-slate-400">
+        {% translate "No forecast has been stored for this spot yet. Refresh the conditions to build the week." %}
+      </p>
+    {% endif %}
+  </div>
+</section>

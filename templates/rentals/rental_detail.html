@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ rental.rental_code }} · {% translate "Rental" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ rental.rental_code }}{% endblock %}
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% blocktranslate with customer=rental.customer %}Hire for {{ customer }}{% endblocktranslate %}
+  </p>
+{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-4 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'rentals:list' %}" class="hover:underline">{% translate "Rentals" %}</a>
+    <span class="mx-1">/</span>
+    <span class="text-slate-700 dark:text-slate-300">{{ rental.rental_code }}</span>
+  </nav>
+{% endblock %}
+
+{% block page_actions %}
+  {% can "rentals.change" as may_change %}
+  {% if may_change and rental.can_check_in %}
+    <a href="{% url 'rentals:return' rental.pk %}" class="btn-primary">
+      {% icon "rotate-ccw" "h-4 w-4" %} {% translate "Check in" %}
+    </a>
+  {% endif %}
+  {% if may_change and is_open %}
+    <a href="{% url 'rentals:extend' rental.pk %}" class="btn-secondary">
+      {% icon "clock" "h-4 w-4" %} {% translate "Extend" %}
+    </a>
+  {% endif %}
+  {% if may_change %}
+    <a href="{% url 'rentals:update' rental.pk %}" class="btn-ghost">
+      {% icon "pencil" "h-4 w-4" %} {% translate "Edit" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  {% if rental.is_overdue %}
+    <div class="alert-error mb-5">
+      {% icon "triangle-alert" "h-5 w-5 shrink-0" %}
+      <div>
+        <p class="font-semibold">{% translate "This hire is overdue." %}</p>
+        <p>
+          {% blocktranslate with hours=rental.hours_overdue fee=projected_late_fee|money %}
+            {{ hours }} hours past the due-back time. Late fee if checked in now: {{ fee }}.
+          {% endblocktranslate %}
+        </p>
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="grid gap-5 lg:grid-cols-3">
+    {# ------------------------------------------------------------ contract #}
+    <div class="card lg:col-span-2">
+      <div class="card-header flex items-center justify-between">
+        <h2 class="card-title">{% translate "Contract" %}</h2>
+        {% status_badge rental.status rental.get_status_display %}
+      </div>
+      <div class="card-body grid gap-4 sm:grid-cols-2">
+        <div>
+          <p class="stat-label">{% translate "Customer" %}</p>
+          <p class="text-sm font-medium text-slate-900 dark:text-slate-100">{{ rental.customer }}</p>
+        </div>
+        <div>
+          <p class="stat-label">{% translate "Student" %}</p>
+          <p class="text-sm text-slate-700 dark:text-slate-300">{{ rental.student|default:"—" }}</p>
+        </div>
+        <div>
+          <p class="stat-label">{% translate "Booking" %}</p>
+          <p class="text-sm text-slate-700 dark:text-slate-300">{{ rental.booking|default:"—" }}</p>
+        </div>
+        <div>
+          <p class="stat-label">{% translate "Period" %}</p>
+          <p class="text-sm text-slate-700 dark:text-slate-300">{{ rental.get_period_type_display }}</p>
+        </div>
+        <div>
+          <p class="stat-label">{% translate "Handed over" %}</p>
+          <p class="text-sm text-slate-700 dark:text-slate-300">{{ rental.start_at|date:"d.m.Y H:i" }}</p>
+        </div>
+        <div>
+          <p class="stat-label">{% translate "Due back" %}</p>
+          <p class="text-sm text-slate-700 dark:text-slate-300">{{ rental.expected_return_at|date:"d.m.Y H:i" }}</p>
+        </div>
+        <div>
+          <p class="stat-label">{% translate "Returned" %}</p>
+          <p class="text-sm text-slate-700 dark:text-slate-300">
+            {{ rental.returned_at|date:"d.m.Y H:i"|default:"—" }}
+          </p>
+        </div>
+        <div>
+          <p class="stat-label">{% translate "Identity document" %}</p>
+          <p class="text-sm text-slate-700 dark:text-slate-300">
+            {% if rental.id_document_held %}{% translate "Held at the counter" %}{% else %}{% translate "Not held" %}{% endif %}
+          </p>
+        </div>
+        <div>
+          <p class="stat-label">{% translate "Checked out by" %}</p>
+          <p class="text-sm text-slate-700 dark:text-slate-300">{{ rental.checked_out_by|default:"—" }}</p>
+        </div>
+        <div>
+          <p class="stat-label">{% translate "Checked in by" %}</p>
+          <p class="text-sm text-slate-700 dark:text-slate-300">{{ rental.checked_in_by|default:"—" }}</p>
+        </div>
+        {% if rental.notes %}
+          <div class="sm:col-span-2">
+            <p class="stat-label">{% translate "Notes" %}</p>
+            <p class="whitespace-pre-line text-sm text-slate-700 dark:text-slate-300">{{ rental.notes }}</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    {# --------------------------------------------------------------- money #}
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Money" %}</h2>
+      </div>
+      <div class="card-body">
+        <dl class="space-y-2 text-sm">
+          <div class="flex justify-between">
+            <dt class="text-slate-500 dark:text-slate-400">{% translate "Hire charge" %}</dt>
+            <dd class="tabular-nums">{{ rental.subtotal|money }}</dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-slate-500 dark:text-slate-400">{% translate "Discount" %}</dt>
+            <dd class="tabular-nums">−{{ rental.discount_amount|money }}</dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-slate-500 dark:text-slate-400">{% translate "Late fee" %}</dt>
+            <dd class="tabular-nums">{{ rental.late_fee|money }}</dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-slate-500 dark:text-slate-400">{% translate "Damage" %}</dt>
+            <dd class="tabular-nums">{{ rental.damage_fee|money }}</dd>
+          </div>
+          <div class="flex justify-between border-t border-slate-200 pt-2 font-semibold dark:border-slate-700">
+            <dt>{% translate "Total" %}</dt>
+            <dd class="tabular-nums">{{ rental.total_amount|money }}</dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-slate-500 dark:text-slate-400">{% translate "Paid" %}</dt>
+            <dd class="tabular-nums">{{ rental.paid_amount|money }}</dd>
+          </div>
+          <div class="flex justify-between font-semibold">
+            <dt>{% translate "Balance" %}</dt>
+            <dd class="tabular-nums {% if rental.balance_due > 0 %}text-amber-600 dark:text-amber-400{% endif %}">
+              {{ rental.balance_due|money }}
+            </dd>
+          </div>
+        </dl>
+
+        <div class="mt-4 rounded-lg bg-slate-50 p-3 text-sm dark:bg-slate-800/60">
+          <div class="flex items-center justify-between">
+            <span class="text-slate-500 dark:text-slate-400">{% translate "Deposit" %}</span>
+            {% status_badge rental.deposit_status rental.get_deposit_status_display %}
+          </div>
+          <div class="mt-1 flex justify-between tabular-nums">
+            <span>{% translate "Taken" %}</span><span>{{ rental.deposit_amount|money }}</span>
+          </div>
+          <div class="flex justify-between tabular-nums">
+            <span>{% translate "Returned" %}</span><span>{{ rental.deposit_returned|money }}</span>
+          </div>
+          {% if rental.deposit_withheld > 0 %}
+            <div class="flex justify-between tabular-nums font-medium text-rose-700 dark:text-rose-300">
+              <span>{% translate "Withheld" %}</span><span>{{ rental.deposit_withheld|money }}</span>
+            </div>
+          {% endif %}
+        </div>
+
+        {% can "rentals.change" as may_change %}
+        {% if may_change and rental.balance_due > 0 %}
+          <form method="post" action="{% url 'rentals:payment' rental.pk %}" class="mt-4 space-y-2">
+            {% csrf_token %}
+            <p class="form-label">{% translate "Take a payment" %}</p>
+            {{ payment_form.amount }}
+            {{ payment_form.method }}
+            <button type="submit" class="btn-success w-full">
+              {% icon "banknote" "h-4 w-4" %} {% translate "Record payment" %}
+            </button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {# ---------------------------------------------------------------- items #}
+  <div class="card mt-5">
+    <div class="card-header flex items-center justify-between">
+      <h2 class="card-title">{% translate "Equipment" %}</h2>
+      <span class="text-sm text-slate-500 dark:text-slate-400">
+        {% blocktranslate with total=rental.item_count out=rental.open_item_count %}{{ out }} of {{ total }} still out{% endblocktranslate %}
+      </span>
+    </div>
+    <div class="table-wrap rounded-none border-0">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">{% translate "Asset" %}</th>
+            <th scope="col" class="text-end">{% translate "Qty" %}</th>
+            <th scope="col" class="text-end">{% translate "Unit" %}</th>
+            <th scope="col" class="text-end">{% translate "Line" %}</th>
+            <th scope="col">{% translate "Out" %}</th>
+            <th scope="col">{% translate "In" %}</th>
+            <th scope="col">{% translate "Damage" %}</th>
+            <th scope="col"><span class="sr-only">{% translate "Actions" %}</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in items %}
+            <tr>
+              <td class="font-medium text-slate-900 dark:text-slate-100">{{ item.equipment }}</td>
+              <td class="text-end tabular-nums">{{ item.quantity }}</td>
+              <td class="text-end tabular-nums">{{ item.unit_price|money }}</td>
+              <td class="text-end tabular-nums">{{ item.line_total|money }}</td>
+              <td>{% status_badge item.condition_out item.get_condition_out_display condition_colors %}</td>
+              <td>
+                {% if item.condition_in %}
+                  {% status_badge item.condition_in item.get_condition_in_display condition_colors %}
+                  <span class="block text-xs text-slate-400">{{ item.returned_at|date:"d.m.Y H:i" }}</span>
+                {% else %}
+                  <span class="badge-amber">{% translate "Out" %}</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if item.damage_reported %}
+                  <span class="badge-rose">{{ item.get_damage_type_display }}</span>
+                  <span class="block text-xs tabular-nums">{{ item.damage_charge|money }}</span>
+                  {% if item.damage_notes %}
+                    <span class="block text-xs text-slate-500">{{ item.damage_notes }}</span>
+                  {% endif %}
+                {% else %}
+                  <span class="text-slate-400">—</span>
+                {% endif %}
+              </td>
+              <td class="text-end">
+                {% can "rentals.change" as may_change %}
+                {% if may_change and not item.is_returned and is_open %}
+                  <form method="post" action="{% url 'rentals:item_return' rental.pk item.pk %}"
+                        class="flex items-center justify-end gap-2">
+                    {% csrf_token %}
+                    <label class="sr-only" for="condition-{{ item.pk }}">{% translate "Condition" %}</label>
+                    <select name="condition_in" id="condition-{{ item.pk }}" class="form-select w-32 py-1 text-xs">
+                      {% for value, label in item.CONDITION_CHOICES %}
+                        <option value="{{ value }}" {% if value == item.condition_out %}selected{% endif %}>{{ label }}</option>
+                      {% endfor %}
+                    </select>
+                    <button type="submit" class="btn-secondary btn-sm">
+                      {% icon "check" "h-3.5 w-3.5" %} {% translate "Take back" %}
+                    </button>
+                  </form>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if rental.can_check_in %}
+      <div class="card-body border-t border-slate-200 dark:border-slate-700">
+        <p class="text-sm text-slate-500 dark:text-slate-400">
+          {% translate "Reporting damage or charging for a repair? Use the full check-in screen." %}
+        </p>
+      </div>
+    {% endif %}
+  </div>
+
+  {# -------------------------------------------------------------- danger #}
+  {% can "rentals.change" as may_change %}
+  {% can "rentals.manage" as may_manage %}
+  {% can "rentals.delete" as may_delete %}
+  {% if may_change or may_manage or may_delete %}
+    <div class="card mt-5">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Exceptions" %}</h2>
+      </div>
+      <div class="card-body flex flex-wrap gap-2">
+        {% if may_change and rental.status == "reserved" %}
+          <a href="{% url 'rentals:cancel' rental.pk %}" class="btn-secondary">
+            {% icon "circle-x" "h-4 w-4" %} {% translate "Cancel reservation" %}
+          </a>
+        {% endif %}
+        {% if may_manage and is_open %}
+          <a href="{% url 'rentals:lost' rental.pk %}" class="btn-danger">
+            {% icon "triangle-alert" "h-4 w-4" %} {% translate "Not returned — write off" %}
+          </a>
+        {% endif %}
+        {% if may_delete and rental.status == "cancelled" %}
+          <a href="{% url 'rentals:delete' rental.pk %}" class="btn-ghost">
+            {% icon "trash-2" "h-4 w-4" %} {% translate "Delete record" %}
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+{% endblock %}

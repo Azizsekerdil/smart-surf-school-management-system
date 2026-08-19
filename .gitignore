@@ -1,0 +1,136 @@
+# =============================================================================
+# Smart Surf School Management System — .gitignore
+# SECURITY: everything that can hold a credential is excluded here.
+# =============================================================================
+
+# --- Secrets & credentials (NEVER commit) ------------------------------------
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.pfx
+*.crt
+*.cer
+credentials*
+secrets*
+secret*
+!secrets.md.example
+service-account*.json
+*_rsa
+*_dsa
+*_ed25519
+.htpasswd
+api_keys*
+token.json
+tokens.json
+
+# --- Python ------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib60/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# --- Virtual environments ----------------------------------------------------
+.venv/
+venv/
+ENV/
+env/
+.python-version
+
+# --- Django ------------------------------------------------------------------
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+
+# --- Media & user uploads ----------------------------------------------------
+# Anchored with a leading slash so only the project-root directory is ignored.
+# An unanchored `media/` would also swallow application packages or template
+# directories that happen to be called `media`.
+/media/
+!/media/.gitkeep
+/media/private/
+staticfiles/
+static_collected/
+
+# --- Backups (may contain full customer database) ----------------------------
+# Anchored: the unanchored form `backups/` previously also excluded the
+# application package `apps/backups/` and `templates/backups/`, which silently
+# removed a whole Django app from version control. Never un-anchor this.
+/backups/
+!/backups/.gitkeep
+*.dump
+*.sql.gz
+*.bak
+
+# --- Logs --------------------------------------------------------------------
+/logs/
+!/logs/.gitkeep
+*.log.*
+
+# --- Testing & coverage ------------------------------------------------------
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.cache
+coverage.xml
+*.cover
+nosetests.xml
+test-results/
+.ruff_cache/
+.mypy_cache/
+
+# --- Node / frontend tooling -------------------------------------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+package-lock.json.bak
+
+# --- AI workspace scratch ----------------------------------------------------
+.ai_workspace/
+ai_terminal_sessions/
+.rag_index/
+*.faiss
+
+# --- Agent / assistant scratch -----------------------------------------------
+.claude/
+.cursor/
+.aider*
+
+# --- Editors / OS ------------------------------------------------------------
+.vscode/
+!.vscode/settings.json.example
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/

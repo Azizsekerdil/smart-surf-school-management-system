@@ -1,0 +1,381 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ equipment.asset_code }} · {{ equipment.name }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ equipment.name }}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+    <span class="font-mono">{{ equipment.asset_code }}</span>
+    <span aria-hidden="true">·</span>
+    <a href="{% url 'equipment:list' %}?category={{ equipment.category.pk }}" class="hover:underline">
+      {{ equipment.category.full_path }}
+    </a>
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  {% can "equipment.change" as may_change %}
+  {% can "equipment.delete" as may_delete %}
+  <a href="{% url 'equipment:labels' %}?ids={{ equipment.pk }}" class="btn-secondary">
+    {% icon "printer" "h-4 w-4" %} {% translate "Print label" %}
+  </a>
+  {% if may_change %}
+    <a href="{% url 'equipment:update' equipment.pk %}" class="btn-primary">
+      {% icon "pencil" "h-4 w-4" %} {% translate "Edit" %}
+    </a>
+  {% endif %}
+  {% if may_delete %}
+    <a href="{% url 'equipment:delete' equipment.pk %}" class="btn-secondary">
+      {% icon "trash-2" "h-4 w-4" %} {% translate "Archive" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  {% if equipment.needs_maintenance %}
+    <div class="alert-warning mb-4" role="status">
+      {% icon "wrench" "h-4 w-4 shrink-0" %}
+      <span>
+        {% if equipment.next_maintenance_date %}
+          {% blocktranslate with due=equipment.next_maintenance_date|date:"d.m.Y" %}Service was due on {{ due }}.{% endblocktranslate %}
+        {% else %}
+          {% translate "This item is flagged for service." %}
+        {% endif %}
+        {% translate "Do not hand it out until it has been checked." %}
+      </span>
+    </div>
+  {% endif %}
+
+  <div class="grid gap-5 lg:grid-cols-3">
+    {# ------------------------------------------------------- main column #}
+    <div class="space-y-5 lg:col-span-2">
+
+      {# --- specification --- #}
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">{% translate "Specification" %}</h2>
+        </div>
+        <div class="card-body">
+          <dl class="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div>
+              <dt class="stat-label">{% translate "Brand & model" %}</dt>
+              <dd class="text-sm text-slate-900 dark:text-slate-100">
+                {{ equipment.brand|default:"—" }} {{ equipment.model }}
+              </dd>
+            </div>
+            <div>
+              <dt class="stat-label">{% translate "Serial number" %}</dt>
+              <dd class="font-mono text-sm text-slate-900 dark:text-slate-100">{{ equipment.serial_number|default:"—" }}</dd>
+            </div>
+            <div>
+              <dt class="stat-label">{% translate "Size" %}</dt>
+              <dd class="text-sm text-slate-900 dark:text-slate-100">{{ equipment.size_label|default:"—" }}</dd>
+            </div>
+            <div>
+              <dt class="stat-label">{% translate "Length" %}</dt>
+              <dd class="text-sm text-slate-900 dark:text-slate-100">
+                {% if equipment.length_cm %}{{ equipment.length_cm }} {% translate "cm" %}{% else %}—{% endif %}
+              </dd>
+            </div>
+            <div>
+              <dt class="stat-label">{% translate "Width × thickness" %}</dt>
+              <dd class="text-sm text-slate-900 dark:text-slate-100">
+                {% if equipment.width_cm %}{{ equipment.width_cm }}{% else %}—{% endif %}
+                ×
+                {% if equipment.thickness_cm %}{{ equipment.thickness_cm }}{% else %}—{% endif %}
+                {% translate "cm" %}
+              </dd>
+            </div>
+            <div>
+              <dt class="stat-label">{% translate "Volume" %}</dt>
+              <dd class="text-sm text-slate-900 dark:text-slate-100">
+                {% if equipment.volume_litres %}{{ equipment.volume_litres }} L{% else %}—{% endif %}
+              </dd>
+            </div>
+            <div>
+              <dt class="stat-label">{% translate "Wetsuit thickness" %}</dt>
+              <dd class="text-sm text-slate-900 dark:text-slate-100">{{ equipment.wetsuit_thickness|default:"—" }}</dd>
+            </div>
+            <div>
+              <dt class="stat-label">{% translate "Suitable levels" %}</dt>
+              <dd class="text-sm text-slate-900 dark:text-slate-100">
+                {{ equipment.get_suitable_min_level_display }} – {{ equipment.get_suitable_max_level_display }}
+              </dd>
+            </div>
+            <div>
+              <dt class="stat-label">{% translate "Rider weight" %}</dt>
+              <dd class="text-sm text-slate-900 dark:text-slate-100">
+                {% if equipment.min_rider_weight_kg or equipment.max_rider_weight_kg %}
+                  {{ equipment.min_rider_weight_kg|default:"—" }} – {{ equipment.max_rider_weight_kg|default:"—" }} {% translate "kg" %}
+                {% else %}—{% endif %}
+              </dd>
+            </div>
+            <div>
+              <dt class="stat-label">{% translate "Storage location" %}</dt>
+              <dd class="text-sm text-slate-900 dark:text-slate-100">{{ equipment.storage_location|default:"—" }}</dd>
+            </div>
+            <div>
+              <dt class="stat-label">{% translate "Condition" %}</dt>
+              <dd>{% status_badge equipment.condition equipment.get_condition_display condition_colors %}</dd>
+            </div>
+            <div>
+              <dt class="stat-label">{% translate "Use" %}</dt>
+              <dd class="flex flex-wrap gap-1.5">
+                {% if equipment.is_rentable %}<span class="badge-sky">{% translate "Rentable" %}</span>{% endif %}
+                {% if equipment.is_lesson_stock %}<span class="badge-emerald">{% translate "Lesson stock" %}</span>{% endif %}
+                {% if not equipment.is_rentable and not equipment.is_lesson_stock %}<span class="badge-slate">{% translate "Internal only" %}</span>{% endif %}
+              </dd>
+            </div>
+          </dl>
+
+          {% if equipment.notes %}
+            <div class="mt-5 rounded-lg bg-slate-50 p-4 text-sm text-slate-700 dark:bg-slate-800/60 dark:text-slate-300">
+              {{ equipment.notes|linebreaksbr }}
+            </div>
+          {% endif %}
+        </div>
+      </section>
+
+      {# --- photos --- #}
+      <section class="card">
+        <div class="card-header flex items-center justify-between">
+          <h2 class="card-title">{% translate "Photos" %}</h2>
+          <span class="text-xs text-slate-500 dark:text-slate-400">{{ photos|length }}</span>
+        </div>
+        <div class="card-body">
+          {% if photos %}
+            <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+              {% for photo in photos %}
+                <figure class="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700">
+                  <img src="{{ photo.image.url }}" alt="{{ photo.caption|default:equipment.name }}"
+                       class="h-28 w-full object-cover" loading="lazy">
+                  <figcaption class="flex items-center justify-between gap-1 p-2 text-xs text-slate-500 dark:text-slate-400">
+                    <span class="truncate">
+                      {% if photo.is_primary %}<span class="badge-sky">{% translate "Primary" %}</span>{% endif %}
+                      {{ photo.caption }}
+                    </span>
+                    {% can "equipment.change" as may_change %}
+                    {% if may_change %}
+                      <form method="post" action="{% url 'equipment:photo_delete' equipment.pk photo.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-ghost btn-sm text-rose-600"
+                                title="{% translate 'Remove photo' %}">{% icon "trash-2" "h-3.5 w-3.5" %}</button>
+                      </form>
+                    {% endif %}
+                  </figcaption>
+                </figure>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p class="text-sm text-slate-500 dark:text-slate-400">
+              {% translate "No photos yet. A photo of the item on the day it arrived settles most damage arguments later." %}
+            </p>
+          {% endif %}
+
+          {% can "equipment.change" as may_change %}
+          {% if may_change %}
+            <form method="post" action="{% url 'equipment:photo_create' equipment.pk %}"
+                  enctype="multipart/form-data" class="mt-4 grid gap-3 sm:grid-cols-4">
+              {% csrf_token %}
+              <div class="sm:col-span-2">
+                <label class="form-label" for="{{ photo_form.image.id_for_label }}">{{ photo_form.image.label }}</label>
+                {{ photo_form.image }}
+              </div>
+              <div>
+                <label class="form-label" for="{{ photo_form.caption.id_for_label }}">{{ photo_form.caption.label }}</label>
+                {{ photo_form.caption }}
+              </div>
+              <div class="flex items-end gap-3">
+                <label class="inline-flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+                  {{ photo_form.is_primary }} {{ photo_form.is_primary.label }}
+                </label>
+                <button type="submit" class="btn-secondary btn-sm">
+                  {% icon "upload" "h-4 w-4" %} {% translate "Upload" %}
+                </button>
+              </div>
+            </form>
+          {% endif %}
+        </div>
+      </section>
+
+      {# --- rental history --- #}
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">{% translate "Rental history" %}</h2>
+        </div>
+        <div class="card-body">
+          {% if rental_history %}
+            <ul class="divide-y divide-slate-100 dark:divide-slate-800">
+              {% for entry in rental_history %}
+                <li class="flex items-center justify-between gap-3 py-2 text-sm">
+                  <span class="min-w-0 truncate text-slate-700 dark:text-slate-300">{{ entry }}</span>
+                  <span class="whitespace-nowrap text-xs text-slate-500 dark:text-slate-400">
+                    {{ entry.created_at|date:"d.m.Y" }}
+                  </span>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="text-sm text-slate-500 dark:text-slate-400">
+              {% blocktranslate with count=equipment.total_rentals hours=equipment.total_rental_hours %}No individual rentals recorded. Lifetime counters: {{ count }} rentals, {{ hours }} hours.{% endblocktranslate %}
+            </p>
+          {% endif %}
+        </div>
+      </section>
+
+      {# --- maintenance history --- #}
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">{% translate "Maintenance history" %}</h2>
+        </div>
+        <div class="card-body">
+          {% if maintenance_history %}
+            <ul class="divide-y divide-slate-100 dark:divide-slate-800">
+              {% for entry in maintenance_history %}
+                <li class="flex items-center justify-between gap-3 py-2 text-sm">
+                  <span class="min-w-0 truncate text-slate-700 dark:text-slate-300">{{ entry }}</span>
+                  <span class="whitespace-nowrap text-xs text-slate-500 dark:text-slate-400">
+                    {{ entry.created_at|date:"d.m.Y" }}
+                  </span>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="text-sm text-slate-500 dark:text-slate-400">
+              {% if equipment.last_maintenance_date %}
+                {% blocktranslate with when=equipment.last_maintenance_date|date:"d.m.Y" %}Last serviced on {{ when }}. No detailed records yet.{% endblocktranslate %}
+              {% else %}
+                {% translate "This item has never been serviced." %}
+              {% endif %}
+            </p>
+          {% endif %}
+        </div>
+      </section>
+    </div>
+
+    {# ------------------------------------------------------- side column #}
+    <div class="space-y-5">
+
+      {# --- QR label --- #}
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">{% translate "QR label" %}</h2>
+        </div>
+        <div class="card-body text-center">
+          <div class="mx-auto inline-block rounded-lg bg-white p-3">{{ qr_svg }}</div>
+          <p class="mt-2 font-mono text-sm font-semibold text-slate-900 dark:text-slate-100">
+            {{ equipment.asset_code }}
+          </p>
+          <p class="mt-1 break-all text-xs text-slate-400">{{ equipment.qr_payload }}</p>
+          <a href="{% url 'equipment:labels' %}?ids={{ equipment.pk }}" class="btn-secondary btn-sm mt-3">
+            {% icon "printer" "h-4 w-4" %} {% translate "Print label" %}
+          </a>
+        </div>
+      </section>
+
+      {# --- status --- #}
+      {% include "equipment/partials/status_panel.html" %}
+
+      {# --- value & usage --- #}
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">{% translate "Value & usage" %}</h2>
+        </div>
+        <div class="card-body">
+          <dl class="space-y-3">
+            <div class="flex items-center justify-between gap-3">
+              <dt class="stat-label">{% translate "Purchase price" %}</dt>
+              <dd class="text-sm tabular-nums text-slate-900 dark:text-slate-100">{{ equipment.purchase_price|money }}</dd>
+            </div>
+            <div class="flex items-center justify-between gap-3">
+              <dt class="stat-label">{% translate "Current value" %}</dt>
+              <dd class="text-sm tabular-nums text-slate-900 dark:text-slate-100">{{ equipment.current_value|money }}</dd>
+            </div>
+            <div class="flex items-center justify-between gap-3">
+              <dt class="stat-label">{% translate "Depreciation" %}</dt>
+              <dd class="text-sm tabular-nums text-slate-900 dark:text-slate-100">{{ equipment.depreciation_percent|pct }}</dd>
+            </div>
+            <div class="flex items-center justify-between gap-3">
+              <dt class="stat-label">{% translate "Purchased" %}</dt>
+              <dd class="text-sm text-slate-900 dark:text-slate-100">
+                {% if equipment.purchase_date %}
+                  {{ equipment.purchase_date|date:"d.m.Y" }}
+                  <span class="text-xs text-slate-400">({{ equipment.age_days }} {% translate "days" %})</span>
+                {% else %}—{% endif %}
+              </dd>
+            </div>
+            <div class="flex items-center justify-between gap-3">
+              <dt class="stat-label">{% translate "Supplier" %}</dt>
+              <dd class="text-sm text-slate-900 dark:text-slate-100">{{ equipment.supplier|default:"—" }}</dd>
+            </div>
+            <div class="flex items-center justify-between gap-3">
+              <dt class="stat-label">{% translate "Rentals" %}</dt>
+              <dd class="text-sm tabular-nums text-slate-900 dark:text-slate-100">{{ equipment.total_rentals }}</dd>
+            </div>
+            <div class="flex items-center justify-between gap-3">
+              <dt class="stat-label">{% translate "Hours out" %}</dt>
+              <dd class="text-sm tabular-nums text-slate-900 dark:text-slate-100">{{ equipment.total_rental_hours }}</dd>
+            </div>
+            <div class="flex items-center justify-between gap-3">
+              <dt class="stat-label">{% translate "Utilisation" %}</dt>
+              <dd class="text-sm tabular-nums text-slate-900 dark:text-slate-100">{{ equipment.utilisation_rate|pct }}</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+
+      {# --- rental pricing --- #}
+      {% if equipment.is_rentable %}
+        <section class="card">
+          <div class="card-header">
+            <h2 class="card-title">{% translate "Rental pricing" %}</h2>
+          </div>
+          <div class="card-body">
+            <dl class="space-y-3">
+              <div class="flex items-center justify-between gap-3">
+                <dt class="stat-label">{% translate "Per hour" %}</dt>
+                <dd class="text-sm tabular-nums text-slate-900 dark:text-slate-100">{{ equipment.rental_price_hourly|money }}</dd>
+              </div>
+              <div class="flex items-center justify-between gap-3">
+                <dt class="stat-label">{% translate "Per day" %}</dt>
+                <dd class="text-sm tabular-nums text-slate-900 dark:text-slate-100">{{ equipment.rental_price_daily|money }}</dd>
+              </div>
+              <div class="flex items-center justify-between gap-3">
+                <dt class="stat-label">{% translate "Per week" %}</dt>
+                <dd class="text-sm tabular-nums text-slate-900 dark:text-slate-100">{{ equipment.rental_price_weekly|money }}</dd>
+              </div>
+              <div class="flex items-center justify-between gap-3">
+                <dt class="stat-label">{% translate "Deposit" %}</dt>
+                <dd class="text-sm tabular-nums text-slate-900 dark:text-slate-100">{{ equipment.deposit_amount|money }}</dd>
+              </div>
+            </dl>
+          </div>
+        </section>
+      {% endif %}
+
+      {# --- service --- #}
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">{% translate "Service" %}</h2>
+        </div>
+        <div class="card-body">
+          <dl class="space-y-3">
+            <div class="flex items-center justify-between gap-3">
+              <dt class="stat-label">{% translate "Last service" %}</dt>
+              <dd class="text-sm text-slate-900 dark:text-slate-100">
+                {{ equipment.last_maintenance_date|date:"d.m.Y"|default:"—" }}
+              </dd>
+            </div>
+            <div class="flex items-center justify-between gap-3">
+              <dt class="stat-label">{% translate "Next service" %}</dt>
+              <dd class="text-sm {% if equipment.needs_maintenance %}text-rose-600 dark:text-rose-400{% else %}text-slate-900 dark:text-slate-100{% endif %}">
+                {{ equipment.next_maintenance_date|date:"d.m.Y"|default:"—" }}
+              </dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+    </div>
+  </div>
+{% endblock %}

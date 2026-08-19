@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Search help" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Search help" %}{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-4 flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400"
+       aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'help_center:home' %}" class="hover:text-brand-600 dark:hover:text-brand-400">
+      {% translate "Help Center" %}
+    </a>
+    {% icon "chevron-right" "h-4 w-4" %}
+    <span class="text-slate-700 dark:text-slate-300">{% translate "Search" %}</span>
+  </nav>
+{% endblock %}
+
+{% block content %}
+  <form method="get" action="{% url 'help_center:search' %}"
+        class="card mb-5 p-4"
+        role="search"
+        hx-get="{% url 'help_center:search' %}"
+        hx-target="#help-search-results"
+        hx-swap="innerHTML"
+        hx-push-url="true"
+        hx-trigger="submit, change from:select">
+    <div class="flex flex-col gap-3 sm:flex-row">
+      <div class="relative flex-1">
+        <span class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3 text-slate-400">
+          {% icon "search" "h-4 w-4" %}
+        </span>
+        <input type="search" name="q" value="{{ search_term }}" class="form-input ps-9"
+               placeholder="{% translate 'What are you trying to do?' %}"
+               autocomplete="off"
+               aria-label="{% translate 'Search the manual' %}">
+      </div>
+      <div class="sm:w-56">{{ search_form.category }}</div>
+      <button type="submit" class="btn-primary">
+        {% icon "search" "h-4 w-4" %} {% translate "Search" %}
+      </button>
+      {% if has_query %}
+        <a href="{% url 'help_center:search' %}" class="btn-secondary">
+          {% icon "rotate-ccw" "h-4 w-4" %} {% translate "Reset" %}
+        </a>
+      {% endif %}
+    </div>
+  </form>
+
+  <div id="help-search-results">
+    {% include "help_center/partials/search_results.html" %}
+  </div>
+{% endblock %}

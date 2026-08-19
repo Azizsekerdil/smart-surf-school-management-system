@@ -1,0 +1,40 @@
+{% load i18n surf_tags %}
+{% if not checked %}
+  <p class="text-sm text-slate-500 dark:text-slate-400">
+    {% translate "Fill in the date, time, instructor and spot — conflicts appear here as you type." %}
+  </p>
+{% elif conflicts %}
+  <div class="alert-error">
+    <p class="font-semibold">
+      {% blocktranslate count counter=conflicts|length %}{{ counter }} blocking conflict{% plural %}{{ counter }} blocking conflicts{% endblocktranslate %}
+    </p>
+    <ul class="mt-1 list-disc space-y-1 ps-5 text-sm">
+      {% for conflict in conflicts %}<li>{{ conflict }}</li>{% endfor %}
+    </ul>
+  </div>
+  {% if warnings %}
+    <ul class="mt-3 list-disc space-y-1 ps-5 text-sm text-amber-700 dark:text-amber-300">
+      {% for warning in warnings %}<li>{{ warning }}</li>{% endfor %}
+    </ul>
+  {% endif %}
+{% else %}
+  <div class="alert-success">
+    <p class="inline-flex items-center gap-2 font-semibold">
+      {% icon "circle-check" "h-4 w-4" %} {% translate "No conflicts found." %}
+    </p>
+  </div>
+  {% if warnings %}
+    <div class="alert-warning mt-3">
+      <p class="font-semibold">{% translate "Worth checking:" %}</p>
+      <ul class="mt-1 list-disc space-y-1 ps-5 text-sm">
+        {% for warning in warnings %}<li>{{ warning }}</li>{% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+{% endif %}
+
+{% if suggested_capacity %}
+  <p class="mt-3 text-sm text-slate-600 dark:text-slate-300">
+    {% blocktranslate with size=suggested_capacity %}Safe group size for this staffing: <strong>{{ size }}</strong> students.{% endblocktranslate %}
+  </p>
+{% endif %}

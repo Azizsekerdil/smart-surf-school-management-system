@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ title }} · {{ camp.name }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="text-sm text-slate-500 dark:text-slate-400">
+    <a href="{% url 'surf_camps:detail' camp.pk %}" class="hover:text-brand-600">{{ camp.name }}</a>
+    · {{ day.display_title }} · {{ day.date|date:"d.m.Y" }}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'surf_camps:detail' camp.pk %}?tab=programme" class="btn-secondary">
+    {% icon "chevron-left" "h-4 w-4" %} {% translate "Back to programme" %}
+  </a>
+{% endblock %}
+
+{% block content %}
+  <form method="post" class="space-y-4" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="alert-error">
+        {% icon "triangle-alert" "h-5 w-5 shrink-0" %}
+        <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+      </div>
+    {% endif %}
+
+    <section class="card">
+      <div class="card-body grid gap-4 sm:grid-cols-2">
+        {% include "surf_camps/partials/field.html" with field=form.start_time %}
+        {% include "surf_camps/partials/field.html" with field=form.end_time %}
+        {% include "surf_camps/partials/field.html" with field=form.title %}
+        {% include "surf_camps/partials/field.html" with field=form.activity_type %}
+        {% include "surf_camps/partials/field.html" with field=form.instructor %}
+        {% include "surf_camps/partials/field.html" with field=form.location %}
+        {% include "surf_camps/partials/field.html" with field=form.lesson %}
+        <div class="sm:col-span-2">
+          {% include "surf_camps/partials/field.html" with field=form.notes %}
+        </div>
+      </div>
+    </section>
+
+    <div class="flex justify-end gap-2">
+      <a href="{% url 'surf_camps:detail' camp.pk %}?tab=programme" class="btn-secondary">{% translate "Cancel" %}</a>
+      <button type="submit" class="btn-primary">
+        {% icon "save" "h-4 w-4" %} {% translate "Save activity" %}
+      </button>
+    </div>
+  </form>
+{% endblock %}

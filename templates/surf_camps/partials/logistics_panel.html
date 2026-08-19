@@ -1,0 +1,172 @@
+{% load i18n surf_tags %}
+
+<div class="grid gap-4 lg:grid-cols-2">
+
+  {# --- what the package includes ---------------------------------------- #}
+  <section class="card">
+    <div class="card-header"><h3 class="card-title">{% translate "Package" %}</h3></div>
+    <div class="card-body">
+      <ul class="grid gap-2 sm:grid-cols-2">
+        <li class="flex items-center gap-2 text-sm {% if camp.includes_accommodation %}text-slate-700 dark:text-slate-300{% else %}text-slate-400 line-through dark:text-slate-600{% endif %}">
+          {% if camp.includes_accommodation %}{% icon "circle-check" "h-4 w-4 text-emerald-500" %}{% else %}{% icon "circle-x" "h-4 w-4" %}{% endif %}
+          {% translate "Accommodation" %}
+        </li>
+        <li class="flex items-center gap-2 text-sm {% if camp.includes_meals %}text-slate-700 dark:text-slate-300{% else %}text-slate-400 line-through dark:text-slate-600{% endif %}">
+          {% if camp.includes_meals %}{% icon "circle-check" "h-4 w-4 text-emerald-500" %}{% else %}{% icon "circle-x" "h-4 w-4" %}{% endif %}
+          {% translate "Meals" %}
+        </li>
+        <li class="flex items-center gap-2 text-sm {% if camp.includes_transfer %}text-slate-700 dark:text-slate-300{% else %}text-slate-400 line-through dark:text-slate-600{% endif %}">
+          {% if camp.includes_transfer %}{% icon "circle-check" "h-4 w-4 text-emerald-500" %}{% else %}{% icon "circle-x" "h-4 w-4" %}{% endif %}
+          {% translate "Airport transfer" %}
+        </li>
+        <li class="flex items-center gap-2 text-sm {% if camp.includes_equipment %}text-slate-700 dark:text-slate-300{% else %}text-slate-400 line-through dark:text-slate-600{% endif %}">
+          {% if camp.includes_equipment %}{% icon "circle-check" "h-4 w-4 text-emerald-500" %}{% else %}{% icon "circle-x" "h-4 w-4" %}{% endif %}
+          {% translate "Equipment" %}
+        </li>
+        <li class="flex items-center gap-2 text-sm {% if camp.includes_insurance %}text-slate-700 dark:text-slate-300{% else %}text-slate-400 line-through dark:text-slate-600{% endif %}">
+          {% if camp.includes_insurance %}{% icon "circle-check" "h-4 w-4 text-emerald-500" %}{% else %}{% icon "circle-x" "h-4 w-4" %}{% endif %}
+          {% translate "Insurance" %}
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  {# --- accommodation ----------------------------------------------------- #}
+  <section class="card">
+    <div class="card-header"><h3 class="card-title">{% translate "Accommodation" %}</h3></div>
+    <div class="card-body space-y-3 text-sm">
+      {% if camp.accommodation_name %}
+        <p class="font-medium text-slate-900 dark:text-slate-100">{{ camp.accommodation_name }}</p>
+        {% if camp.accommodation_address %}
+          <p class="whitespace-pre-line text-slate-600 dark:text-slate-300">{{ camp.accommodation_address }}</p>
+        {% endif %}
+      {% else %}
+        <p class="text-slate-500 dark:text-slate-400">{% translate "No property recorded." %}</p>
+      {% endif %}
+      {% if camp.single_room_supplement %}
+        <p class="text-slate-600 dark:text-slate-300">
+          {% blocktranslate with amount=camp.single_room_supplement|money %}Single room supplement: {{ amount }}{% endblocktranslate %}
+        </p>
+      {% endif %}
+      {% if camp.meal_plan %}
+        <div>
+          <p class="font-medium text-slate-900 dark:text-slate-100">{% translate "Meal plan" %}</p>
+          <p class="whitespace-pre-line text-slate-600 dark:text-slate-300">{{ camp.meal_plan }}</p>
+        </div>
+      {% endif %}
+    </div>
+  </section>
+
+  {# --- rooming list ------------------------------------------------------ #}
+  <section class="card lg:col-span-2">
+    <div class="card-header"><h3 class="card-title">{% translate "Rooming list" %}</h3></div>
+    <div class="card-body">
+      {% if participants %}
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>{% translate "Room" %}</th>
+                <th>{% translate "Type" %}</th>
+                <th>{% translate "Student" %}</th>
+                <th>{% translate "Roommate preference" %}</th>
+                <th>{% translate "T-shirt" %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for participant in participants %}
+                <tr>
+                  <td class="font-medium text-slate-900 dark:text-slate-100">{{ participant.room_number|default:"—" }}</td>
+                  <td>{{ participant.get_room_type_display }}</td>
+                  <td>{{ participant.student }}</td>
+                  <td class="text-slate-500 dark:text-slate-400">{{ participant.roommate_preference|default:"—" }}</td>
+                  <td>{{ participant.get_t_shirt_size_display|default:"—" }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="text-sm text-slate-500 dark:text-slate-400">{% translate "Nobody is registered yet." %}</p>
+      {% endif %}
+    </div>
+  </section>
+
+  {# --- transfers --------------------------------------------------------- #}
+  <section class="card">
+    <div class="card-header">
+      <h3 class="card-title">{% translate "Transfers" %}</h3>
+      <span class="badge-slate">{{ transfer_participants|length }}</span>
+    </div>
+    <div class="card-body space-y-3 text-sm">
+      {% if camp.transfer_pickup_point %}
+        <p class="flex items-start gap-2 text-slate-600 dark:text-slate-300">
+          {% icon "map-pin" "h-4 w-4 shrink-0 text-slate-400" %}
+          {{ camp.transfer_pickup_point }}
+        </p>
+      {% endif %}
+      {% if camp.transfer_notes %}
+        <p class="whitespace-pre-line text-slate-600 dark:text-slate-300">{{ camp.transfer_notes }}</p>
+      {% endif %}
+
+      {% if transfer_participants %}
+        <ul class="divide-y divide-slate-100 dark:divide-slate-800">
+          {% for participant in transfer_participants %}
+            <li class="flex flex-wrap items-center justify-between gap-2 py-2">
+              <span class="font-medium text-slate-900 dark:text-slate-100">{{ participant.student }}</span>
+              <span class="text-xs text-slate-500 dark:text-slate-400">
+                {% if participant.arrival_datetime %}
+                  {% icon "arrow-left-right" "inline h-3.5 w-3.5" %}
+                  {{ participant.arrival_datetime|date:"d.m H:i" }} {{ participant.arrival_flight }}
+                {% endif %}
+                {% if participant.departure_datetime %}
+                  · {{ participant.departure_datetime|date:"d.m H:i" }} {{ participant.departure_flight }}
+                {% endif %}
+              </span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-slate-500 dark:text-slate-400">{% translate "Nobody needs a transfer." %}</p>
+      {% endif %}
+    </div>
+  </section>
+
+  {# --- dietary & medical -------------------------------------------------- #}
+  <section class="card">
+    <div class="card-header"><h3 class="card-title">{% translate "Dietary and medical" %}</h3></div>
+    <div class="card-body space-y-4 text-sm">
+      <div>
+        <p class="mb-2 font-medium text-slate-900 dark:text-slate-100">{% translate "Dietary requirements" %}</p>
+        {% if dietary_participants %}
+          <ul class="space-y-1.5">
+            {% for participant in dietary_participants %}
+              <li class="flex flex-wrap items-center justify-between gap-2">
+                <span class="text-slate-700 dark:text-slate-300">{{ participant.student }}</span>
+                <span class="badge-amber">{{ participant.dietary_requirements }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-slate-500 dark:text-slate-400">{% translate "None recorded." %}</p>
+        {% endif %}
+      </div>
+
+      <div>
+        <p class="mb-2 font-medium text-slate-900 dark:text-slate-100">{% translate "Medical notes" %}</p>
+        {% if medical_participants %}
+          <ul class="space-y-2">
+            {% for participant in medical_participants %}
+              <li class="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 dark:border-rose-500/30 dark:bg-rose-500/10">
+                <p class="font-medium text-rose-900 dark:text-rose-200">{{ participant.student }}</p>
+                <p class="whitespace-pre-line text-rose-800 dark:text-rose-300">{{ participant.medical_notes }}</p>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-slate-500 dark:text-slate-400">{% translate "None recorded." %}</p>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+</div>

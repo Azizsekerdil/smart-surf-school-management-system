@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Notifications" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Notifications" %}{% endblock %}
+
+{% block page_subtitle %}
+  {% include "notifications/partials/unread_counter.html" %}
+{% endblock %}
+
+{% block page_actions %}
+  {% can "notifications.add" as may_broadcast %}
+  {% if may_broadcast %}
+    <a href="{% url 'notifications:broadcast' %}" class="btn-secondary">
+      {% icon "send" "h-4 w-4" %} {% translate "Send announcement" %}
+    </a>
+  {% endif %}
+
+  <a href="{% url 'notifications:preferences' %}" class="btn-secondary">
+    {% icon "settings" "h-4 w-4" %} {% translate "Preferences" %}
+  </a>
+
+  {% if unread_total %}
+    <form method="post" action="{% url 'notifications:mark_all_read' %}"
+          hx-post="{% url 'notifications:mark_all_read' %}" hx-swap="none">
+      {% csrf_token %}
+      <input type="hidden" name="category" value="{{ filters.category }}">
+      <input type="hidden" name="next" value="{{ request.get_full_path }}">
+      <button type="submit" class="btn-primary">
+        {% icon "list-checks" "h-4 w-4" %} {% translate "Mark all as read" %}
+      </button>
+    </form>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <form method="get" action="{% url 'notifications:list' %}"
+        class="card mb-4 flex flex-wrap items-end gap-3 p-4"
+        hx-get="{% url 'notifications:list' %}"
+        hx-target="#notification-list"
+        hx-swap="outerHTML"
+        hx-push-url="true"
+        hx-trigger="change, submit, keyup changed delay:400ms from:input[name='q']">
+
+    <div class="min-w-56 flex-1">
+      <label for="filter-q" class="form-label">{% translate "Search" %}</label>
+      <input type="search" id="filter-q" name="q" value="{{ filters.q }}"
+             class="form-input" placeholder="{% translate 'Title or message…' %}">
+    </div>
+
+    <div>
+      <label for="filter-category" class="form-label">{% translate "Category" %}</label>
+      <select id="filter-category" name="category" class="form-select">
+        <option value="">{% translate "All categories" %}</option>
+        {% for value, label in categories %}
+          <option value="{{ value }}" {% if filters.category == value %}selected{% endif %}>
+            {{ label }}{% with count=unread_by_category|get_item:value %}{% if count %} ({{ count }}){% endif %}{% endwith %}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label for="filter-level" class="form-label">{% translate "Level" %}</label>
+      <select id="filter-level" name="level" class="form-select">
+        <option value="">{% translate "All levels" %}</option>
+        {% for value, label in levels %}
+          <option value="{{ value }}" {% if filters.level == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <label class="flex items-center gap-2 pb-2 text-sm text-slate-600 dark:text-slate-300">
+      <input type="checkbox" name="unread" value="1" {% if filters.unread == "1" %}checked{% endif %}
+             class="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500 dark:border-slate-600">
+      {% translate "Unread only" %}
+    </label>
+
+    <button type="submit" class="btn-secondary">
+      {% icon "filter" "h-4 w-4" %} {% translate "Filter" %}
+    </button>
+
+    {% if filters.q or filters.category or filters.level or filters.unread %}
+      <a href="{% url 'notifications:list' %}" class="btn-secondary">
+        {% icon "x" "h-4 w-4" %} {% translate "Clear" %}
+      </a>
+    {% endif %}
+  </form>
+
+  {% include "notifications/partials/notification_list.html" %}
+{% endblock %}

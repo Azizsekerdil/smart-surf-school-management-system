@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Check in" %} {{ rental.rental_code }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Check in" %} — {{ rental.rental_code }}{% endblock %}
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% blocktranslate with customer=rental.customer %}Returning gear for {{ customer }}{% endblocktranslate %}
+  </p>
+{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-4 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'rentals:list' %}" class="hover:underline">{% translate "Rentals" %}</a>
+    <span class="mx-1">/</span>
+    <a href="{% url 'rentals:detail' rental.pk %}" class="hover:underline">{{ rental.rental_code }}</a>
+    <span class="mx-1">/</span>
+    <span class="text-slate-700 dark:text-slate-300">{% translate "Check in" %}</span>
+  </nav>
+{% endblock %}
+
+{% block content %}
+  {% if rental.is_overdue %}
+    <div class="alert-warning mb-5">
+      {% icon "clock" "h-5 w-5 shrink-0" %}
+      <div>
+        <p class="font-semibold">{% translate "Returned late" %}</p>
+        <p>
+          {% blocktranslate with hours=hours_overdue due=rental.expected_return_at|date:"d.m.Y H:i" %}
+            Due back {{ due }} — {{ hours }} hours ago. The late fee below is already calculated.
+          {% endblocktranslate %}
+        </p>
+      </div>
+    </div>
+  {% endif %}
+
+  <form method="post" action="{% url 'rentals:return' rental.pk %}" id="checkin-form" novalidate>
+    {% csrf_token %}
+    <div class="grid gap-5 lg:grid-cols-3">
+
+      {# ------------------------------------------------------------- items #}
+      <div class="space-y-4 lg:col-span-2"
+           hx-post="{% url 'rentals:return_preview' rental.pk %}"
+           hx-trigger="change, keyup changed delay:500ms"
+           hx-include="#checkin-form"
+           hx-target="#checkin-summary"
+           hx-swap="innerHTML">
+        {% for item_form in item_forms %}
+          <div class="card">
+            <div class="card-header flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h2 class="card-title">{{ item_form.item.equipment }}</h2>
+                <p class="text-xs text-slate-500 dark:text-slate-400">
+                  {% blocktranslate with condition=item_form.item.get_condition_out_display qty=item_form.item.quantity %}
+                    Handed out as {{ condition }} · {{ qty }} unit(s)
+                  {% endblocktranslate %}
+                </p>
+              </div>
+              <label class="flex items-center gap-2 text-sm font-medium">
+                {{ item_form.check_in }}
+                <span>{% translate "Coming back now" %}</span>
+              </label>
+            </div>
+            <div class="card-body grid gap-4 sm:grid-cols-2">
+              <div>
+                <label class="form-label" for="{{ item_form.condition_in.id_for_label }}">
+                  {% translate "Condition on return" %}
+                </label>
+                {{ item_form.condition_in }}
+                {% for error in item_form.condition_in.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+              </div>
+              <div class="flex items-end">
+                <label class="flex items-center gap-2 text-sm">
+                  {{ item_form.damage_reported }}
+                  <span>{% translate "Damage to report" %}</span>
+                </label>
+              </div>
+              <div>
+                <label class="form-label" for="{{ item_form.damage_type.id_for_label }}">
+                  {% translate "Damage type" %}
+                </label>
+                {{ item_form.damage_type }}
+                {% for error in item_form.damage_type.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+              </div>
+              <div>
+                <label class="form-label" for="{{ item_form.damage_charge.id_for_label }}">
+                  {% translate "Damage charge" %}
+                </label>
+                {{ item_form.damage_charge }}
+                {% for error in item_form.damage_charge.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+              </div>
+              <div class="sm:col-span-2">
+                <label class="form-label" for="{{ item_form.damage_notes.id_for_label }}">
+                  {% translate "What happened" %}
+                </label>
+                {{ item_form.damage_notes }}
+                <p class="form-help">
+                  {% translate "Damaged gear goes straight to maintenance and a workshop job is opened." %}
+                </p>
+              </div>
+              {% for error in item_form.non_field_errors %}
+                <p class="form-error sm:col-span-2">{{ error }}</p>
+              {% endfor %}
+            </div>
+          </div>
+        {% empty %}
+          {% include "partials/empty_state.html" with icon_name="circle-check" title=_("Everything is already back") subtitle=_("There is nothing left to check in on this rental.") %}
+        {% endfor %}
+      </div>
+
+      {# ----------------------------------------------------------- summary #}
+      <div>
+        <div id="checkin-summary" class="lg:sticky lg:top-6">
+          {% include "rentals/partials/return_summary.html" %}
+        </div>
+      </div>
+    </div>
+  </form>
+{% endblock %}

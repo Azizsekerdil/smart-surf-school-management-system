@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ customer.full_name }} · {% translate "Customers" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ customer.full_name }}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+    <span>{{ customer.customer_code }}</span>
+    {% if customer.age %}<span>· {% blocktranslate with age=customer.age %}{{ age }} years old{% endblocktranslate %}</span>{% endif %}
+    {% if customer.is_minor %}<span class="badge-amber">{% translate "Under 18" %}</span>{% endif %}
+    {% if not customer.is_active %}<span class="badge-slate">{% translate "Archived" %}</span>{% endif %}
+    {% if customer.marketing_consent %}<span class="badge-emerald">{% translate "Marketing opt-in" %}</span>{% endif %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  {% can "customers.change" as may_change %}
+  <a href="{% url 'customers:list' %}" class="btn-ghost">
+    {% icon "chevron-left" "h-4 w-4" %} {% translate "All customers" %}
+  </a>
+  {% if student_profile %}
+    <a href="{% url 'students:detail' student_profile.pk %}" class="btn-secondary">
+      {% icon "graduation-cap" "h-4 w-4" %} {% translate "Student profile" %}
+    </a>
+  {% else %}
+    {% can "students.add" as may_add_student %}
+    {% if may_add_student %}
+      <a href="{% url 'students:create' %}?customer={{ customer.pk }}" class="btn-secondary">
+        {% icon "graduation-cap" "h-4 w-4" %} {% translate "Create student profile" %}
+      </a>
+    {% endif %}
+  {% endif %}
+  {% if may_change %}
+    <a href="{% url 'customers:update' customer.pk %}" class="btn-primary">
+      {% icon "pencil" "h-4 w-4" %} {% translate "Edit" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  {% if not has_valid_waiver %}
+    <div class="alert-warning mb-5">
+      {% icon "triangle-alert" "h-5 w-5 shrink-0" %}
+      <div>
+        <p class="font-medium">{% translate "No valid waiver on file" %}</p>
+        <p>{% translate "This customer may not enter the water until a signed, unexpired waiver is attached." %}</p>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if customer.is_minor and not customer.has_emergency_contact %}
+    <div class="alert-error mb-5">
+      {% icon "circle-alert" "h-5 w-5 shrink-0" %}
+      <div>
+        <p class="font-medium">{% translate "Minor without an emergency contact" %}</p>
+        <p>{% translate "Add a guardian name and phone number before this customer joins a lesson." %}</p>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if duplicate_candidates %}
+    {% can "customers.manage" as may_manage %}
+    <div class="alert-info mb-5">
+      {% icon "copy" "h-5 w-5 shrink-0" %}
+      <div class="min-w-0">
+        <p class="font-medium">{% translate "Possible duplicate records" %}</p>
+        <ul class="mt-1 space-y-1">
+          {% for other in duplicate_candidates %}
+            <li class="flex flex-wrap items-center gap-2">
+              <a href="{% url 'customers:detail' other.pk %}" class="underline">{{ other.full_name }} ({{ other.customer_code }})</a>
+              {% if may_manage %}
+                <a href="{% url 'customers:merge' customer.pk other.pk %}" class="btn-secondary btn-sm">
+                  {% translate "Merge into this record" %}
+                </a>
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="grid gap-5 lg:grid-cols-3">
+    {# ------------------------------------------------------------ profile #}
+    <div class="space-y-5 lg:col-span-1">
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">{% translate "Profile" %}</h2>
+        </div>
+        <div class="card-body space-y-4">
+          <div class="flex items-center gap-4">
+            {% if customer.photo %}
+              <img src="{{ customer.photo.url }}" alt="{{ customer.full_name }}"
+                   class="h-16 w-16 rounded-full object-cover">
+            {% else %}
+              <span class="flex h-16 w-16 items-center justify-center rounded-full bg-brand-50 text-lg font-semibold text-brand-700 dark:bg-brand-500/10 dark:text-brand-300">
+                {{ customer.initials }}
+              </span>
+            {% endif %}
+            <div class="min-w-0">
+              <p class="font-medium text-slate-900 dark:text-slate-100">{{ customer.full_name }}</p>
+              <p class="text-sm text-slate-500 dark:text-slate-400">{{ customer.get_preferred_language_display }}</p>
+            </div>
+          </div>
+
+          <dl class="divide-y divide-slate-100 text-sm dark:divide-slate-800">
+            <div class="flex justify-between gap-3 py-2">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Phone" %}</dt>
+              <dd class="text-end text-slate-900 dark:text-slate-100">{{ customer.phone|default:"—" }}</dd>
+            </div>
+            <div class="flex justify-between gap-3 py-2">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "E-mail" %}</dt>
+              <dd class="min-w-0 truncate text-end text-slate-900 dark:text-slate-100">{{ customer.email|default:"—" }}</dd>
+            </div>
+            <div class="flex justify-between gap-3 py-2">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Date of birth" %}</dt>
+              <dd class="text-end text-slate-900 dark:text-slate-100">{{ customer.birth_date|default:"—" }}</dd>
+            </div>
+            <div class="flex justify-between gap-3 py-2">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Nationality" %}</dt>
+              <dd class="text-end text-slate-900 dark:text-slate-100">{{ customer.nationality|default:"—" }}</dd>
+            </div>
+            <div class="flex justify-between gap-3 py-2">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Source" %}</dt>
+              <dd class="text-end">{% status_badge customer.source customer.get_source_display %}</dd>
+            </div>
+            {% if customer.full_address %}
+              <div class="flex justify-between gap-3 py-2">
+                <dt class="text-slate-500 dark:text-slate-400">{% translate "Address" %}</dt>
+                <dd class="text-end text-slate-900 dark:text-slate-100">{{ customer.full_address }}</dd>
+              </div>
+            {% endif %}
+          </dl>
+
+          {% if customer.tags.all %}
+            <div class="flex flex-wrap gap-1.5">
+              {% for tag in customer.tags.all %}
+                <span class="badge-sky">{{ tag.name }}</span>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">{% translate "Emergency contact" %}</h2>
+        </div>
+        <div class="card-body text-sm">
+          {% if customer.has_emergency_contact %}
+            <p class="font-medium text-slate-900 dark:text-slate-100">{{ customer.emergency_contact_name }}</p>
+            <p class="text-slate-600 dark:text-slate-300">{{ customer.emergency_contact_phone }}</p>
+            {% if customer.emergency_contact_relation %}
+              <p class="text-slate-500 dark:text-slate-400">{{ customer.emergency_contact_relation }}</p>
+            {% endif %}
+          {% else %}
+            <p class="text-slate-500 dark:text-slate-400">{% translate "Not recorded." %}</p>
+          {% endif %}
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">{% translate "Value" %}</h2>
+          {% can "customers.change" as may_change %}
+          {% if may_change %}
+            <form method="post" action="{% url 'customers:recalculate' customer.pk %}">
+              {% csrf_token %}
+              <button type="submit" class="btn-ghost btn-sm" title="{% translate 'Recalculate from finance and bookings' %}">
+                {% icon "refresh-cw" "h-4 w-4" %}
+              </button>
+            </form>
+          {% endif %}
+        </div>
+        <div class="card-body grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <p class="stat-label">{% translate "Lifetime value" %}</p>
+            <p class="stat-value">{{ customer.lifetime_value|money }}</p>
+          </div>
+          <div>
+            <p class="stat-label">{% translate "Bookings" %}</p>
+            <p class="stat-value">{{ customer.total_bookings }}</p>
+          </div>
+          <div>
+            <p class="stat-label">{% translate "First visit" %}</p>
+            <p class="mt-1 text-sm text-slate-700 dark:text-slate-300">{{ customer.first_visit_date|default:"—" }}</p>
+          </div>
+          <div>
+            <p class="stat-label">{% translate "Last visit" %}</p>
+            <p class="mt-1 text-sm text-slate-700 dark:text-slate-300">{{ customer.last_visit_date|default:"—" }}</p>
+          </div>
+        </div>
+      </section>
+
+      {% can "customers.change" as may_change %}
+      {% if may_change %}
+        <section class="card">
+          <div class="card-header">
+            <h2 class="card-title">{% translate "Administration" %}</h2>
+          </div>
+          <div class="card-body flex flex-col gap-2">
+            <form method="post" action="{% url 'customers:consent' customer.pk %}">
+              {% csrf_token %}
+              <input type="hidden" name="granted" value="{% if customer.marketing_consent %}0{% else %}1{% endif %}">
+              <button type="submit" class="btn-secondary w-full">
+                {% icon "mail" "h-4 w-4" %}
+                {% if customer.marketing_consent %}
+                  {% translate "Withdraw marketing consent" %}
+                {% else %}
+                  {% translate "Record marketing consent" %}
+                {% endif %}
+              </button>
+            </form>
+            <form method="post" action="{% url 'customers:toggle_active' customer.pk %}">
+              {% csrf_token %}
+              <button type="submit" class="{% if customer.is_active %}btn-danger{% else %}btn-success{% endif %} w-full">
+                {% if customer.is_active %}
+                  {% icon "lock" "h-4 w-4" %} {% translate "Archive customer" %}
+                {% else %}
+                  {% icon "lock-open" "h-4 w-4" %} {% translate "Reactivate customer" %}
+                {% endif %}
+              </button>
+            </form>
+          </div>
+        </section>
+      {% endif %}
+    </div>
+
+    {# --------------------------------------------------------------- tabs #}
+    <div class="lg:col-span-2">
+      <div class="card">
+        <nav class="flex flex-wrap gap-1 border-b border-slate-200 px-3 pt-3 dark:border-slate-700"
+             aria-label="{% translate 'Customer sections' %}">
+          {% for t in tabs %}
+            <a href="?tab={{ t.key }}"
+               hx-get="{% url 'customers:tab' customer.pk t.key %}"
+               hx-target="#tab-panel"
+               hx-swap="innerHTML"
+               hx-push-url="?tab={{ t.key }}"
+               class="flex items-center gap-2 rounded-t-lg px-3 py-2 text-sm font-medium transition-colors
+                      {% if t.key == active_tab %}border-b-2 border-brand-600 text-brand-700 dark:text-brand-300{% else %}text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200{% endif %}">
+              {% icon t.icon "h-4 w-4" %} {{ t.label }}
+            </a>
+          {% endfor %}
+        </nav>
+        <div id="tab-panel" class="card-body">
+          {% include "customers/partials/tab_"|add:active_tab|add:".html" with tab=tab_context.tab rows=tab_context.rows customer=customer note_form=tab_context.note_form document_form=tab_context.document_form invoices=tab_context.invoices open_balance=tab_context.open_balance %}
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

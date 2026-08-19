@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ invoice.invoice_number }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ invoice.invoice_number }}{% endblock %}
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {{ invoice.customer }} · {% blocktranslate with issued=invoice.issue_date|date:"d.m.Y" due=invoice.due_date|date:"d.m.Y" %}issued {{ issued }}, due {{ due }}{% endblocktranslate %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'finance:invoice_list' %}" class="btn-secondary no-print">
+    {% icon "chevron-left" "h-4 w-4" %} {% translate "Back" %}
+  </a>
+  <button type="button" class="btn-secondary no-print" onclick="window.print()">
+    {% icon "printer" "h-4 w-4" %} {% translate "Print" %}
+  </button>
+
+  {% can "finance.change" as may_change %}
+  {% if may_change and invoice.can_issue %}
+    <form method="post" action="{% url 'finance:invoice_issue' invoice.pk %}" class="no-print">
+      {% csrf_token %}
+      <button type="submit" class="btn-primary">
+        {% icon "send" "h-4 w-4" %} {% translate "Issue invoice" %}
+      </button>
+    </form>
+  {% endif %}
+
+  {% can "finance.add" as may_add %}
+  {% if may_add and invoice.balance_due > 0 and invoice.status != "draft" %}
+    <a href="{% url 'finance:payment_create' %}?invoice={{ invoice.pk }}&customer={{ invoice.customer_id }}"
+       class="btn-primary no-print">
+      {% icon "banknote" "h-4 w-4" %} {% translate "Take payment" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <div class="grid gap-4 lg:grid-cols-3">
+    <section class="card lg:col-span-2">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Lines" %}</h2>
+        {% status_badge invoice.status invoice.get_status_display %}
+      </div>
+      <div class="card-body p-0">
+        <div class="table-wrap border-0">
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col">{% translate "Description" %}</th>
+                <th scope="col" class="text-end">{% translate "Qty" %}</th>
+                <th scope="col" class="text-end">{% translate "Unit price" %}</th>
+                <th scope="col" class="text-end">{% translate "Discount" %}</th>
+                <th scope="col" class="text-end">{% translate "Total" %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for line in invoice.lines.all %}
+                <tr>
+                  <td class="text-slate-900 dark:text-slate-100">{{ line.description }}</td>
+                  <td class="text-end tabular-nums">{{ line.quantity|floatformat:2 }}</td>
+                  <td class="text-end tabular-nums">{{ line.unit_price|money }}</td>
+                  <td class="text-end tabular-nums">{{ line.discount_amount|money }}</td>
+                  <td class="text-end font-medium tabular-nums">{{ line.line_total|money }}</td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="5" class="py-6 text-center text-sm text-slate-500 dark:text-slate-400">
+                    {% translate "This invoice has no lines." %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <dl class="space-y-2 border-t border-slate-200 px-5 py-4 text-sm dark:border-slate-700">
+          <div class="flex items-center justify-between">
+            <dt class="text-slate-500 dark:text-slate-400">{% translate "Subtotal" %}</dt>
+            <dd class="tabular-nums">{{ invoice.subtotal|money }}</dd>
+          </div>
+          {% if invoice.discount_amount %}
+            <div class="flex items-center justify-between">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Discount" %}</dt>
+              <dd class="tabular-nums text-emerald-600 dark:text-emerald-400">
+                −{{ invoice.discount_amount|money }}
+              </dd>
+            </div>
+          {% endif %}
+          {% if invoice.tax_rate %}
+            <div class="flex items-center justify-between">
+              <dt class="text-slate-500 dark:text-slate-400">
+                {% blocktranslate with rate=invoice.tax_rate|floatformat:2 %}Tax ({{ rate }}%){% endblocktranslate %}
+              </dt>
+              <dd class="tabular-nums">{{ invoice.tax_amount|money }}</dd>
+            </div>
+          {% endif %}
+          <div class="flex items-center justify-between border-t border-slate-200 pt-2 text-base font-semibold dark:border-slate-700">
+            <dt>{% translate "Total" %}</dt>
+            <dd class="tabular-nums">{{ invoice.total_amount|money }}</dd>
+          </div>
+          <div class="flex items-center justify-between">
+            <dt class="text-slate-500 dark:text-slate-400">{% translate "Paid" %}</dt>
+            <dd class="tabular-nums">{{ invoice.paid_amount|money }}</dd>
+          </div>
+          <div class="flex items-center justify-between text-base font-semibold">
+            <dt>{% translate "Balance due" %}</dt>
+            <dd class="tabular-nums {% if invoice.balance_due > 0 %}text-amber-700 dark:text-amber-300{% else %}text-emerald-600 dark:text-emerald-400{% endif %}">
+              {{ invoice.balance_due|money }}
+            </dd>
+          </div>
+        </dl>
+
+        {% if invoice.notes or invoice.terms %}
+          <div class="space-y-3 border-t border-slate-200 px-5 py-4 text-sm text-slate-600 dark:border-slate-700 dark:text-slate-300">
+            {% if invoice.notes %}<p>{{ invoice.notes|linebreaksbr }}</p>{% endif %}
+            {% if invoice.terms %}
+              <p class="text-xs text-slate-500 dark:text-slate-400">{{ invoice.terms|linebreaksbr }}</p>
+            {% endif %}
+          </div>
+        {% endif %}
+      </div>
+    </section>
+
+    <aside class="space-y-4">
+      {% if invoice.is_overdue %}
+        <div class="alert-error">
+          {% icon "triangle-alert" "h-5 w-5 shrink-0" %}
+          <div>
+            <p class="font-medium">{% translate "Overdue" %}</p>
+            <p class="mt-1">
+              {% blocktranslate with days=invoice.days_overdue amount=invoice.balance_due|money %}{{ amount }} has been outstanding for {{ days }} days.{% endblocktranslate %}
+            </p>
+          </div>
+        </div>
+      {% endif %}
+
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">{% translate "Payments" %}</h2>
+        </div>
+        <div class="card-body p-0">
+          {% if invoice.payments.all %}
+            <ul class="divide-y divide-slate-100 dark:divide-slate-800">
+              {% for payment in invoice.payments.all %}
+                <li class="flex items-center justify-between gap-3 px-5 py-3">
+                  <div class="min-w-0">
+                    <a href="{% url 'finance:payment_detail' payment.pk %}"
+                       class="text-sm font-medium text-slate-900 hover:underline dark:text-slate-100">
+                      {{ payment.payment_code }}
+                    </a>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">
+                      {{ payment.paid_at|date:"d.m.Y H:i" }} · {{ payment.get_method_display }}
+                    </p>
+                  </div>
+                  <span class="text-sm font-semibold tabular-nums {% if payment.is_refund %}text-rose-600 dark:text-rose-400{% else %}text-emerald-600 dark:text-emerald-400{% endif %}">
+                    {{ payment.amount|money }}
+                  </span>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="px-5 py-6 text-center text-sm text-slate-500 dark:text-slate-400">
+              {% translate "Nothing has been paid against this invoice yet." %}
+            </p>
+          {% endif %}
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">{% translate "Linked records" %}</h2>
+        </div>
+        <div class="card-body space-y-2 text-sm">
+          <p class="flex items-center justify-between">
+            <span class="text-slate-500 dark:text-slate-400">{% translate "Booking" %}</span>
+            <span>{% if invoice.booking_id %}{{ invoice.booking.booking_code }}{% else %}—{% endif %}</span>
+          </p>
+          <p class="flex items-center justify-between">
+            <span class="text-slate-500 dark:text-slate-400">{% translate "Rental" %}</span>
+            <span>{% if invoice.rental_id %}{{ invoice.rental.rental_code }}{% else %}—{% endif %}</span>
+          </p>
+          <p class="flex items-center justify-between">
+            <span class="text-slate-500 dark:text-slate-400">{% translate "Currency" %}</span>
+            <span>{{ invoice.currency }}</span>
+          </p>
+        </div>
+      </section>
+
+      {% can "finance.change" as may_change %}
+      {% if may_change and invoice.can_cancel %}
+        <form method="post" action="{% url 'finance:invoice_cancel' invoice.pk %}" class="card no-print">
+          {% csrf_token %}
+          <div class="card-body space-y-3">
+            <label class="form-label" for="cancel-reason">{% translate "Cancel this invoice" %}</label>
+            <input type="text" name="reason" id="cancel-reason" class="form-input"
+                   placeholder="{% translate 'Reason (optional)' %}" maxlength="500">
+            <button type="submit" class="btn-danger w-full">
+              {% icon "x" "h-4 w-4" %} {% translate "Cancel invoice" %}
+            </button>
+            <p class="form-help">{% translate "Only possible while no money has been taken against it." %}</p>
+          </div>
+        </form>
+      {% endif %}
+    </aside>
+  </div>
+{% endblock %}

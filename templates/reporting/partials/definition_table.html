@@ -1,0 +1,87 @@
+{% load i18n surf_tags %}
+
+{% if definitions %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">{% translate "Name" %}</th>
+          <th scope="col">{% translate "Report" %}</th>
+          <th scope="col">{% translate "Format" %}</th>
+          <th scope="col">{% translate "Schedule" %}</th>
+          <th scope="col">{% translate "Recipients" %}</th>
+          <th scope="col">{% translate "Last run" %}</th>
+          <th scope="col">{% translate "Active" %}</th>
+          <th scope="col"><span class="sr-only">{% translate "Actions" %}</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for definition in definitions %}
+          <tr>
+            <td>
+              <p class="font-medium text-slate-900 dark:text-slate-100">{{ definition.name }}</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400">{{ definition.code }}</p>
+            </td>
+            <td>{{ definition.report_key }}</td>
+            <td>{{ definition.get_default_format_display }}</td>
+            <td>
+              {% if definition.is_scheduled %}
+                <span class="badge-sky font-mono">{{ definition.schedule_cron }}</span>
+              {% else %}
+                <span class="text-slate-400">{% translate "Manual" %}</span>
+              {% endif %}
+            </td>
+            <td class="max-w-xs truncate">{{ definition.recipient_list|join:", "|default:"—" }}</td>
+            <td class="whitespace-nowrap">
+              {% if definition.last_run_at %}{{ definition.last_run_at|date:"SHORT_DATETIME_FORMAT" }}{% else %}—{% endif %}
+            </td>
+            <td>
+              {% if definition.is_active %}
+                <span class="badge-emerald">{% translate "Active" %}</span>
+              {% else %}
+                <span class="badge-slate">{% translate "Paused" %}</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <div class="flex items-center justify-end gap-1">
+                {% can "reporting.export" as may_export %}
+                {% if may_export and definition.is_active %}
+                  <form method="post" action="{% url 'reporting:definition_run' definition.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-secondary btn-sm" title="{% translate 'Run now' %}">
+                      {% icon "play" "h-4 w-4" %}
+                    </button>
+                  </form>
+                {% endif %}
+                {% can "reporting.change" as may_change %}
+                {% if may_change %}
+                  <a href="{% url 'reporting:definition_update' definition.pk %}"
+                     class="btn-secondary btn-sm" title="{% translate 'Edit' %}">
+                    {% icon "pencil" "h-4 w-4" %}
+                  </a>
+                {% endif %}
+                {% can "reporting.delete" as may_delete %}
+                {% if may_delete %}
+                  <a href="{% url 'reporting:definition_delete' definition.pk %}"
+                     class="btn-secondary btn-sm" title="{% translate 'Archive' %}">
+                    {% icon "trash-2" "h-4 w-4" %}
+                  </a>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% include "partials/pagination.html" %}
+{% else %}
+  {% can "reporting.add" as may_add %}
+  {% if may_add %}
+    {% url 'reporting:definition_create' as create_url %}
+    {% include "partials/empty_state.html" with icon_name="bookmark" title=_("No saved reports yet") subtitle=_("Save a filter set from any report's run screen, or create one here.") action_url=create_url action_label=_("New saved report") %}
+  {% else %}
+    {% include "partials/empty_state.html" with icon_name="bookmark" title=_("No saved reports yet") subtitle=_("Saved reports are created by managers from a report's run screen.") %}
+  {% endif %}
+{% endif %}

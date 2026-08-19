@@ -1,0 +1,23 @@
+{% load i18n surf_tags %}
+{% if show %}
+  <div class="alert-info mb-5" role="status">
+    <span class="mt-0.5 shrink-0">{% icon "sparkles" "h-5 w-5" %}</span>
+    <div class="flex flex-1 flex-wrap items-center justify-between gap-3">
+      <div>
+        <p class="font-medium">{% translate "Finish setting up your surf school" %}</p>
+        <p class="mt-0.5 text-xs opacity-80">
+          {% blocktranslate with percent=state.percent_complete %}Setup is {{ percent }}% complete. It takes about five minutes.{% endblocktranslate %}
+        </p>
+      </div>
+      <div class="flex items-center gap-2">
+        <a href="{% url 'onboarding:step' step=state.current_step %}" class="btn-primary btn-sm">
+          {% translate "Continue setup" %}
+        </a>
+        <form method="post" action="{% url 'onboarding:skip' %}">
+          {% csrf_token %}
+          <button type="submit" class="btn-ghost btn-sm">{% translate "Dismiss" %}</button>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endif %}

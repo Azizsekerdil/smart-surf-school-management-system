@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Weather warnings" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Weather warnings" %}{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-3 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'safety:dashboard' %}" class="hover:underline">{% translate "Safety" %}</a>
+    <span class="mx-1">/</span>
+    <span class="text-slate-700 dark:text-slate-300">{% translate "Weather warnings" %}</span>
+  </nav>
+{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "Confirmed warnings are obeyed by bookings, lessons and the spot readiness check. AI suggestions are not — until someone confirms one." %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  {% can "safety.add" as may_add %}
+  {% if may_add %}
+    <a href="{% url 'safety:warning_create' %}" class="btn-primary">
+      {% icon "plus" "h-4 w-4" %} {% translate "New warning" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+
+  {# --- 1. confirmed and in force --------------------------------------- #}
+  <section class="mb-6" aria-labelledby="in-force-heading">
+    <h2 class="mb-3 flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-slate-100" id="in-force-heading">
+      {% icon "shield-alert" "h-4 w-4 text-rose-500" %} {% translate "In force now" %}
+    </h2>
+    <div class="space-y-3">
+      {% for warning in confirmed_warnings %}
+        {% include "safety/partials/warning_card.html" with warning=warning %}
+      {% empty %}
+        <div class="alert-success">
+          {% icon "circle-check" "h-5 w-5 shrink-0" %}
+          <p>{% translate "No confirmed warnings are in force right now." %}</p>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  {# --- 2. AI suggestions, structurally separate ------------------------- #}
+  <section class="mb-6" aria-labelledby="pending-heading">
+    <h2 class="mb-3 flex flex-wrap items-center gap-2 text-base font-semibold text-slate-900 dark:text-slate-100" id="pending-heading">
+      {% translate "AI Recommendation — awaiting staff confirmation" %}
+      {% ai_chip %}
+    </h2>
+    {% if pending_warnings %}
+      <div class="ai-surface space-y-3 p-5">
+        <p class="text-sm text-slate-600 dark:text-slate-300">
+          {% translate "Nothing below counts as a warning anywhere in the system. Confirming one is a named decision recorded against your account." %}
+        </p>
+        {% for warning in pending_warnings %}
+          {% include "safety/partials/ai_warning_card.html" with warning=warning %}
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="ai-surface p-5">
+        <p class="text-sm text-slate-600 dark:text-slate-300">
+          {% translate "No AI suggestions are waiting for a decision." %}
+        </p>
+      </div>
+    {% endif %}
+  </section>
+
+  {# --- 3. the full register --------------------------------------------- #}
+  <section aria-labelledby="register-heading">
+    <div class="mb-3 flex flex-wrap items-end justify-between gap-3">
+      <h2 class="text-base font-semibold text-slate-900 dark:text-slate-100" id="register-heading">
+        {% translate "All warnings" %}
+      </h2>
+      <form method="get" action="{% url 'safety:warning_list' %}" class="flex flex-wrap items-end gap-2">
+        <div class="w-56">
+          <label class="sr-only" for="id_q">{% translate "Search" %}</label>
+          <input type="search" name="q" id="id_q" value="{{ search_term }}"
+                 class="form-input" placeholder="{% translate 'Search warnings…' %}">
+        </div>
+        <div class="w-40">
+          <label class="sr-only" for="id_status">{% translate "Status" %}</label>
+          <select name="status" id="id_status" class="form-select">
+            <option value="active" {% if not show_archived %}selected{% endif %}>{% translate "Active only" %}</option>
+            <option value="all" {% if show_archived %}selected{% endif %}>{% translate "All" %}</option>
+          </select>
+        </div>
+        <button type="submit" class="btn-secondary">{% icon "filter" "h-4 w-4" %}</button>
+      </form>
+    </div>
+
+    {% if warnings %}
+      <div class="card table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">{% translate "Title" %}</th>
+              <th scope="col">{% translate "Spot" %}</th>
+              <th scope="col">{% translate "Severity" %}</th>
+              <th scope="col">{% translate "Window" %}</th>
+              <th scope="col">{% translate "Source" %}</th>
+              <th scope="col">{% translate "Status" %}</th>
+              <th scope="col" class="text-end">{% translate "Actions" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for warning in warnings %}
+              <tr>
+                <td class="font-medium text-slate-900 dark:text-slate-100">{{ warning.title }}</td>
+                <td>{{ warning.scope_label }}</td>
+                <td>
+                  {% if warning.severity == "critical" %}
+                    <span class="badge-rose">{{ warning.get_severity_display }}</span>
+                  {% elif warning.severity == "high" %}
+                    <span class="badge-amber">{{ warning.get_severity_display }}</span>
+                  {% else %}
+                    <span class="badge-sky">{{ warning.get_severity_display }}</span>
+                  {% endif %}
+                </td>
+                <td class="whitespace-nowrap text-xs">
+                  {{ warning.starts_at|date:"d.m H:i" }} – {{ warning.ends_at|date:"d.m H:i" }}
+                </td>
+                <td>
+                  {% if warning.ai_suggested %}
+                    {% ai_chip %}
+                  {% else %}
+                    {{ warning.get_source_display }}
+                  {% endif %}
+                </td>
+                <td>
+                  {% if not warning.is_active %}
+                    <span class="badge-slate">{% translate "Dismissed" %}</span>
+                  {% elif warning.awaiting_confirmation %}
+                    <span class="badge-violet">{% translate "Awaiting confirmation" %}</span>
+                  {% elif warning.is_in_force %}
+                    <span class="badge-rose">{% translate "In force" %}</span>
+                  {% else %}
+                    <span class="badge-emerald">{% translate "Confirmed" %}</span>
+                  {% endif %}
+                </td>
+                <td class="text-end">
+                  <div class="flex flex-wrap items-center justify-end gap-1">
+                    {% can "safety.approve" as may_approve %}
+                    {% if may_approve and warning.awaiting_confirmation %}
+                      <form method="post" action="{% url 'safety:warning_acknowledge' warning.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-success btn-sm">{% translate "Confirm" %}</button>
+                      </form>
+                    {% endif %}
+                    {% if may_approve and warning.is_active %}
+                      <form method="post" action="{% url 'safety:warning_dismiss' warning.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-ghost btn-sm">{% translate "Dismiss" %}</button>
+                      </form>
+                    {% endif %}
+                    {% can "safety.change" as may_change %}
+                    {% if may_change %}
+                      <a href="{% url 'safety:warning_update' warning.pk %}" class="btn-ghost btn-sm">
+                        {% icon "pencil" "h-4 w-4" %}
+                      </a>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% include "partials/pagination.html" %}
+    {% else %}
+      {% include "partials/empty_state.html" with icon_name="cloud" title=_("No warnings on record") subtitle=_("Publish one when the forecast turns, or wait for the AI module to suggest one for you to judge.") %}
+    {% endif %}
+  </section>
+{% endblock %}

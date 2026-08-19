@@ -1,0 +1,91 @@
+{% load i18n surf_tags %}
+{# Swapped in place by HTMX after every change to the weekly pattern. #}
+<div id="availability-grid" class="space-y-5">
+
+  <section class="card">
+    <div class="card-header">
+      <h2 class="card-title">{% translate "Weekly pattern" %}</h2>
+      <span class="text-xs text-slate-500">{% translate "Times are local to the school." %}</span>
+    </div>
+    <div class="card-body">
+      <div class="grid gap-3 md:grid-cols-4 xl:grid-cols-7">
+        {% for day in week %}
+          <div class="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
+            <div class="mb-2 flex items-baseline justify-between">
+              <p class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ day.label }}</p>
+              <span class="text-xs tabular-nums text-slate-400">{{ day.active_minutes|duration_hm }}</span>
+            </div>
+
+            {% for slot in day.slots %}
+              <div class="mb-2 rounded-lg border px-2 py-1.5 text-xs
+                          {% if slot.is_active %}border-brand-200 bg-brand-50 dark:border-brand-500/30 dark:bg-brand-500/10{% else %}border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800{% endif %}">
+                <p class="font-medium tabular-nums {% if slot.is_active %}text-brand-800 dark:text-brand-200{% else %}text-slate-400 line-through{% endif %}">
+                  {{ slot.start_time|time:"H:i" }}–{{ slot.end_time|time:"H:i" }}
+                </p>
+                {% if slot.valid_from or slot.valid_until %}
+                  <p class="mt-0.5 text-[0.68rem] text-slate-500">
+                    {% if slot.valid_from %}{{ slot.valid_from|date:"d.m.Y" }}{% else %}…{% endif %}
+                    –
+                    {% if slot.valid_until %}{{ slot.valid_until|date:"d.m.Y" }}{% else %}…{% endif %}
+                  </p>
+                {% endif %}
+                <div class="mt-1 flex items-center gap-1">
+                  <button type="button"
+                          hx-post="{% url 'instructors:availability_slot_toggle' slot.pk %}"
+                          hx-target="#availability-grid"
+                          hx-swap="outerHTML"
+                          class="btn-ghost btn-sm"
+                          title="{% if slot.is_active %}{% translate 'Pause this slot' %}{% else %}{% translate 'Activate this slot' %}{% endif %}">
+                    {% if slot.is_active %}{% icon "eye-off" "h-3.5 w-3.5" %}{% else %}{% icon "eye" "h-3.5 w-3.5" %}{% endif %}
+                  </button>
+                  <button type="button"
+                          hx-post="{% url 'instructors:availability_slot_delete' slot.pk %}"
+                          hx-target="#availability-grid"
+                          hx-swap="outerHTML"
+                          hx-confirm="{% translate 'Remove this availability slot?' %}"
+                          class="btn-ghost btn-sm text-rose-600 dark:text-rose-400"
+                          title="{% translate 'Remove' %}">
+                    {% icon "trash-2" "h-3.5 w-3.5" %}
+                  </button>
+                </div>
+              </div>
+            {% empty %}
+              <p class="text-xs text-slate-400">{% translate "Not working" %}</p>
+            {% endfor %}
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-header">
+      <h2 class="card-title">{% translate "Add a slot" %}</h2>
+    </div>
+    <form hx-post="{% url 'instructors:availability_slot_create' instructor.pk %}"
+          hx-target="#availability-grid"
+          hx-swap="outerHTML"
+          class="card-body grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <div class="alert-error sm:col-span-2 lg:col-span-3">
+          <span class="mt-0.5 shrink-0">{% icon "circle-x" "h-5 w-5" %}</span>
+          <div class="flex-1">{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+        </div>
+      {% endif %}
+      {% include "instructors/partials/field.html" with field=form.weekday %}
+      {% include "instructors/partials/field.html" with field=form.start_time %}
+      {% include "instructors/partials/field.html" with field=form.end_time %}
+      {% include "instructors/partials/field.html" with field=form.valid_from %}
+      {% include "instructors/partials/field.html" with field=form.valid_until %}
+      <div class="flex items-end gap-3">
+        <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+          {{ form.is_active }} <span>{{ form.is_active.label }}</span>
+        </label>
+        <button type="submit" class="btn-primary ms-auto">
+          {% icon "plus" "h-4 w-4" %} {% translate "Add" %}
+        </button>
+      </div>
+    </form>
+  </section>
+</div>

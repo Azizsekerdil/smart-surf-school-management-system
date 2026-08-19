@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Training Center" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Training Center" %}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "Short, guided courses that walk you through a real task on the real screens." %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'training:progress' %}" class="btn-secondary">
+    {% icon "list-checks" "h-4 w-4" %} {% translate "My progress" %}
+  </a>
+  <a href="{% url 'help_center:home' %}" class="btn-secondary">
+    {% icon "circle-help" "h-4 w-4" %} {% translate "Help Center" %}
+  </a>
+{% endblock %}
+
+{% block content %}
+  {% if summaries %}
+    {# --- overall ------------------------------------------------------- #}
+    <div class="card mb-6">
+      <div class="card-body flex flex-wrap items-center gap-6">
+        {% include "training/partials/progress_ring.html" with percent=overall.percent ring_class="h-20 w-20" %}
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-medium text-slate-900 dark:text-slate-100">
+            {% blocktranslate with done=overall.courses_completed total=overall.courses_total %}
+              {{ done }} of {{ total }} courses completed
+            {% endblocktranslate %}
+          </p>
+          <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            {% blocktranslate with steps=overall.steps_completed total=overall.steps_total %}
+              {{ steps }} of {{ total }} steps ticked off
+            {% endblocktranslate %}
+            {% if overall.remaining_minutes %}
+              · {% blocktranslate with minutes=overall.remaining_minutes %}about {{ minutes }} minutes of training left{% endblocktranslate %}
+            {% endif %}
+          </p>
+        </div>
+        {% if in_progress %}
+          <a href="{% url 'training:course' in_progress.0.course.pk %}" class="btn-primary">
+            {% icon "play" "h-4 w-4" %} {% translate "Continue where you left off" %}
+          </a>
+        {% endif %}
+      </div>
+    </div>
+
+    {# --- course grid --------------------------------------------------- #}
+    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      {% for summary in summaries %}
+        <article class="card flex flex-col">
+          <div class="card-body flex flex-1 items-start gap-4">
+            {% include "training/partials/progress_ring.html" with percent=summary.percent ring_class="h-14 w-14" %}
+            <div class="min-w-0 flex-1">
+              <div class="flex flex-wrap items-center gap-1.5">
+                <span class="badge-{{ summary.course.difficulty_color }}">
+                  {{ summary.course.get_difficulty_display }}
+                </span>
+                {% if summary.is_completed %}
+                  <span class="badge-emerald">{% icon "circle-check" "h-3 w-3" %} {% translate "Completed" %}</span>
+                {% elif summary.is_started %}
+                  <span class="badge-sky">{% translate "In progress" %}</span>
+                {% endif %}
+              </div>
+              <h2 class="mt-1.5 text-base font-semibold text-slate-900 dark:text-slate-100">
+                <a href="{{ summary.course.get_absolute_url }}" class="hover:text-brand-600 dark:hover:text-brand-400">
+                  {{ summary.course.title }}
+                </a>
+              </h2>
+              <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{ summary.course.description }}</p>
+              <p class="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+                <span class="inline-flex items-center gap-1">
+                  {% icon "clock" "h-3.5 w-3.5" %} {{ summary.course.estimated_minutes|duration_hm }}
+                </span>
+                <span class="inline-flex items-center gap-1">
+                  {% icon "list-checks" "h-3.5 w-3.5" %}
+                  {% blocktranslate with done=summary.completed_steps total=summary.total_steps %}{{ done }}/{{ total }} steps{% endblocktranslate %}
+                </span>
+              </p>
+            </div>
+          </div>
+          <div class="border-t border-slate-200 px-5 py-3 dark:border-slate-700">
+            <div class="flex flex-wrap items-center gap-2">
+              {% if summary.next_step and not summary.is_completed %}
+                <form method="post" action="{% url 'training:course_start' summary.course.pk %}">
+                  {% csrf_token %}
+                  <button type="submit" class="btn-primary btn-sm">
+                    {% icon "play" "h-4 w-4" %}
+                    {% if summary.is_started %}{% translate "Continue" %}{% else %}{% translate "Start" %}{% endif %}
+                  </button>
+                </form>
+              {% endif %}
+              <a href="{{ summary.course.get_absolute_url }}" class="btn-secondary btn-sm">
+                {% icon "book-open" "h-4 w-4" %} {% translate "Outline" %}
+              </a>
+            </div>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    {% translate "No training courses are available to you" as empty_title %}
+    {% translate "Either no courses have been loaded yet — run the seed_training_content management command — or every course requires a capability your role does not hold." as empty_subtitle %}
+    {% include "partials/empty_state.html" with icon_name="school" title=empty_title subtitle=empty_subtitle %}
+  {% endif %}
+{% endblock %}

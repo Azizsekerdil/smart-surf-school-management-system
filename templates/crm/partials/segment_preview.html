@@ -1,0 +1,44 @@
+{% load i18n surf_tags %}
+<aside id="segment-preview" class="card" aria-live="polite">
+  <div class="card-header">
+    <h2 class="card-title">{% translate "Audience preview" %}</h2>
+  </div>
+  <div class="card-body">
+    {% if has_rules %}
+      <p class="text-4xl font-semibold tabular-nums text-slate-900 dark:text-slate-50">{{ count }}</p>
+      <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+        {% blocktranslate count counter=count %}customer matches{% plural %}customers match{% endblocktranslate %}
+      </p>
+
+      {% if rules %}
+        <ul class="mt-4 space-y-1.5 border-t border-slate-100 pt-4 text-sm text-slate-600 dark:border-slate-800 dark:text-slate-300">
+          {% for rule in rules %}
+            <li class="flex items-start gap-2">
+              <span class="mt-0.5 shrink-0 text-brand-500">{% icon "check" "h-3.5 w-3.5" %}</span>
+              <span>{{ rule }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+
+      {% if issues %}
+        <div class="alert-warning mt-4">
+          {% icon "triangle-alert" "h-5 w-5" %}
+          <div class="text-sm">
+            {% for issue in issues %}<p>{{ issue }}</p>{% endfor %}
+          </div>
+        </div>
+      {% endif %}
+
+      {% if count == 0 and not issues %}
+        <p class="mt-4 text-xs text-amber-600 dark:text-amber-400">
+          {% translate "Nobody matches yet. Loosen a rule before you build a campaign on this." %}
+        </p>
+      {% endif %}
+    {% else %}
+      <p class="text-sm text-slate-500 dark:text-slate-400">
+        {% translate "Add at least one rule. Without rules a segment would target every customer, which is never what a campaign wants." %}
+      </p>
+    {% endif %}
+  </div>
+</aside>

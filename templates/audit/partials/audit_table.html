@@ -1,0 +1,63 @@
+{% load i18n surf_tags %}
+{% if entries %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>{% translate "When" %}</th>
+          <th>{% translate "User" %}</th>
+          <th>{% translate "Action" %}</th>
+          <th>{% translate "Object" %}</th>
+          <th>{% translate "Source" %}</th>
+          <th>{% translate "IP" %}</th>
+          <th class="text-end"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for entry in entries %}
+          <tr>
+            <td class="whitespace-nowrap text-slate-500 dark:text-slate-400">
+              {{ entry.created_at|date:"d.m.Y H:i:s" }}
+            </td>
+            <td>
+              {% if entry.username %}
+                <span class="font-medium text-slate-900 dark:text-slate-100">{{ entry.username }}</span>
+                {% if entry.user_role %}
+                  <span class="block text-xs text-slate-500">{{ entry.user_role }}</span>
+                {% endif %}
+              {% else %}
+                <span class="text-slate-400">{% translate "system" %}</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if entry.is_sensitive %}
+                <span class="badge-amber">{{ entry.get_action_display }}</span>
+              {% else %}
+                <span class="badge-slate">{{ entry.get_action_display }}</span>
+              {% endif %}
+            </td>
+            <td class="max-w-xs">
+              <span class="block truncate" title="{{ entry.object_repr }}">{{ entry.object_repr|default:"—" }}</span>
+              {% if entry.description %}
+                <span class="block truncate text-xs text-slate-500" title="{{ entry.description }}">
+                  {{ entry.description }}
+                </span>
+              {% endif %}
+            </td>
+            <td class="text-xs text-slate-500">{{ entry.get_source_display }}</td>
+            <td class="font-mono text-xs text-slate-500">{{ entry.ip_address|default:"—" }}</td>
+            <td class="text-end">
+              <a href="{% url 'audit:detail' entry.pk %}" class="btn-ghost btn-sm"
+                 title="{% translate 'Details' %}">{% icon "eye" "h-4 w-4" %}</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include "partials/pagination.html" %}
+{% else %}
+  {% translate "No audit entries" as empty_title %}
+  {% translate "Nothing matches these filters. Widen the period or clear the search." as empty_subtitle %}
+  {% include "partials/empty_state.html" with icon_name="scroll-text" title=empty_title subtitle=empty_subtitle %}
+{% endif %}

@@ -1,0 +1,55 @@
+{% load i18n surf_tags %}
+<div class="mb-4 grid grid-cols-2 gap-4">
+  <div>
+    <p class="stat-label">{% translate "Paid to date" %}</p>
+    <p class="stat-value">{{ customer.lifetime_value|money }}</p>
+  </div>
+  <div>
+    <p class="stat-label">{% translate "Open balance" %}</p>
+    <p class="stat-value {% if open_balance %}text-rose-600 dark:text-rose-400{% endif %}">{{ open_balance|money }}</p>
+  </div>
+</div>
+
+{% if invoices %}
+  <h3 class="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-300">{% translate "Invoices" %}</h3>
+  <ul class="mb-5 divide-y divide-slate-100 dark:divide-slate-800">
+    {% for invoice in invoices %}
+      <li class="flex flex-wrap items-center justify-between gap-3 py-2">
+        <span class="min-w-0 truncate text-sm text-slate-700 dark:text-slate-300">{{ invoice }}</span>
+        <span class="flex items-center gap-2">
+          {% if invoice.payment_status %}{% status_badge invoice.payment_status invoice.get_payment_status_display %}{% endif %}
+          {% if invoice.total %}<span class="tabular-nums text-sm">{{ invoice.total|money }}</span>{% endif %}
+        </span>
+      </li>
+    {% endfor %}
+  </ul>
+{% endif %}
+
+{% if rows %}
+  <h3 class="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-300">{% translate "Payments" %}</h3>
+  <ul class="divide-y divide-slate-100 dark:divide-slate-800">
+    {% for row in rows %}
+      <li class="flex flex-wrap items-center justify-between gap-3 py-3">
+        <div class="min-w-0">
+          <p class="truncate font-medium text-slate-900 dark:text-slate-100">{{ row }}</p>
+          <p class="text-xs text-slate-500 dark:text-slate-400">{{ row.created_at|date:"d.m.Y H:i" }}</p>
+        </div>
+        <div class="flex items-center gap-2">
+          {% if row.method %}<span class="badge-slate">{{ row.get_method_display|default:row.method }}</span>{% endif %}
+          {% if row.amount %}<span class="tabular-nums text-sm font-medium">{{ row.amount|money }}</span>{% endif %}
+        </div>
+      </li>
+    {% endfor %}
+  </ul>
+  {% can "finance.view" as may_view_finance %}
+  {% url 'finance:dashboard' as finance_url %}
+  {% if may_view_finance and finance_url %}
+    <p class="mt-4 text-sm">
+      <a href="{{ finance_url }}?customer={{ customer.pk }}" class="text-brand-700 hover:underline dark:text-brand-300">
+        {% translate "Open finance for this customer" %}
+      </a>
+    </p>
+  {% endif %}
+{% elif not invoices %}
+  {% include "partials/empty_state.html" with icon_name="wallet" title=_("No payments recorded") subtitle=_("Payments and invoices raised for this customer will appear here.") %}
+{% endif %}

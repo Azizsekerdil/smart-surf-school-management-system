@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+{% block title %}{% translate "Account locked" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block auth_content %}
+<div class="flex min-h-screen items-center justify-center bg-slate-50 px-4 dark:bg-slate-950">
+  <div class="card w-full max-w-sm">
+    <div class="card-body text-center">
+      <span class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-rose-100 text-rose-600 dark:bg-rose-500/15 dark:text-rose-400">
+        {% icon "lock" "h-6 w-6" %}
+      </span>
+      <h1 class="text-lg font-semibold text-slate-900 dark:text-slate-50">{% translate "Too many attempts" %}</h1>
+      <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
+        {% blocktranslate %}Sign-in has been blocked for a short while after too many failed attempts. Try again in about 15 minutes, or ask a manager to unlock the account.{% endblocktranslate %}
+      </p>
+    </div>
+  </div>
+</div>

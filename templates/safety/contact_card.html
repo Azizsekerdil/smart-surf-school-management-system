@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Emergency card" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Emergency card" %}{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="no-print mb-3 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'safety:dashboard' %}" class="hover:underline">{% translate "Safety" %}</a>
+    <span class="mx-1">/</span>
+    <span class="text-slate-700 dark:text-slate-300">{% translate "Emergency card" %}</span>
+  </nav>
+{% endblock %}
+
+{% block page_subtitle %}
+  <p class="no-print mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "Print this, laminate it, and put one copy in every beach bag and one in the van." %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <button type="button" onclick="window.print()" class="btn-primary no-print">
+    {% icon "printer" "h-4 w-4" %} {% translate "Print" %}
+  </button>
+{% endblock %}
+
+{% block content %}
+  <form method="get" action="{% url 'safety:contact_card' %}" class="card no-print mb-5 flex flex-wrap items-end gap-3 p-4">
+    <div class="w-full sm:w-72">
+      <label class="form-label" for="id_spot">{% translate "Surf spot" %}</label>
+      <select name="spot" id="id_spot" class="form-select">
+        <option value="">{% translate "General card (all spots)" %}</option>
+        {% for option in spots %}
+          <option value="{{ option.pk }}" {% if spot and spot.pk == option.pk %}selected{% endif %}>{{ option.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn-secondary">{% icon "refresh-cw" "h-4 w-4" %} {% translate "Update card" %}</button>
+  </form>
+
+  <article class="card mx-auto max-w-3xl p-6 print:border-0 print:shadow-none">
+    <header class="border-b-2 border-rose-500 pb-3">
+      <p class="text-xs font-semibold uppercase tracking-widest text-rose-600">{% translate "Emergency procedure" %}</p>
+      <h2 class="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-50">{{ SCHOOL_NAME }}</h2>
+      <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">
+        {% if spot %}
+          {{ spot.name }} · {{ spot.coordinates_display }}
+        {% else %}
+          {% translate "All surf spots" %}
+        {% endif %}
+      </p>
+    </header>
+
+    {% if spot %}
+      <section class="mt-5">
+        <h3 class="text-sm font-bold uppercase tracking-wide text-slate-700 dark:text-slate-300">
+          {% translate "Where you are" %}
+        </h3>
+        <dl class="mt-2 grid gap-3 sm:grid-cols-2">
+          <div>
+            <dt class="text-xs text-slate-500 dark:text-slate-400">{% translate "Coordinates" %}</dt>
+            <dd class="font-mono text-sm text-slate-900 dark:text-slate-100">{{ spot.coordinates_display }}</dd>
+          </div>
+          <div>
+            <dt class="text-xs text-slate-500 dark:text-slate-400">{% translate "Access" %}</dt>
+            <dd class="text-sm text-slate-900 dark:text-slate-100">{{ spot.access_notes|default:"—" }}</dd>
+          </div>
+          {% if spot.nearest_hospital %}
+            <div>
+              <dt class="text-xs text-slate-500 dark:text-slate-400">{% translate "Nearest hospital" %}</dt>
+              <dd class="text-sm text-slate-900 dark:text-slate-100">
+                {{ spot.nearest_hospital }}
+                {% if spot.nearest_hospital_phone %} · {{ spot.nearest_hospital_phone }}{% endif %}
+              </dd>
+            </div>
+          {% endif %}
+          {% if spot.emergency_notes %}
+            <div>
+              <dt class="text-xs text-slate-500 dark:text-slate-400">{% translate "Notes" %}</dt>
+              <dd class="text-sm text-slate-900 dark:text-slate-100">{{ spot.emergency_notes }}</dd>
+            </div>
+          {% endif %}
+        </dl>
+      </section>
+    {% endif %}
+
+    <section class="mt-6">
+      <h3 class="text-sm font-bold uppercase tracking-wide text-slate-700 dark:text-slate-300">
+        {% translate "Call, in this order" %}
+      </h3>
+      {% if contacts %}
+        <ol class="mt-2 divide-y divide-slate-200 dark:divide-slate-700">
+          {% for contact in contacts %}
+            <li class="flex flex-wrap items-baseline justify-between gap-2 py-2.5">
+              <div class="min-w-0">
+                <p class="font-semibold text-slate-900 dark:text-slate-100">{{ contact.name }}</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">
+                  {{ contact.get_kind_display }}
+                  {% if contact.organisation %} · {{ contact.organisation }}{% endif %}
+                  {% if not contact.applies_everywhere %} · {{ contact.spot.name }}{% endif %}
+                </p>
+                {% if contact.notes %}
+                  <p class="text-xs text-slate-500 dark:text-slate-400">{{ contact.notes }}</p>
+                {% endif %}
+              </div>
+              <div class="text-end">
+                <p class="text-lg font-bold tabular-nums text-slate-900 dark:text-slate-50">{{ contact.phone }}</p>
+                {% if contact.alternate_phone %}
+                  <p class="text-xs tabular-nums text-slate-500 dark:text-slate-400">{{ contact.alternate_phone }}</p>
+                {% endif %}
+              </div>
+            </li>
+          {% endfor %}
+        </ol>
+      {% else %}
+        <p class="mt-2 text-sm text-rose-600">
+          {% translate "No emergency contacts are on file. This card is not usable until they are added." %}
+        </p>
+      {% endif %}
+    </section>
+
+    {% if plans %}
+      <section class="mt-6">
+        <h3 class="text-sm font-bold uppercase tracking-wide text-slate-700 dark:text-slate-300">
+          {% translate "Evacuation" %}
+        </h3>
+        {% for plan in plans %}
+          <div class="mt-3">
+            <p class="font-semibold text-slate-900 dark:text-slate-100">{{ plan.title }}</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400">
+              {% blocktranslate with point=plan.assembly_point %}Assembly point: {{ point }}{% endblocktranslate %}
+              · {{ plan.get_responsible_role_display }}
+            </p>
+            <ol class="mt-1 list-decimal space-y-0.5 ps-5 text-sm text-slate-700 dark:text-slate-300">
+              {% for step in plan.step_list %}<li>{{ step }}</li>{% endfor %}
+            </ol>
+          </div>
+        {% endfor %}
+      </section>
+    {% endif %}
+
+    <footer class="mt-6 border-t border-slate-200 pt-3 text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
+      {% blocktranslate with when=printed_at|date:"d.m.Y H:i" %}Printed {{ when }}. Check the safety screen for the current version before each session.{% endblocktranslate %}
+    </footer>
+  </article>
+{% endblock %}

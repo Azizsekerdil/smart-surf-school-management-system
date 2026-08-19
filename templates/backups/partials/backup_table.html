@@ -1,0 +1,68 @@
+{% load i18n surf_tags %}
+
+{% if backups %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">{% translate "Taken" %}</th>
+          <th scope="col">{% translate "Code" %}</th>
+          <th scope="col">{% translate "Type" %}</th>
+          <th scope="col">{% translate "Scope" %}</th>
+          <th scope="col" class="text-end">{% translate "Size" %}</th>
+          <th scope="col">{% translate "Status" %}</th>
+          <th scope="col">{% translate "Verified" %}</th>
+          <th scope="col"><span class="sr-only">{% translate "Actions" %}</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for backup in backups %}
+          <tr>
+            <td class="whitespace-nowrap">
+              <a href="{% url 'backups:detail' backup.pk %}" class="font-medium text-brand-700 hover:underline dark:text-brand-300">
+                {{ backup.created_at|date:"d.m.Y H:i" }}
+              </a>
+              <span class="block text-xs text-slate-500 dark:text-slate-400">
+                {% blocktranslate with days=backup.age_days %}{{ days }} day(s) ago{% endblocktranslate %}
+              </span>
+            </td>
+            <td class="whitespace-nowrap font-mono text-xs">{{ backup.backup_code }}</td>
+            <td class="whitespace-nowrap">{{ backup.get_backup_type_display }}</td>
+            <td class="whitespace-nowrap">{{ backup.get_scope_display }}</td>
+            <td class="whitespace-nowrap text-end tabular-nums">{{ backup.size_display }}</td>
+            <td class="whitespace-nowrap">
+              {% status_badge backup.status backup.get_status_display status_colors %}
+              {% if backup.is_stalled %}
+                <span class="badge-amber ms-1">{% translate "Stalled" %}</span>
+              {% endif %}
+            </td>
+            <td class="whitespace-nowrap">
+              {% if backup.is_verified and backup.exists_on_disk %}
+                <span class="badge-emerald">
+                  {% icon "shield-check" "h-3.5 w-3.5" %} {% translate "Verified" %}
+                </span>
+              {% elif not backup.exists_on_disk and backup.status == "completed" %}
+                <span class="badge-rose">
+                  {% icon "triangle-alert" "h-3.5 w-3.5" %} {% translate "File missing" %}
+                </span>
+              {% else %}
+                <span class="badge-slate">{% translate "Not verified" %}</span>
+              {% endif %}
+            </td>
+            <td class="whitespace-nowrap text-end">
+              <a href="{% url 'backups:detail' backup.pk %}" class="btn-ghost btn-sm" aria-label="{% translate 'Open backup' %}">
+                {% icon "chevron-right" "h-4 w-4" %}
+              </a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% include "partials/pagination.html" %}
+{% else %}
+  {% translate "No backups match this filter" as empty_title %}
+  {% translate "Take one now with the button above — a school with no backup is one hard-drive failure away from losing its waivers and its books." as empty_subtitle %}
+  {% include "partials/empty_state.html" with icon_name="database-backup" title=empty_title subtitle=empty_subtitle %}
+{% endif %}

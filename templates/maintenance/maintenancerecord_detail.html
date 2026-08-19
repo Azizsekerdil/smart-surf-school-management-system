@@ -1,0 +1,361 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ record.record_code }} · {% translate "Maintenance" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ record.record_code }}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+    {% include "maintenance/partials/status_badge.html" with value=record.status label=record.get_status_display %}
+    {% include "maintenance/partials/severity_badge.html" with value=record.severity label=record.get_severity_display %}
+    <span>{{ record.get_damage_type_display }}</span>
+    <span aria-hidden="true">·</span>
+    <span>{{ record.equipment }}</span>
+  </p>
+{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-3 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'maintenance:list' %}" class="hover:underline">{% translate "Maintenance" %}</a>
+    <span class="mx-1" aria-hidden="true">/</span>
+    <span>{{ record.record_code }}</span>
+  </nav>
+{% endblock %}
+
+{% block page_actions %}
+  {% can "maintenance.change" as may_change %}
+  {% if may_change and can_complete %}
+    <a href="{% url 'maintenance:complete' record.pk %}" class="btn-success">
+      {% icon "circle-check" "h-4 w-4" %} {% translate "Complete repair" %}
+    </a>
+  {% endif %}
+  {% if may_change %}
+    <a href="{% url 'maintenance:update' record.pk %}" class="btn-secondary">
+      {% icon "pencil" "h-4 w-4" %} {% translate "Edit" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+
+  {% if record.made_unusable and record.is_open %}
+    <div class="alert-warning mb-5" role="status">
+      <span class="mt-0.5 shrink-0">{% icon "triangle-alert" "h-5 w-5" %}</span>
+      <div>
+        <p class="font-medium">{% translate "This item is out of service." %}</p>
+        <p class="mt-1 text-xs">
+          {% blocktranslate with days=record.downtime_days %}It has been unavailable for {{ days }} days.{% endblocktranslate %}
+        </p>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if other_open %}
+    <div class="alert-info mb-5" role="status">
+      <span class="mt-0.5 shrink-0">{% icon "info" "h-5 w-5" %}</span>
+      <div>
+        <p class="font-medium">{% translate "Other open records on this item" %}</p>
+        <p class="mt-1 text-xs">
+          {% translate "Completing this repair will not return the item to service while these are open:" %}
+          {% for other in other_open %}
+            <a href="{% url 'maintenance:detail' other.pk %}" class="font-medium hover:underline">{{ other.record_code }}</a>{% if not forloop.last %}, {% endif %}
+          {% endfor %}
+        </p>
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="grid gap-5 lg:grid-cols-3">
+
+    {# ================================================== left: the story #}
+    <div class="space-y-5 lg:col-span-2">
+
+      <section class="card">
+        <div class="card-header"><h2 class="card-title">{% translate "The problem" %}</h2></div>
+        <div class="card-body space-y-4">
+          <p class="whitespace-pre-line text-sm text-slate-700 dark:text-slate-300">{{ record.description }}</p>
+
+          <dl class="grid gap-4 sm:grid-cols-2">
+            <div>
+              <dt class="stat-label">{% translate "Equipment" %}</dt>
+              <dd class="mt-1 text-sm text-slate-900 dark:text-slate-100">
+                <a href="{% url 'equipment:detail' record.equipment_id %}" class="font-medium text-brand-600 hover:underline dark:text-brand-400">
+                  {{ record.equipment }}
+                </a>
+              </dd>
+            </div>
+            {% if record.rental_item %}
+              <div>
+                <dt class="stat-label">{% translate "Found on rental return" %}</dt>
+                <dd class="mt-1 text-sm text-slate-900 dark:text-slate-100">
+                  {% if record.rental_pk %}
+                    <a href="{% url 'rentals:detail' record.rental_pk %}" class="font-medium text-brand-600 hover:underline dark:text-brand-400">
+                      {{ record.rental_item }}
+                    </a>
+                  {% else %}
+                    {{ record.rental_item }}
+                  {% endif %}
+                </dd>
+              </div>
+            {% endif %}
+            <div>
+              <dt class="stat-label">{% translate "Reported by" %}</dt>
+              <dd class="mt-1 text-sm text-slate-900 dark:text-slate-100">
+                {% if record.reported_by %}{{ record.reported_by.get_display_name }}{% else %}—{% endif %}
+              </dd>
+            </div>
+            <div>
+              <dt class="stat-label">{% translate "Assigned to" %}</dt>
+              <dd class="mt-1 text-sm text-slate-900 dark:text-slate-100">
+                {% if record.assigned_to %}{{ record.assigned_to.get_display_name }}{% else %}{% translate "Unassigned" %}{% endif %}
+              </dd>
+            </div>
+          </dl>
+
+          {% if record.diagnosis %}
+            <div>
+              <h3 class="stat-label">{% translate "Diagnosis" %}</h3>
+              <p class="mt-1 whitespace-pre-line text-sm text-slate-700 dark:text-slate-300">{{ record.diagnosis }}</p>
+            </div>
+          {% endif %}
+
+          {% if record.resolution %}
+            <div>
+              <h3 class="stat-label">{% translate "Resolution" %}</h3>
+              <p class="mt-1 whitespace-pre-line text-sm text-slate-700 dark:text-slate-300">{{ record.resolution }}</p>
+            </div>
+          {% endif %}
+
+          {% if record.parts_used %}
+            <div>
+              <h3 class="stat-label">{% translate "Parts and materials" %}</h3>
+              <p class="mt-1 whitespace-pre-line text-sm text-slate-700 dark:text-slate-300">{{ record.parts_used }}</p>
+            </div>
+          {% endif %}
+        </div>
+      </section>
+
+      {# --- before / after photos ---------------------------------------- #}
+      {% if record.photo_before or record.photo_after %}
+        <section class="card">
+          <div class="card-header"><h2 class="card-title">{% translate "Photographs" %}</h2></div>
+          <div class="card-body grid gap-4 sm:grid-cols-2">
+            <figure>
+              <figcaption class="stat-label mb-2">{% translate "Before" %}</figcaption>
+              {% if record.photo_before %}
+                <img src="{{ record.photo_before.url }}" alt="{% translate 'Damage before the repair' %}"
+                     class="w-full rounded-lg border border-slate-200 object-cover dark:border-slate-700" loading="lazy">
+              {% else %}
+                <p class="text-sm text-slate-400">{% translate "No photo" %}</p>
+              {% endif %}
+            </figure>
+            <figure>
+              <figcaption class="stat-label mb-2">{% translate "After" %}</figcaption>
+              {% if record.photo_after %}
+                <img src="{{ record.photo_after.url }}" alt="{% translate 'Item after the repair' %}"
+                     class="w-full rounded-lg border border-slate-200 object-cover dark:border-slate-700" loading="lazy">
+              {% else %}
+                <p class="text-sm text-slate-400">{% translate "No photo" %}</p>
+              {% endif %}
+            </figure>
+          </div>
+        </section>
+      {% endif %}
+
+      {# --- timeline ------------------------------------------------------ #}
+      <section class="card">
+        <div class="card-header"><h2 class="card-title">{% translate "Timeline" %}</h2></div>
+        <div class="card-body">
+          <ol class="relative space-y-5 border-s border-slate-200 ps-6 dark:border-slate-700">
+            <li>
+              <span class="absolute -start-2 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500"></span>
+              <p class="text-sm font-medium text-slate-900 dark:text-slate-100">{% translate "Reported" %}</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400">
+                {{ record.reported_at|date:"d.m.Y H:i" }}
+                {% if record.reported_by %}· {{ record.reported_by.get_display_name }}{% endif %}
+              </p>
+            </li>
+            {% if record.started_at %}
+              <li>
+                <span class="absolute -start-2 flex h-4 w-4 items-center justify-center rounded-full bg-sky-500"></span>
+                <p class="text-sm font-medium text-slate-900 dark:text-slate-100">{% translate "Work started" %}</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">
+                  {{ record.started_at|date:"d.m.Y H:i" }}
+                  {% if record.assigned_to %}· {{ record.assigned_to.get_display_name }}{% endif %}
+                </p>
+              </li>
+            {% endif %}
+            {% if record.completed_at %}
+              <li>
+                <span class="absolute -start-2 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500"></span>
+                <p class="text-sm font-medium text-slate-900 dark:text-slate-100">
+                  {% if record.status == "cancelled" %}{% translate "Cancelled" %}{% else %}{% translate "Completed" %}{% endif %}
+                </p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">
+                  {{ record.completed_at|date:"d.m.Y H:i" }}
+                  {% if record.repair_days is not None %}
+                    · {% blocktranslate with days=record.repair_days %}{{ days }} days of work{% endblocktranslate %}
+                  {% endif %}
+                </p>
+              </li>
+            {% else %}
+              <li>
+                <span class="absolute -start-2 flex h-4 w-4 items-center justify-center rounded-full bg-slate-300 dark:bg-slate-600"></span>
+                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">{% translate "Not completed yet" %}</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">
+                  {% blocktranslate with days=record.age_days %}Open for {{ days }} days{% endblocktranslate %}
+                </p>
+              </li>
+            {% endif %}
+          </ol>
+        </div>
+      </section>
+
+      {# --- this item's other records ------------------------------------- #}
+      {% if equipment_history %}
+        <section class="card">
+          <div class="card-header">
+            <h2 class="card-title">{% translate "Earlier records for this item" %}</h2>
+          </div>
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th scope="col">{% translate "Record" %}</th>
+                  <th scope="col">{% translate "Damage" %}</th>
+                  <th scope="col">{% translate "Reported" %}</th>
+                  <th scope="col">{% translate "Status" %}</th>
+                  <th scope="col" class="text-end">{% translate "Cost" %}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for other in equipment_history %}
+                  <tr>
+                    <td>
+                      <a href="{% url 'maintenance:detail' other.pk %}" class="font-medium text-brand-600 hover:underline dark:text-brand-400">
+                        {{ other.record_code }}
+                      </a>
+                    </td>
+                    <td>{{ other.get_damage_type_display }}</td>
+                    <td class="tabular-nums">{{ other.reported_at|date:"d.m.Y" }}</td>
+                    <td>{% include "maintenance/partials/status_badge.html" with value=other.status label=other.get_status_display %}</td>
+                    <td class="text-end tabular-nums">{{ other.total_cost|money }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      {% endif %}
+    </div>
+
+    {# ================================================== right: money & actions #}
+    <div class="space-y-5">
+
+      <section class="card">
+        <div class="card-header"><h2 class="card-title">{% translate "Cost breakdown" %}</h2></div>
+        <div class="card-body">
+          <dl class="space-y-2 text-sm">
+            <div class="flex items-center justify-between">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Parts" %}</dt>
+              <dd class="tabular-nums text-slate-900 dark:text-slate-100">{{ record.parts_cost|money }}</dd>
+            </div>
+            <div class="flex items-center justify-between">
+              <dt class="text-slate-500 dark:text-slate-400">
+                {% blocktranslate with hours=record.labour_hours %}Labour ({{ hours }} h){% endblocktranslate %}
+              </dt>
+              <dd class="tabular-nums text-slate-900 dark:text-slate-100">{{ record.labour_cost|money }}</dd>
+            </div>
+            <div class="flex items-center justify-between border-t border-slate-200 pt-2 dark:border-slate-700">
+              <dt class="font-medium text-slate-900 dark:text-slate-100">{% translate "Total" %}</dt>
+              <dd class="text-base font-semibold tabular-nums text-slate-900 dark:text-slate-50">{{ record.total_cost|money }}</dd>
+            </div>
+          </dl>
+          <dl class="mt-4 space-y-2 border-t border-slate-200 pt-4 text-sm dark:border-slate-700">
+            <div class="flex items-center justify-between">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Days out of service" %}</dt>
+              <dd class="tabular-nums text-slate-900 dark:text-slate-100">{{ record.downtime_days }}</dd>
+            </div>
+            <div class="flex items-center justify-between">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Days since reported" %}</dt>
+              <dd class="tabular-nums text-slate-900 dark:text-slate-100">{{ record.age_days }}</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+
+      {% if schedule %}
+        <section class="card">
+          <div class="card-header"><h2 class="card-title">{% translate "Service plan" %}</h2></div>
+          <div class="card-body space-y-2 text-sm">
+            <div class="flex items-center justify-between">
+              <span class="text-slate-500 dark:text-slate-400">{% translate "Interval" %}</span>
+              <span class="tabular-nums">{% blocktranslate with days=schedule.interval_days %}{{ days }} days{% endblocktranslate %}</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-slate-500 dark:text-slate-400">{% translate "Next due" %}</span>
+              <span class="tabular-nums {% if schedule.is_overdue %}font-semibold text-rose-600 dark:text-rose-400{% endif %}">
+                {{ schedule.next_due_on|date:"d.m.Y"|default:"—" }}
+              </span>
+            </div>
+            <a href="{% url 'maintenance:schedule_update' schedule.pk %}" class="btn-ghost btn-sm mt-2 w-full justify-center">
+              {% icon "settings" "h-4 w-4" %} {% translate "Edit plan" %}
+            </a>
+          </div>
+        </section>
+      {% endif %}
+
+      {# --- workflow actions --------------------------------------------- #}
+      {% can "maintenance.change" as may_change %}
+      {% if may_change %}
+        <section class="card">
+          <div class="card-header"><h2 class="card-title">{% translate "Actions" %}</h2></div>
+          <div class="card-body space-y-4">
+
+            {% if can_start %}
+              <form method="post" action="{% url 'maintenance:start' record.pk %}" class="space-y-3">
+                {% csrf_token %}
+                {% include "maintenance/partials/form_field.html" with field=start_form.assigned_to %}
+                {% include "maintenance/partials/form_field.html" with field=start_form.diagnosis %}
+                <button type="submit" class="btn-primary w-full justify-center">
+                  {% icon "play" "h-4 w-4" %} {% translate "Start work" %}
+                </button>
+              </form>
+            {% endif %}
+
+            {% if can_hold %}
+              <form method="post" action="{% url 'maintenance:hold' record.pk %}" class="space-y-3 border-t border-slate-200 pt-4 dark:border-slate-700">
+                {% csrf_token %}
+                {% include "maintenance/partials/form_field.html" with field=reason_form.reason %}
+                <button type="submit" class="btn-secondary w-full justify-center">
+                  {% icon "clock" "h-4 w-4" %} {% translate "Put on hold" %}
+                </button>
+              </form>
+            {% endif %}
+
+            {% if can_cancel %}
+              <form method="post" action="{% url 'maintenance:cancel' record.pk %}"
+                    class="space-y-3 border-t border-slate-200 pt-4 dark:border-slate-700">
+                {% csrf_token %}
+                <label for="cancel-reason" class="form-label">{% translate "Reason for cancelling" %}</label>
+                <textarea id="cancel-reason" name="reason" rows="2" required
+                          class="form-textarea"
+                          placeholder="{% translate 'e.g. wrong item scanned' %}"></textarea>
+                <button type="submit" class="btn-danger w-full justify-center">
+                  {% icon "circle-x" "h-4 w-4" %} {% translate "Cancel record" %}
+                </button>
+              </form>
+            {% endif %}
+
+            {% if can_complete %}
+              <a href="{% url 'maintenance:complete' record.pk %}"
+                 class="btn-success w-full justify-center border-t border-slate-200 dark:border-slate-700">
+                {% icon "circle-check" "h-4 w-4" %} {% translate "Complete repair" %}
+              </a>
+            {% endif %}
+          </div>
+        </section>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}

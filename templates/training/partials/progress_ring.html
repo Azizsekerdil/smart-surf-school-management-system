@@ -1,0 +1,16 @@
+{% load i18n %}
+{% comment %} Usage: {% include "training/partials/progress_ring.html" with percent=42 ring_class="h-16 w-16" %}
+   Circumference of r=46 is 2πr ≈ 289, which is what the dash length is scaled against. {% endcomment %}
+{% widthratio percent 100 289 as ring_dash %}
+<svg viewBox="0 0 100 100" class="{{ ring_class|default:'h-16 w-16' }} shrink-0"
+     role="img"
+     aria-label="{% blocktranslate with value=percent %}{{ value }}% complete{% endblocktranslate %}">
+  <circle cx="50" cy="50" r="46" fill="none" stroke-width="8"
+          class="stroke-slate-200 dark:stroke-slate-700"></circle>
+  <circle cx="50" cy="50" r="46" fill="none" stroke-width="8" stroke-linecap="round"
+          stroke-dasharray="{{ ring_dash }} 289"
+          transform="rotate(-90 50 50)"
+          class="{% if percent >= 100 %}stroke-emerald-500{% else %}stroke-brand-500{% endif %}"></circle>
+  <text x="50" y="50" text-anchor="middle" dominant-baseline="central"
+        class="fill-slate-700 text-[1.7rem] font-semibold dark:fill-slate-200">{{ percent }}%</text>
+</svg>

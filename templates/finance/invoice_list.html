@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Invoices" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Invoices" %}{% endblock %}
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "What customers owe the school, and how much of it has arrived." %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'finance:dashboard' %}" class="btn-secondary">
+    {% icon "gauge" "h-4 w-4" %} {% translate "Dashboard" %}
+  </a>
+  {% can "finance.add" as may_add %}
+  {% if may_add %}
+    <a href="{% url 'finance:invoice_create' %}" class="btn-primary">
+      {% icon "plus" "h-4 w-4" %} {% translate "New invoice" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Outstanding on issued invoices" %}</p>
+      <p class="stat-value">{{ receivables|money }}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Overdue" %}</p>
+      <p class="stat-value {% if overdue_count %}text-rose-600 dark:text-rose-400{% endif %}">
+        {{ overdue_count }}
+      </p>
+    </div>
+  </div>
+
+  <form method="get" action="{% url 'finance:invoice_list' %}" class="card mt-4">
+    <div class="card-body grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      {% include "finance/partials/field.html" with field=filter_form.q wrapper_class="lg:col-span-2" %}
+      {% include "finance/partials/field.html" with field=filter_form.status %}
+      {% include "finance/partials/field.html" with field=filter_form.range %}
+      {% include "finance/partials/field.html" with field=filter_form.start %}
+      {% include "finance/partials/field.html" with field=filter_form.end %}
+      <div class="flex items-end gap-2 lg:col-span-2">
+        <button type="submit" class="btn-primary">
+          {% icon "search" "h-4 w-4" %} {% translate "Filter" %}
+        </button>
+        <a href="{% url 'finance:invoice_list' %}" class="btn-secondary">{% translate "Reset" %}</a>
+      </div>
+    </div>
+  </form>
+
+  <div id="invoice-table" class="mt-4">
+    {% include "finance/partials/invoice_table.html" %}
+  </div>
+{% endblock %}

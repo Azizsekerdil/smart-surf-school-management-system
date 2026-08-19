@@ -1,0 +1,34 @@
+{% load i18n surf_tags %}
+
+{% if error %}
+  <div class="alert-error">
+    {% icon "circle-alert" "h-5 w-5 shrink-0" %}
+    <p>{{ error }}</p>
+  </div>
+{% elif rental %}
+  <div class="alert-success">
+    {% icon "circle-check" "h-5 w-5 shrink-0" %}
+    <div>
+      <p class="font-semibold">
+        {% blocktranslate with item=item.equipment %}{{ item }} checked in.{% endblocktranslate %}
+      </p>
+      <p>
+        <a href="{% url 'rentals:detail' rental.pk %}" class="underline">{{ rental.rental_code }}</a>
+        ·
+        {% if closed %}
+          {% blocktranslate with balance=rental.balance_due|money %}Contract closed. Balance {{ balance }}.{% endblocktranslate %}
+          {% if rental.deposit_returned > 0 %}
+            {% blocktranslate with refund=rental.deposit_returned|money %}Refund deposit: {{ refund }}.{% endblocktranslate %}
+          {% endif %}
+        {% else %}
+          {% blocktranslate count remaining=rental.open_item_count %}{{ remaining }} item still out.{% plural %}{{ remaining }} items still out.{% endblocktranslate %}
+        {% endif %}
+      </p>
+      {% if rental.late_fee > 0 %}
+        <p class="text-rose-700 dark:text-rose-300">
+          {% blocktranslate with fee=rental.late_fee|money %}Late fee charged: {{ fee }}.{% endblocktranslate %}
+        </p>
+      {% endif %}
+    </div>
+  </div>
+{% endif %}

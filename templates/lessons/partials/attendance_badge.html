@@ -1,0 +1,14 @@
+{% load i18n %}{% comment %}
+Attendance status pill. Kept as its own partial so the roster table, the
+printable manifest and any future screen colour the same status identically.
+{% endcomment %}{% if attendance.status == "registered" %}
+  <span class="badge-sky">{{ attendance.get_status_display }}</span>
+{% elif attendance.status == "checked_in" %}
+  <span class="badge-violet">{{ attendance.get_status_display }}</span>
+{% elif attendance.status == "attended" %}
+  <span class="badge-emerald">{{ attendance.get_status_display }}</span>
+{% elif attendance.status == "no_show" %}
+  <span class="badge-amber">{{ attendance.get_status_display }}</span>
+{% else %}
+  <span class="badge-rose">{{ attendance.get_status_display }}</span>
+{% endif %}

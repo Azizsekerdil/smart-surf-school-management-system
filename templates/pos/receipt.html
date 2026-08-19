@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% blocktranslate with number=sale.sale_number %}Receipt {{ number }}{% endblocktranslate %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% blocktranslate with number=sale.sale_number %}Receipt {{ number }}{% endblocktranslate %}{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* The receipt is a document, not a screen: everything that is application
+     chrome disappears when it goes to paper or to a thermal printer. The
+     selectors target the layout in base.html precisely so the receipt's own
+     <header> and <footer> survive. */
+  @media print {
+    body > div > aside,
+    body > div > div > header,
+    body > div > div > footer,
+    .no-print { display: none !important; }
+    .lg\:ps-64 { padding-inline-start: 0 !important; }
+    main { padding: 0 !important; }
+    .receipt-sheet { max-width: none !important; border: 0 !important; box-shadow: none !important; }
+  }
+</style>
+{% endblock %}
+
+{% block page_actions %}
+  <div class="no-print flex flex-wrap items-center gap-2">
+    <button type="button" class="btn-primary" onclick="window.print()">
+      {% icon "printer" "h-4 w-4" %} {% translate "Print" %}
+    </button>
+    <a href="{% url 'pos:detail' sale.pk %}" class="btn-secondary">
+      {% icon "eye" "h-4 w-4" %} {% translate "Sale record" %}
+    </a>
+    <a href="{% url 'pos:terminal' %}" class="btn-secondary">
+      {% icon "shopping-cart" "h-4 w-4" %} {% translate "Back to the till" %}
+    </a>
+  </div>
+{% endblock %}
+
+{% block content %}
+  <article class="receipt-sheet card mx-auto max-w-md p-6 font-mono text-sm text-slate-900 dark:text-slate-100">
+
+    <header class="text-center">
+      <h2 class="text-base font-semibold uppercase tracking-wide">{{ SCHOOL_NAME }}</h2>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{% translate "Shop receipt" %}</p>
+    </header>
+
+    <dl class="mt-4 space-y-0.5 border-y border-dashed border-slate-300 py-3 text-xs dark:border-slate-600">
+      <div class="flex justify-between gap-2">
+        <dt>{% translate "Receipt" %}</dt>
+        <dd class="font-semibold">{{ sale.sale_number }}</dd>
+      </div>
+      <div class="flex justify-between gap-2">
+        <dt>{% translate "Date" %}</dt>
+        <dd>{{ sale.sold_at|date:"d.m.Y H:i" }}</dd>
+      </div>
+      {% if sale.cashier %}
+        <div class="flex justify-between gap-2">
+          <dt>{% translate "Served by" %}</dt>
+          <dd>{{ sale.cashier.get_full_name|default:sale.cashier.username }}</dd>
+        </div>
+      {% endif %}
+      {% if sale.customer %}
+        <div class="flex justify-between gap-2">
+          <dt>{% translate "Customer" %}</dt>
+          <dd>{{ sale.customer }}</dd>
+        </div>
+      {% endif %}
+    </dl>
+
+    {% if sale.is_voided %}
+      <p class="mt-3 rounded border border-rose-400 px-3 py-2 text-center text-xs font-semibold uppercase tracking-widest text-rose-600 dark:text-rose-400">
+        {% translate "Voided" %} — {{ sale.voided_at|date:"d.m.Y H:i" }}
+      </p>
+    {% endif %}
+
+    <table class="mt-3 w-full text-xs">
+      <caption class="sr-only">{% translate "Items sold" %}</caption>
+      <thead>
+        <tr class="border-b border-dashed border-slate-300 dark:border-slate-600">
+          <th scope="col" class="py-1 text-start font-medium">{% translate "Item" %}</th>
+          <th scope="col" class="py-1 text-end font-medium">{% translate "Qty" %}</th>
+          <th scope="col" class="py-1 text-end font-medium">{% translate "Amount" %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in sale.items.all %}
+          <tr>
+            <td class="py-1 pe-2 align-top">
+              {{ item.product.name }}
+              <span class="block text-[0.65rem] text-slate-500 dark:text-slate-400">
+                {{ item.unit_price|money }} / {{ item.product.get_unit_display }}
+                {% if item.discount_amount %} · −{{ item.discount_amount|money }}{% endif %}
+              </span>
+            </td>
+            <td class="py-1 text-end align-top tabular-nums">{{ item.quantity|floatformat:'-2' }}</td>
+            <td class="py-1 text-end align-top tabular-nums">{{ item.line_total|money }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <dl class="mt-3 space-y-0.5 border-t border-dashed border-slate-300 pt-3 text-xs dark:border-slate-600">
+      <div class="flex justify-between gap-2">
+        <dt>{% translate "Subtotal" %}</dt>
+        <dd class="tabular-nums">{{ sale.subtotal|money }}</dd>
+      </div>
+      {% if sale.discount_amount %}
+        <div class="flex justify-between gap-2">
+          <dt>
+            {% translate "Discount" %}{% if sale.discount_percent %} ({{ sale.discount_percent|floatformat:'-2' }}%){% endif %}
+          </dt>
+          <dd class="tabular-nums">−{{ sale.discount_amount|money }}</dd>
+        </div>
+      {% endif %}
+      <div class="flex justify-between gap-2 border-t border-slate-300 pt-1 text-sm font-bold dark:border-slate-600">
+        <dt>{% translate "Total" %}</dt>
+        <dd class="tabular-nums">{{ sale.total_amount|money }}</dd>
+      </div>
+      <div class="flex justify-between gap-2">
+        <dt>{% translate "Tax included" %}</dt>
+        <dd class="tabular-nums">{{ sale.tax_amount|money }}</dd>
+      </div>
+      <div class="flex justify-between gap-2 pt-1">
+        <dt>{{ sale.get_payment_method_display }}</dt>
+        <dd class="tabular-nums">{{ sale.paid_amount|money }}</dd>
+      </div>
+      {% if sale.change_given %}
+        <div class="flex justify-between gap-2">
+          <dt>{% translate "Change" %}</dt>
+          <dd class="tabular-nums">{{ sale.change_given|money }}</dd>
+        </div>
+      {% endif %}
+    </dl>
+
+    {% if sale.note %}
+      <p class="mt-3 border-t border-dashed border-slate-300 pt-2 text-xs dark:border-slate-600">{{ sale.note }}</p>
+    {% endif %}
+
+    <footer class="mt-4 border-t border-dashed border-slate-300 pt-3 text-center text-[0.65rem] text-slate-500 dark:border-slate-600 dark:text-slate-400">
+      <p>{% translate "Thank you — see you in the water." %}</p>
+      <p class="mt-1">{% translate "Keep this receipt for exchanges." %}</p>
+    </footer>
+  </article>
+{% endblock %}

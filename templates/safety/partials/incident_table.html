@@ -1,0 +1,72 @@
+{% load i18n surf_tags %}
+{% if incidents %}
+  <div class="table-wrap border-0">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">{% translate "Code" %}</th>
+          <th scope="col">{% translate "When" %}</th>
+          <th scope="col">{% translate "Type" %}</th>
+          <th scope="col">{% translate "Severity" %}</th>
+          <th scope="col">{% translate "Spot" %}</th>
+          <th scope="col">{% translate "Status" %}</th>
+          <th scope="col" class="text-end">{% translate "Open for" %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for incident in incidents %}
+          <tr>
+            <td>
+              <a href="{% url 'safety:incident_detail' incident.pk %}"
+                 class="font-mono font-medium text-brand-600 hover:underline dark:text-brand-400">
+                {{ incident.incident_code }}
+              </a>
+              {% if incident.medical_attention_required %}
+                <span class="badge-rose ms-1" title="{% translate 'Medical attention required' %}">
+                  {% icon "heart" "h-3 w-3" %}
+                </span>
+              {% endif %}
+              {% if incident.emergency_services_called %}
+                <span class="badge-rose ms-1" title="{% translate 'Emergency services called' %}">
+                  {% icon "phone" "h-3 w-3" %}
+                </span>
+              {% endif %}
+            </td>
+            <td class="whitespace-nowrap">{{ incident.occurred_at|date:"d.m.Y H:i" }}</td>
+            <td>{{ incident.get_incident_type_display }}</td>
+            <td>
+              {% if incident.severity == "critical" %}
+                <span class="badge-rose">{{ incident.get_severity_display }}</span>
+              {% elif incident.severity == "high" %}
+                <span class="badge-amber">{{ incident.get_severity_display }}</span>
+              {% elif incident.severity == "medium" %}
+                <span class="badge-sky">{{ incident.get_severity_display }}</span>
+              {% else %}
+                <span class="badge-slate">{{ incident.get_severity_display }}</span>
+              {% endif %}
+            </td>
+            <td>{% if incident.spot %}{{ incident.spot.name }}{% else %}—{% endif %}</td>
+            <td>
+              {% status_badge incident.status incident.get_status_display %}
+              {% if incident.is_follow_up_overdue %}
+                <span class="badge-rose ms-1">{% translate "Follow-up overdue" %}</span>
+              {% endif %}
+            </td>
+            <td class="text-end tabular-nums">
+              {% if incident.is_open %}
+                {% blocktranslate count counter=incident.days_open %}{{ counter }} day{% plural %}{{ counter }} days{% endblocktranslate %}
+              {% else %}
+                —
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include "partials/pagination.html" %}
+{% else %}
+  <div class="p-5">
+    {% include "partials/empty_state.html" with icon_name="shield-check" title=_("No incidents match this filter") subtitle=_("A quiet log is the goal — but record every near miss, they are the cheapest safety data there is.") %}
+  </div>
+{% endif %}

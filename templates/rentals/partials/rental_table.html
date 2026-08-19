@@ -1,0 +1,85 @@
+{% load i18n surf_tags %}
+
+{% if rentals %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">{% translate "Code" %}</th>
+          <th scope="col">{% translate "Customer" %}</th>
+          <th scope="col">{% translate "Items" %}</th>
+          <th scope="col">{% translate "Out" %}</th>
+          <th scope="col">{% translate "Due back" %}</th>
+          <th scope="col">{% translate "Status" %}</th>
+          <th scope="col" class="text-end">{% translate "Total" %}</th>
+          <th scope="col" class="text-end">{% translate "Balance" %}</th>
+          <th scope="col"><span class="sr-only">{% translate "Actions" %}</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for rental in rentals %}
+          <tr class="{% if rental.is_overdue %}bg-rose-50/70 dark:bg-rose-500/10{% endif %}">
+            <td class="font-medium text-slate-900 dark:text-slate-100">
+              <a href="{% url 'rentals:detail' rental.pk %}" class="hover:underline">
+                {{ rental.rental_code }}
+              </a>
+              {% if rental.id_document_held %}
+                <span class="ms-1 inline-flex align-middle text-slate-400"
+                      title="{% translate 'Identity document held' %}">
+                  {% icon "file-text" "h-3.5 w-3.5" %}
+                </span>
+              {% endif %}
+            </td>
+            <td>{{ rental.customer }}</td>
+            <td class="tabular-nums">{{ rental.item_count }}</td>
+            <td class="whitespace-nowrap">{{ rental.start_at|date:"d.m.Y H:i" }}</td>
+            <td class="whitespace-nowrap {% if rental.is_overdue %}font-semibold text-rose-700 dark:text-rose-300{% endif %}">
+              {{ rental.expected_return_at|date:"d.m.Y H:i" }}
+              {% if rental.is_overdue %}
+                <span class="block text-xs">
+                  {% blocktranslate with hours=rental.hours_overdue %}{{ hours }} h late{% endblocktranslate %}
+                </span>
+              {% endif %}
+            </td>
+            <td>
+              {% status_badge rental.status rental.get_status_display %}
+            </td>
+            <td class="text-end tabular-nums">{{ rental.total_amount|money }}</td>
+            <td class="text-end tabular-nums">
+              {% if rental.balance_due > 0 %}
+                <span class="font-semibold text-amber-700 dark:text-amber-300">
+                  {{ rental.balance_due|money }}
+                </span>
+              {% else %}
+                <span class="text-slate-400">—</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <div class="flex items-center justify-end gap-1">
+                {% can "rentals.change" as may_change %}
+                {% if may_change and rental.can_check_in %}
+                  <a href="{% url 'rentals:return' rental.pk %}" class="btn-secondary btn-sm">
+                    {% icon "rotate-ccw" "h-3.5 w-3.5" %} {% translate "Check in" %}
+                  </a>
+                {% endif %}
+                <a href="{% url 'rentals:detail' rental.pk %}" class="btn-ghost btn-sm">
+                  {% translate "Open" %}
+                </a>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% include "partials/pagination.html" %}
+{% else %}
+  {% can "rentals.add" as may_add %}
+  {% if may_add %}
+    {% url 'rentals:create' as create_url %}
+    {% include "partials/empty_state.html" with icon_name="package" title=_("No rentals here") subtitle=_("Nothing matches this tab or search. Check gear out to start a hire.") action_url=create_url action_label=_("New rental") %}
+  {% else %}
+    {% include "partials/empty_state.html" with icon_name="package" title=_("No rentals here") subtitle=_("Nothing matches this tab or search.") %}
+  {% endif %}
+{% endif %}

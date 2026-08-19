@@ -1,0 +1,363 @@
+{% extends "base.html" %}
+{% load i18n static surf_tags %}
+
+{% block title %}{% translate "Safety" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Safety" %}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "The morning briefing: what is open, what is in force, and who is watching the water." %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'safety:contact_card' %}" class="btn-secondary">
+    {% icon "printer" "h-4 w-4" %} {% translate "Emergency card" %}
+  </a>
+  {% can "safety.add" as may_add %}
+  {% if may_add %}
+    <a href="{% url 'safety:incident_create' %}" class="btn-primary">
+      {% icon "triangle-alert" "h-4 w-4" %} {% translate "Report an incident" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+
+  {# --- headline tiles --------------------------------------------------- #}
+  <div class="mb-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Days since last incident" %}</p>
+      {% if stats.days_since_last_incident is None %}
+        <p class="stat-value">—</p>
+        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          {% translate "Nothing has been recorded yet." %}
+        </p>
+      {% else %}
+        <p class="stat-value {% if stats.days_since_last_incident < 7 %}text-amber-600 dark:text-amber-400{% else %}text-emerald-600 dark:text-emerald-400{% endif %}">
+          {{ stats.days_since_last_incident }}
+        </p>
+        {% if stats.last_incident %}
+          <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            <a href="{% url 'safety:incident_detail' stats.last_incident.pk %}" class="hover:underline">
+              {{ stats.last_incident.incident_code }} · {{ stats.last_incident.occurred_at|date:"d.m.Y H:i" }}
+            </a>
+          </p>
+        {% endif %}
+      {% endif %}
+    </div>
+
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Open incidents" %}</p>
+      <p class="stat-value {% if stats.open_incidents %}text-amber-600 dark:text-amber-400{% endif %}">{{ stats.open_incidents }}</p>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {% blocktranslate count counter=stats.overdue_follow_ups %}{{ counter }} overdue follow-up{% plural %}{{ counter }} overdue follow-ups{% endblocktranslate %}
+      </p>
+    </div>
+
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Warnings in force" %}</p>
+      <p class="stat-value {% if stats.active_warnings %}text-rose-600 dark:text-rose-400{% endif %}">{{ stats.active_warnings }}</p>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {% blocktranslate count counter=stats.pending_ai_warnings %}{{ counter }} AI suggestion awaiting confirmation{% plural %}{{ counter }} AI suggestions awaiting confirmation{% endblocktranslate %}
+      </p>
+    </div>
+
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Overdue equipment checks" %}</p>
+      <p class="stat-value {% if stats.overdue_equipment_checks %}text-rose-600 dark:text-rose-400{% endif %}">{{ stats.overdue_equipment_checks }}</p>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {% blocktranslate count counter=stats.failed_checks %}{{ counter }} failed check with no action recorded{% plural %}{{ counter }} failed checks with no action recorded{% endblocktranslate %}
+      </p>
+    </div>
+  </div>
+
+  <div class="grid gap-5 lg:grid-cols-3">
+
+    {# ==================================================== main column === #}
+    <div class="space-y-5 lg:col-span-2">
+
+      {# --- warnings in force ----------------------------------------- #}
+      <section class="card" aria-labelledby="warnings-heading">
+        <div class="card-header">
+          <h2 class="card-title" id="warnings-heading">
+            {% icon "shield-alert" "inline h-4 w-4 text-rose-500" %} {% translate "Warnings in force" %}
+          </h2>
+          <a href="{% url 'safety:warning_list' %}" class="btn-ghost btn-sm">{% translate "All warnings" %}</a>
+        </div>
+        <div class="card-body space-y-3">
+          {% for warning in confirmed_warnings %}
+            {% include "safety/partials/warning_card.html" with warning=warning %}
+          {% empty %}
+            <p class="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
+              {% icon "circle-check" "h-4 w-4" %}
+              {% translate "No confirmed warnings are in force right now." %}
+            </p>
+          {% endfor %}
+        </div>
+      </section>
+
+      {# --- AI suggestions: kept apart, on purpose --------------------- #}
+      {% if pending_warnings %}
+        <section class="ai-surface p-5" aria-labelledby="ai-warnings-heading">
+          <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <h2 class="text-base font-semibold text-slate-900 dark:text-slate-100" id="ai-warnings-heading">
+              {% translate "Awaiting staff confirmation" %}
+            </h2>
+            {% ai_chip %}
+          </div>
+          <p class="mb-4 text-sm text-slate-600 dark:text-slate-300">
+            {% translate "These are AI recommendations. Nothing in the system treats one as a warning until a named member of staff confirms it." %}
+          </p>
+          <div class="space-y-3">
+            {% for warning in pending_warnings %}
+              {% include "safety/partials/ai_warning_card.html" with warning=warning %}
+            {% endfor %}
+          </div>
+        </section>
+      {% endif %}
+
+      {# --- incident trend --------------------------------------------- #}
+      <section class="card" aria-labelledby="trend-heading">
+        <div class="card-header">
+          <h2 class="card-title" id="trend-heading">
+            {% icon "chart-line" "inline h-4 w-4 text-brand-500" %} {% translate "Incident trend" %}
+          </h2>
+          <span class="text-xs text-slate-500 dark:text-slate-400">{{ range_label }}</span>
+        </div>
+        <div class="card-body">
+          {% if stats.total %}
+            <div class="h-64">
+              <canvas id="incident-trend-chart"
+                      data-label-all="{% translate 'All incidents' %}"
+                      data-label-serious="{% translate 'High or critical' %}"></canvas>
+            </div>
+            <script type="application/json" id="incident-trend-data">{{ stats.trend|to_json }}</script>
+          {% else %}
+            <p class="text-sm text-slate-500 dark:text-slate-400">
+              {% translate "No incidents in this period — there is nothing to plot." %}
+            </p>
+          {% endif %}
+        </div>
+      </section>
+
+      {# --- open incidents --------------------------------------------- #}
+      <section class="card" aria-labelledby="open-heading">
+        <div class="card-header">
+          <h2 class="card-title" id="open-heading">
+            {% icon "clipboard-list" "inline h-4 w-4 text-amber-500" %} {% translate "Open incidents" %}
+          </h2>
+          <a href="{% url 'safety:incident_list' %}?status=open" class="btn-ghost btn-sm">{% translate "See all" %}</a>
+        </div>
+        {% if open_incidents %}
+          {% include "safety/partials/incident_table.html" with incidents=open_incidents %}
+        {% else %}
+          <div class="card-body">
+            <p class="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
+              {% icon "circle-check" "h-4 w-4" %}
+              {% translate "Every incident on file has been closed." %}
+            </p>
+          </div>
+        {% endif %}
+      </section>
+
+      {# --- incidents by type ------------------------------------------ #}
+      {% if stats.by_type %}
+        <section class="card" aria-labelledby="by-type-heading">
+          <div class="card-header">
+            <h2 class="card-title" id="by-type-heading">{% translate "Incidents by type" %}</h2>
+            <span class="text-xs text-slate-500 dark:text-slate-400">{{ range_label }}</span>
+          </div>
+          <div class="table-wrap border-0">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th scope="col">{% translate "Type" %}</th>
+                  <th scope="col" class="text-end">{% translate "Count" %}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in stats.by_type %}
+                  <tr>
+                    <td class="font-medium text-slate-900 dark:text-slate-100">{{ row.label }}</td>
+                    <td class="text-end tabular-nums">{{ row.count }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <div class="card-body border-t border-slate-200 pt-4 dark:border-slate-700">
+            <dl class="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+              {% for row in stats.by_severity %}
+                <div>
+                  <dt class="text-xs text-slate-500 dark:text-slate-400">{{ row.label }}</dt>
+                  <dd class="font-semibold tabular-nums text-slate-900 dark:text-slate-100">{{ row.count }}</dd>
+                </div>
+              {% endfor %}
+            </dl>
+          </div>
+        </section>
+      {% endif %}
+    </div>
+
+    {# ==================================================== side column === #}
+    <div class="space-y-5">
+
+      {# --- lifeguard cover today -------------------------------------- #}
+      <section class="card" aria-labelledby="cover-heading">
+        <div class="card-header">
+          <h2 class="card-title" id="cover-heading">
+            {% icon "life-buoy" "inline h-4 w-4 text-brand-500" %} {% translate "Cover today" %}
+          </h2>
+          <a href="{% url 'safety:roster' %}" class="btn-ghost btn-sm">{% translate "Roster" %}</a>
+        </div>
+        <div class="card-body space-y-3">
+          {% for shift in cover_today %}
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <p class="truncate text-sm font-medium text-slate-900 dark:text-slate-100">
+                  {{ shift.lifeguard.get_display_name }}
+                </p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">
+                  {{ shift.spot.name }} · {{ shift.start_time|time:"H:i" }}–{{ shift.end_time|time:"H:i" }}
+                </p>
+              </div>
+              {% if shift.is_confirmed %}
+                <span class="badge-emerald shrink-0">{% icon "check" "h-3 w-3" %}{% translate "Confirmed" %}</span>
+              {% else %}
+                <span class="badge-amber shrink-0">{% translate "Unconfirmed" %}</span>
+              {% endif %}
+            </div>
+          {% empty %}
+            <p class="flex items-start gap-2 text-sm text-amber-600 dark:text-amber-400">
+              {% icon "triangle-alert" "h-4 w-4 shrink-0" %}
+              {% translate "Nobody is rostered for water safety today." %}
+            </p>
+          {% endfor %}
+        </div>
+      </section>
+
+      {# --- overdue equipment checks ----------------------------------- #}
+      <section class="card" aria-labelledby="checks-heading">
+        <div class="card-header">
+          <h2 class="card-title" id="checks-heading">
+            {% icon "clipboard-check" "inline h-4 w-4 text-brand-500" %} {% translate "Overdue checks" %}
+          </h2>
+          <a href="{% url 'safety:check_list' %}" class="btn-ghost btn-sm">{% translate "All checks" %}</a>
+        </div>
+        <div class="card-body space-y-2">
+          {% for check in overdue_checks %}
+            <div class="flex items-start justify-between gap-3">
+              <p class="min-w-0 truncate text-sm text-slate-800 dark:text-slate-200">{{ check.equipment }}</p>
+              <span class="badge-rose shrink-0">
+                {% blocktranslate count counter=check.days_overdue %}{{ counter }} day late{% plural %}{{ counter }} days late{% endblocktranslate %}
+              </span>
+            </div>
+          {% empty %}
+            <p class="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
+              {% icon "circle-check" "h-4 w-4" %}
+              {% translate "No equipment check is overdue." %}
+            </p>
+          {% endfor %}
+        </div>
+      </section>
+
+      {# --- drills ------------------------------------------------------ #}
+      <section class="card" aria-labelledby="drills-heading">
+        <div class="card-header">
+          <h2 class="card-title" id="drills-heading">
+            {% icon "list-checks" "inline h-4 w-4 text-brand-500" %} {% translate "Evacuation drills" %}
+          </h2>
+          <a href="{% url 'safety:plan_list' %}" class="btn-ghost btn-sm">{% translate "Plans" %}</a>
+        </div>
+        <div class="card-body space-y-2">
+          {% for plan in upcoming_drills %}
+            <div class="flex items-start justify-between gap-3">
+              <a href="{% url 'safety:plan_detail' plan.pk %}" class="min-w-0 truncate text-sm text-slate-800 hover:underline dark:text-slate-200">
+                {{ plan.title }}
+              </a>
+              {% if plan.is_drill_overdue %}
+                <span class="badge-rose shrink-0">{% translate "Overdue" %}</span>
+              {% else %}
+                <span class="badge-amber shrink-0">{{ plan.next_drill_due|date:"d.m" }}</span>
+              {% endif %}
+            </div>
+          {% empty %}
+            <p class="text-sm text-slate-500 dark:text-slate-400">
+              {% translate "No drill is due in the next 30 days." %}
+            </p>
+          {% endfor %}
+        </div>
+      </section>
+
+      {# --- restrictions ------------------------------------------------ #}
+      <section class="card" aria-labelledby="restrictions-heading">
+        <div class="card-header">
+          <h2 class="card-title" id="restrictions-heading">
+            {% icon "user-check" "inline h-4 w-4 text-brand-500" %} {% translate "Student restrictions" %}
+          </h2>
+          <a href="{% url 'safety:restriction_list' %}" class="btn-ghost btn-sm">{% translate "Manage" %}</a>
+        </div>
+        <div class="card-body">
+          <p class="text-sm text-slate-700 dark:text-slate-300">
+            {% blocktranslate count counter=stats.active_restrictions %}{{ counter }} restriction is in force today.{% plural %}{{ counter }} restrictions are in force today.{% endblocktranslate %}
+          </p>
+        </div>
+      </section>
+    </div>
+  </div>
+{% endblock %}
+
+{% block extra_scripts %}
+  {% if stats.total %}
+    <script src="{% static 'vendor/chartjs/chart.umd.js' %}"></script>
+    <script>
+      (function () {
+        var canvas = document.getElementById('incident-trend-chart');
+        var payload = document.getElementById('incident-trend-data');
+        if (!canvas || !payload || typeof Chart === 'undefined') { return; }
+
+        var data;
+        try { data = JSON.parse(payload.textContent); } catch (e) { return; }
+
+        var colors = window.surfChartColors || ['#0083ce', '#10b981', '#f59e0b', '#f43f5e'];
+        var options = window.surfChartDefaults ? window.surfChartDefaults() : {};
+        options.scales = options.scales || {};
+        options.scales.y = Object.assign({}, options.scales.y || {}, {
+          beginAtZero: true,
+          ticks: Object.assign({}, (options.scales.y || {}).ticks || {}, { precision: 0 })
+        });
+
+        new Chart(canvas, {
+          type: 'line',
+          data: {
+            labels: data.labels,
+            datasets: [
+              {
+                label: canvas.dataset.labelAll,
+                data: data.counts,
+                borderColor: colors[0],
+                backgroundColor: 'rgba(0, 131, 206, 0.12)',
+                fill: true,
+                tension: 0.3,
+                pointRadius: 0,
+                borderWidth: 2
+              },
+              {
+                label: canvas.dataset.labelSerious,
+                data: data.serious,
+                borderColor: colors[3] || '#f43f5e',
+                backgroundColor: 'transparent',
+                borderDash: [4, 3],
+                tension: 0.3,
+                pointRadius: 0,
+                borderWidth: 2
+              }
+            ]
+          },
+          options: options
+        });
+      })();
+    </script>
+  {% endif %}
+{% endblock %}

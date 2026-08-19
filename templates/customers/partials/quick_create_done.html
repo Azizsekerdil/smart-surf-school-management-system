@@ -1,0 +1,29 @@
+{% load i18n surf_tags %}
+{% comment %} Replaces the modal after a successful quick create. The HX-Trigger header
+   "customerCreated" carries the new customer to the calling screen; this markup
+   is only the visible confirmation, and it removes itself. {% endcomment %}
+<div id="customer-quick-create"
+     class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"
+     x-data="{}"
+     x-init="setTimeout(() => { const region = document.getElementById('modal-region'); if (region) { region.innerHTML = ''; } }, 1600)">
+  <div class="card w-full max-w-md">
+    <div class="card-body flex items-start gap-3">
+      <span class="mt-0.5 text-emerald-600 dark:text-emerald-400">{% icon "circle-check" "h-6 w-6" %}</span>
+      <div class="min-w-0">
+        <p class="font-medium text-slate-900 dark:text-slate-100">
+          {% blocktranslate with name=customer.full_name %}{{ name }} was added.{% endblocktranslate %}
+        </p>
+        <p class="text-sm text-slate-500 dark:text-slate-400">{{ customer.customer_code }}</p>
+        <a href="{% url 'customers:detail' customer.pk %}"
+           class="mt-2 inline-block text-sm text-brand-700 hover:underline dark:text-brand-300">
+          {% translate "Open the customer record" %}
+        </a>
+      </div>
+      <button type="button" class="btn-icon ms-auto text-slate-500"
+              aria-label="{% translate 'Close' %}"
+              onclick="document.getElementById('modal-region').innerHTML = '';">
+        {% icon "x" "h-5 w-5" %}
+      </button>
+    </div>
+  </div>
+</div>

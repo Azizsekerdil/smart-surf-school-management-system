@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ title }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-3 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'maintenance:list' %}" class="hover:underline">{% translate "Maintenance" %}</a>
+    <span class="mx-1" aria-hidden="true">/</span>
+    <a href="{% url 'maintenance:schedule_list' %}" class="hover:underline">{% translate "Service plans" %}</a>
+    <span class="mx-1" aria-hidden="true">/</span>
+    <span>{{ title }}</span>
+  </nav>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl">
+  {% if form.non_field_errors %}
+    <div class="alert-error mb-5" role="alert">
+      <span class="mt-0.5 shrink-0">{% icon "circle-x" "h-5 w-5" %}</span>
+      <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+    </div>
+  {% endif %}
+
+  <form method="post" class="card" novalidate>
+    {% csrf_token %}
+    <div class="card-body space-y-5">
+      {% include "maintenance/partials/form_field.html" with field=form.equipment %}
+
+      <div class="grid gap-5 sm:grid-cols-2">
+        {% include "maintenance/partials/form_field.html" with field=form.interval_days %}
+        {% include "maintenance/partials/form_field.html" with field=form.last_performed_on %}
+      </div>
+
+      {% include "maintenance/partials/form_field.html" with field=form.check_items %}
+
+      <div class="rounded-lg border border-slate-200 p-4 dark:border-slate-700">
+        {% include "maintenance/partials/form_field.html" with field=form.is_active %}
+      </div>
+
+      {% if schedule and schedule.next_due_on %}
+        <p class="form-help">
+          {% blocktranslate with date=schedule.next_due_on|date:"d.m.Y" %}Next service currently due on {{ date }}. Saving with a new interval moves it.{% endblocktranslate %}
+        </p>
+      {% endif %}
+    </div>
+
+    <div class="flex items-center justify-end gap-2 border-t border-slate-200 p-4 dark:border-slate-700">
+      <a href="{% url 'maintenance:schedule_list' %}" class="btn-secondary">{% translate "Cancel" %}</a>
+      <button type="submit" class="btn-primary">
+        {% icon "save" "h-4 w-4" %} {{ submit_label }}
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

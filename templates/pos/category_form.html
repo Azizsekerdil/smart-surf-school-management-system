@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ form_title }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ form_title }}{% endblock %}
+
+{% block content %}
+  <form method="post" novalidate class="mx-auto max-w-2xl space-y-5">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="alert-error">
+        {% icon "circle-alert" "h-5 w-5 shrink-0" %}
+        <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+      </div>
+    {% endif %}
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% icon "folder" "inline h-4 w-4 text-brand-500" %} {% translate "Category" %}</h2>
+      </div>
+      <div class="card-body grid gap-4 sm:grid-cols-2">
+        {% include "pos/partials/field.html" with field=form.name %}
+        {% include "pos/partials/field.html" with field=form.code %}
+        {% include "pos/partials/field.html" with field=form.parent %}
+        {% include "pos/partials/field.html" with field=form.icon %}
+        {% include "pos/partials/field.html" with field=form.sort_order %}
+        {% include "pos/partials/field.html" with field=form.is_active wrapper_class="sm:col-span-2" %}
+      </div>
+      <div class="border-t border-slate-200 px-5 py-4 dark:border-slate-700">
+        <p class="flex items-start gap-2 text-sm text-slate-500 dark:text-slate-400">
+          {% icon "info" "h-4 w-4 shrink-0" %}
+          <span>{% translate "The icon is the name of a vendored Lucide icon, for example package, waves or banknote. An unknown name falls back to a neutral circle." %}</span>
+        </p>
+      </div>
+    </section>
+
+    <div class="flex flex-wrap items-center justify-end gap-2">
+      <a href="{{ cancel_url }}" class="btn-secondary">{% translate "Cancel" %}</a>
+      <button type="submit" class="btn-primary">
+        {% icon "save" "h-4 w-4" %} {% translate "Save category" %}
+      </button>
+    </div>
+  </form>
+{% endblock %}

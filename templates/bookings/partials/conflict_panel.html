@@ -1,0 +1,78 @@
+{% load i18n surf_tags %}
+{% comment %} Live rule check. Re-posts the whole form whenever a field changes or the
+   Alpine pickers fire a "recheck" event. {% endcomment %}
+<div id="conflict-panel"
+     class="card"
+     hx-post="{% url 'bookings:check' %}"
+     hx-include="#booking-form"
+     hx-target="#conflict-panel"
+     hx-swap="outerHTML"
+     hx-trigger="recheck, change from:#booking-form delay:300ms">
+
+  <div class="card-header flex items-center justify-between">
+    <h2 class="card-title">{% translate "Live check" %}</h2>
+    <span class="htmx-indicator text-slate-400">{% icon "loader-circle" "h-4 w-4 animate-spin" %}</span>
+  </div>
+
+  <div class="card-body space-y-3">
+    {% if has_target %}
+      <div>
+        <div class="flex items-center justify-between text-sm">
+          <span class="text-slate-500 dark:text-slate-400">{% translate "Seats sold" %}</span>
+          <span class="font-semibold tabular-nums">{{ capacity_label }}</span>
+        </div>
+        <div class="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+          {% widthratio taken capacity 100 as fill_percent %}
+          <div class="h-full rounded-full {% if free == 0 %}bg-rose-500{% elif free <= 2 %}bg-amber-500{% else %}bg-emerald-500{% endif %}"
+               style="width: {{ fill_percent|default:0 }}%;"></div>
+        </div>
+        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          {% blocktranslate with n=free %}{{ n }} seat(s) free{% endblocktranslate %}
+        </p>
+      </div>
+
+      <dl class="space-y-1 border-t border-slate-200 pt-3 text-sm dark:border-slate-700">
+        <div class="flex justify-between">
+          <dt class="text-slate-500 dark:text-slate-400">{% translate "Session" %}</dt>
+          <dd class="text-end">{{ target }}</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-slate-500 dark:text-slate-400">{% translate "Seats requested" %}</dt>
+          <dd class="tabular-nums">{{ participants }}</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-slate-500 dark:text-slate-400">{% translate "Price per seat" %}</dt>
+          <dd class="tabular-nums">{{ unit_price|money }}</dd>
+        </div>
+        <div class="flex justify-between font-semibold">
+          <dt>{% translate "Estimated total" %}</dt>
+          <dd class="tabular-nums">{{ estimated_total|money }}</dd>
+        </div>
+      </dl>
+    {% else %}
+      <p class="text-sm text-slate-500 dark:text-slate-400">
+        {% translate "Pick a customer and a session — the rules are checked here as you go." %}
+      </p>
+    {% endif %}
+
+    {% if conflicts %}
+      <div class="alert-error">
+        <p class="flex items-center gap-1.5 font-semibold">
+          {% icon "triangle-alert" "h-4 w-4" %} {% translate "Blocked" %}
+        </p>
+        <ul class="mt-1 list-disc space-y-1 ps-5 text-sm">
+          {% for conflict in conflicts %}<li>{{ conflict }}</li>{% endfor %}
+        </ul>
+      </div>
+    {% elif has_target %}
+      <div class="alert-success">
+        <p class="flex items-center gap-1.5 font-semibold">
+          {% icon "circle-check" "h-4 w-4" %} {% translate "All clear" %}
+        </p>
+        <p class="mt-0.5 text-sm">
+          {% translate "Seats, level, instructor ratio and safety restrictions all pass." %}
+        </p>
+      </div>
+    {% endif %}
+  </div>
+</div>

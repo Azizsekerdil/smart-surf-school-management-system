@@ -1,0 +1,73 @@
+{% load i18n surf_tags %}
+<div id="documents-panel">
+  {% can "customers.change" as may_change %}
+  {% if may_change %}
+    <form method="post"
+          action="{% url 'customers:document_create' customer.pk %}"
+          enctype="multipart/form-data"
+          hx-post="{% url 'customers:document_create' customer.pk %}"
+          hx-target="#documents-panel"
+          hx-swap="outerHTML"
+          hx-encoding="multipart/form-data"
+          class="mb-5 grid gap-3 rounded-lg border border-slate-200 p-4 sm:grid-cols-2 dark:border-slate-700">
+      {% csrf_token %}
+      <div class="sm:col-span-2">
+        <label class="form-label" for="{{ document_form.title.id_for_label }}">{% translate "Title" %}</label>
+        {{ document_form.title }}
+      </div>
+      <div>
+        <label class="form-label" for="{{ document_form.category.id_for_label }}">{% translate "Category" %}</label>
+        {{ document_form.category }}
+      </div>
+      <div>
+        <label class="form-label" for="{{ document_form.expires_on.id_for_label }}">{% translate "Expires on" %}</label>
+        {{ document_form.expires_on }}
+      </div>
+      <div class="sm:col-span-2">
+        <label class="form-label" for="{{ document_form.file.id_for_label }}">{% translate "File" %}</label>
+        {{ document_form.file }}
+        <p class="form-help">{{ document_form.expires_on.help_text }}</p>
+      </div>
+      <div class="flex items-center justify-between gap-3 sm:col-span-2">
+        <label class="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+          {{ document_form.is_confidential }} {% translate "Confidential" %}
+        </label>
+        <button type="submit" class="btn-primary">
+          {% icon "upload" "h-4 w-4" %} {% translate "Upload document" %}
+        </button>
+      </div>
+    </form>
+  {% endif %}
+
+  {% if rows %}
+    <ul class="divide-y divide-slate-100 dark:divide-slate-800">
+      {% for document in rows %}
+        <li class="flex flex-wrap items-center justify-between gap-3 py-3">
+          <div class="flex min-w-0 items-center gap-3">
+            <span class="text-slate-400">{% icon "file-text" "h-5 w-5" %}</span>
+            <div class="min-w-0">
+              <a href="{{ document.file.url }}" class="block truncate font-medium text-slate-900 hover:underline dark:text-slate-100">
+                {{ document.title }}
+              </a>
+              <p class="text-xs text-slate-500 dark:text-slate-400">
+                {{ document.get_category_display }} · {{ document.created_at|date:"d.m.Y" }}
+              </p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            {% if document.is_confidential %}<span class="badge-violet">{% translate "Confidential" %}</span>{% endif %}
+            {% if document.expires_on %}
+              {% if document.is_expired %}
+                <span class="badge-rose">{% translate "Expired" %}</span>
+              {% else %}
+                <span class="badge-slate">{% blocktranslate with date=document.expires_on %}Valid to {{ date }}{% endblocktranslate %}</span>
+              {% endif %}
+            {% endif %}
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    {% include "partials/empty_state.html" with icon_name="file-text" title=_("No documents") subtitle=_("Attach the signed waiver, an ID copy or an insurance certificate.") %}
+  {% endif %}
+</div>

@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ form_title }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ form_title }}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "The shelf price includes tax. The tax rate says how much of it is tax, so the margin shown is the school's real revenue." %}
+  </p>
+{% endblock %}
+
+{% block content %}
+  <form method="post" enctype="multipart/form-data" novalidate class="space-y-5">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="alert-error">
+        {% icon "circle-alert" "h-5 w-5 shrink-0" %}
+        <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+      </div>
+    {% endif %}
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% icon "package" "inline h-4 w-4 text-brand-500" %} {% translate "The product" %}</h2>
+      </div>
+      <div class="card-body grid gap-4 sm:grid-cols-2">
+        {% include "pos/partials/field.html" with field=form.name wrapper_class="sm:col-span-2" %}
+        {% include "pos/partials/field.html" with field=form.sku %}
+        {% include "pos/partials/field.html" with field=form.barcode %}
+        {% include "pos/partials/field.html" with field=form.category %}
+        {% include "pos/partials/field.html" with field=form.supplier %}
+        {% include "pos/partials/field.html" with field=form.description wrapper_class="sm:col-span-2" %}
+        {% include "pos/partials/field.html" with field=form.photo wrapper_class="sm:col-span-2" %}
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% icon "banknote" "inline h-4 w-4 text-brand-500" %} {% translate "Pricing" %}</h2>
+      </div>
+      <div class="card-body grid gap-4 sm:grid-cols-3">
+        {% include "pos/partials/field.html" with field=form.cost_price %}
+        {% include "pos/partials/field.html" with field=form.sale_price %}
+        {% include "pos/partials/field.html" with field=form.tax_rate %}
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% icon "clipboard-list" "inline h-4 w-4 text-brand-500" %} {% translate "Stock" %}</h2>
+      </div>
+      <div class="card-body grid gap-4 sm:grid-cols-3">
+        {% include "pos/partials/field.html" with field=form.unit %}
+        {% include "pos/partials/field.html" with field=form.low_stock_threshold %}
+        {% if form.opening_stock %}
+          {% include "pos/partials/field.html" with field=form.opening_stock %}
+        {% endif %}
+        {% include "pos/partials/field.html" with field=form.track_stock wrapper_class="sm:col-span-3" %}
+      </div>
+      {% if not form.opening_stock %}
+        <div class="border-t border-slate-200 px-5 py-4 dark:border-slate-700">
+          <p class="flex items-start gap-2 text-sm text-slate-500 dark:text-slate-400">
+            {% icon "info" "h-4 w-4 shrink-0" %}
+            <span>
+              {% blocktranslate with stock=object.stock_display %}On hand: {{ stock }}. Stock is derived from the ledger — correct it with a stock movement so the change stays auditable.{% endblocktranslate %}
+            </span>
+          </p>
+          {% can "pos.change" as may_change %}
+          {% if may_change %}
+            <a href="{% url 'pos:stock_adjust' %}?product={{ object.pk }}" class="btn-secondary mt-3">
+              {% icon "arrow-left-right" "h-4 w-4" %} {% translate "Correct the stock" %}
+            </a>
+          {% endif %}
+        </div>
+      {% endif %}
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% icon "settings" "inline h-4 w-4 text-brand-500" %} {% translate "Shop" %}</h2>
+      </div>
+      <div class="card-body grid gap-4 sm:grid-cols-2">
+        {% include "pos/partials/field.html" with field=form.sort_order %}
+        {% include "pos/partials/field.html" with field=form.is_active wrapper_class="sm:col-span-2" %}
+      </div>
+    </section>
+
+    {% if movements %}
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">{% icon "history" "inline h-4 w-4 text-brand-500" %} {% translate "Recent stock movements" %}</h2>
+          <a href="{% url 'pos:movement_list' %}?product={{ object.pk }}" class="text-sm text-brand-600 hover:underline dark:text-brand-300">
+            {% translate "Full ledger" %}
+          </a>
+        </div>
+        <div class="table-wrap rounded-none border-0">
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col">{% translate "When" %}</th>
+                <th scope="col">{% translate "Movement" %}</th>
+                <th scope="col" class="text-end">{% translate "Quantity" %}</th>
+                <th scope="col" class="text-end">{% translate "Balance" %}</th>
+                <th scope="col">{% translate "Reference" %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for movement in movements %}
+                <tr>
+                  <td class="whitespace-nowrap">{{ movement.created_at|date:"d.m.Y H:i" }}</td>
+                  <td>{{ movement.get_movement_type_display }}</td>
+                  <td class="text-end tabular-nums {% if movement.is_incoming %}text-emerald-600 dark:text-emerald-400{% else %}text-rose-600 dark:text-rose-400{% endif %}">
+                    {{ movement.signed_display }}
+                  </td>
+                  <td class="text-end tabular-nums">{{ movement.balance_after|floatformat:'-2' }}</td>
+                  <td class="text-xs text-slate-500 dark:text-slate-400">{{ movement.reference|default:"—" }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    {% endif %}
+
+    <div class="flex flex-wrap items-center justify-end gap-2">
+      <a href="{{ cancel_url }}" class="btn-secondary">{% translate "Cancel" %}</a>
+      <button type="submit" class="btn-primary">
+        {% icon "save" "h-4 w-4" %} {% translate "Save product" %}
+      </button>
+    </div>
+  </form>
+{% endblock %}

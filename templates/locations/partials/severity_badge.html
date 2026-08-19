@@ -1,0 +1,11 @@
+{% load i18n surf_tags %}
+{# Usage: {% include "locations/partials/severity_badge.html" with severity=hazard.severity label=hazard.get_severity_display %} #}
+{% if severity == "critical" %}
+  <span class="badge-rose">{% icon "triangle-alert" "h-3 w-3" %}{{ label }}</span>
+{% elif severity == "high" %}
+  <span class="badge-rose">{{ label }}</span>
+{% elif severity == "medium" %}
+  <span class="badge-amber">{{ label }}</span>
+{% else %}
+  <span class="badge-slate">{{ label }}</span>
+{% endif %}

@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Till" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Till" %}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "Scan or tap a product, take the money, hand over the receipt." %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  {% can "pos.view" as may_view %}
+  {% if may_view %}
+    {% if low_stock_count %}
+      <a href="{% url 'pos:product_list' %}?stock=low" class="btn-secondary text-amber-700 dark:text-amber-300">
+        {% icon "triangle-alert" "h-4 w-4" %}
+        {% blocktranslate count counter=low_stock_count %}{{ counter }} product low{% plural %}{{ counter }} products low{% endblocktranslate %}
+      </a>
+    {% endif %}
+    <a href="{% url 'pos:list' %}" class="btn-secondary">
+      {% icon "receipt" "h-4 w-4" %} {% translate "Sales" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <div class="grid gap-4 xl:grid-cols-5">
+
+    {# ================================================================ grid #}
+    <section class="xl:col-span-3" aria-label="{% translate 'Products' %}">
+      <form id="pos-scan-form"
+            data-refocus-scan
+            class="card mb-3 p-3"
+            hx-post="{% url 'pos:cart_add' %}"
+            hx-target="#pos-cart"
+            hx-swap="innerHTML">
+        {% csrf_token %}
+        <label class="form-label" for="pos-scan">
+          {% icon "barcode" "inline h-4 w-4 text-brand-500" %} {% translate "Scan or type a barcode / SKU" %}
+        </label>
+        <div class="flex gap-2">
+          <input type="text" name="code" id="pos-scan" autocomplete="off" autofocus
+                 class="form-input font-mono text-lg"
+                 placeholder="{% translate '8690000000000' %}"
+                 aria-describedby="pos-scan-help">
+          <button type="submit" class="btn-primary shrink-0">
+            {% icon "plus" "h-4 w-4" %} {% translate "Add" %}
+          </button>
+        </div>
+        <p class="form-help" id="pos-scan-help">
+          {% translate "Press Enter to add. F2 returns here, F4 jumps to the amount tendered, F9 completes the sale." %}
+        </p>
+      </form>
+
+      <form id="pos-grid-filters"
+            class="card mb-3 p-3"
+            x-data="{ category: '{{ active_category.pk|default_if_none:'' }}' }"
+            hx-get="{% url 'pos:product_grid' %}"
+            hx-target="#pos-grid"
+            hx-swap="innerHTML"
+            hx-trigger="input changed delay:250ms from:#pos-grid-search, change, pos-sale-completed from:body">
+        <input type="hidden" name="category" x-model="category">
+        <div class="relative mb-3">
+          <span class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3 text-slate-400">
+            {% icon "search" "h-4 w-4" %}
+          </span>
+          <input type="search" name="q" id="pos-grid-search" value="{{ grid_search }}"
+                 class="form-input ps-9" autocomplete="off"
+                 placeholder="{% translate 'Filter the grid by name or SKU…' %}">
+        </div>
+
+        <div class="flex flex-wrap gap-1.5" role="group" aria-label="{% translate 'Categories' %}">
+          <button type="button"
+                  @click="category = ''; $el.closest('form').dispatchEvent(new Event('change', { bubbles: true }))"
+                  :class="category === '' ? 'bg-brand-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-300'"
+                  class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium dark:border-slate-600">
+            {% translate "All" %}
+          </button>
+          {% for category in categories %}
+            <button type="button"
+                    @click="category = '{{ category.pk }}'; $el.closest('form').dispatchEvent(new Event('change', { bubbles: true }))"
+                    :class="category === '{{ category.pk }}' ? 'bg-brand-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-300'"
+                    class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium dark:border-slate-600">
+              {% icon category.icon "h-4 w-4" %} {{ category.name }}
+            </button>
+          {% endfor %}
+        </div>
+      </form>
+
+      <div id="pos-grid" data-refocus-scan>
+        {% include "pos/partials/product_grid.html" %}
+      </div>
+    </section>
+
+    {# ================================================================ cart #}
+    <section class="xl:col-span-2" aria-label="{% translate 'Current sale' %}">
+      <div class="xl:sticky xl:top-4">
+        <div id="pos-cart">
+          {% include "pos/partials/cart.html" %}
+        </div>
+      </div>
+    </section>
+  </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  (function () {
+    'use strict';
+
+    function scanner() { return document.getElementById('pos-scan'); }
+
+    function focusScanner() {
+      var field = scanner();
+      if (!field) return;
+      field.value = '';
+      field.focus();
+    }
+
+    // After adding a product the counter is always ready for the next scan.
+    document.body.addEventListener('htmx:afterSwap', function (event) {
+      var origin = event.detail && event.detail.elt;
+      if (origin && origin.closest && origin.closest('[data-refocus-scan]')) {
+        focusScanner();
+      }
+    });
+
+    // Till shortcuts. Chosen to avoid the browser's own F-keys.
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'F2') {
+        event.preventDefault();
+        focusScanner();
+        return;
+      }
+      if (event.key === 'F4') {
+        var tendered = document.getElementById('pos-tendered');
+        if (tendered) { event.preventDefault(); tendered.focus(); tendered.select(); }
+        return;
+      }
+      if (event.key === 'F9') {
+        var complete = document.getElementById('pos-complete');
+        if (complete && !complete.disabled) { event.preventDefault(); complete.click(); }
+        return;
+      }
+      if (event.key === 'Escape' && document.activeElement === scanner()) {
+        scanner().value = '';
+      }
+    });
+  })();
+</script>
+{% endblock %}

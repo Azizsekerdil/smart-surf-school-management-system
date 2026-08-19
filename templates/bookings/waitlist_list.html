@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Waiting list" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Waiting list" %}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "When a seat is freed by a cancellation, the first person here is offered it automatically." %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'bookings:calendar' %}" class="btn-secondary">
+    {% icon "calendar-days" "h-4 w-4" %} {% translate "Calendar" %}
+  </a>
+  <a href="{% url 'bookings:list' %}" class="btn-secondary">
+    {% icon "list-checks" "h-4 w-4" %} {% translate "Bookings" %}
+  </a>
+{% endblock %}
+
+{% block content %}
+  <div class="grid gap-5 lg:grid-cols-3">
+
+    <div class="lg:col-span-2">
+      <form class="card mb-4 p-4"
+            hx-get="{% url 'bookings:waitlist' %}"
+            hx-target="#waitlist-table"
+            hx-swap="outerHTML"
+            hx-push-url="true"
+            hx-trigger="change, submit">
+        <div class="flex flex-wrap items-end gap-3">
+          <div>
+            <label class="form-label" for="waitlist-state">{% translate "Show" %}</label>
+            <select id="waitlist-state" name="state" class="form-select">
+              <option value="waiting" {% if applied.state == 'waiting' %}selected{% endif %}>{% translate "Still waiting" %}</option>
+              <option value="converted" {% if applied.state == 'converted' %}selected{% endif %}>{% translate "Converted to a booking" %}</option>
+              <option value="all" {% if applied.state == 'all' %}selected{% endif %}>{% translate "Everything" %}</option>
+            </select>
+          </div>
+          <button type="submit" class="btn-secondary">
+            {% icon "filter" "h-4 w-4" %} {% translate "Apply" %}
+          </button>
+        </div>
+      </form>
+
+      {% include "bookings/partials/waitlist_table.html" %}
+    </div>
+
+    {% can "bookings.add" as may_add %}
+    {% if may_add %}
+      <section class="card h-fit">
+        <div class="card-header"><h2 class="card-title">{% translate "Add someone to the list" %}</h2></div>
+        <form method="post" action="{% url 'bookings:waitlist_add' %}">
+          {% csrf_token %}
+          <div class="card-body space-y-3">
+            <p class="text-sm text-slate-500 dark:text-slate-400">
+              {% translate "Use this when the session the customer wants is already full." %}
+            </p>
+            {% for field in form %}
+              <div>
+                <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}<p class="form-help">{{ field.help_text }}</p>{% endif %}
+              </div>
+            {% endfor %}
+          </div>
+          <div class="border-t border-slate-200 p-4 dark:border-slate-700">
+            <button type="submit" class="btn-primary w-full">
+              {% icon "plus" "h-4 w-4" %} {% translate "Add to the waiting list" %}
+            </button>
+          </div>
+        </form>
+      </section>
+    {% endif %}
+  </div>
+{% endblock %}

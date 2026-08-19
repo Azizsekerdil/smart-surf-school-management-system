@@ -1,0 +1,24 @@
+{% load i18n %}
+{# The interaction form body, shared by the full page and the HTMX modal. #}
+{{ form.customer }}
+{{ form.lead }}
+
+<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+  {% include "crm/partials/field.html" with field=form.kind %}
+  {% include "crm/partials/field.html" with field=form.direction %}
+  <div class="sm:col-span-2">{% include "crm/partials/field.html" with field=form.subject %}</div>
+  <div class="sm:col-span-2">{% include "crm/partials/field.html" with field=form.body %}</div>
+  {% include "crm/partials/field.html" with field=form.occurred_at %}
+  {% include "crm/partials/field.html" with field=form.duration_minutes %}
+  {% include "crm/partials/field.html" with field=form.sentiment %}
+  {% include "crm/partials/field.html" with field=form.follow_up_at %}
+  <div class="sm:col-span-2">
+    <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+      {{ form.follow_up_required }} <span>{{ form.follow_up_required.label }}</span>
+    </label>
+    {% for error in form.follow_up_required.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+    <p class="form-help">
+      {% translate "A complaint always creates a follow-up, whatever this box says." %}
+    </p>
+  </div>
+</div>

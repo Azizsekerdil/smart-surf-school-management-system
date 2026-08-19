@@ -1,0 +1,49 @@
+{% load i18n surf_tags %}
+<div id="assessment-results">
+  {% if assessments %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">{% translate "Date" %}</th>
+            <th scope="col">{% translate "Student" %}</th>
+            <th scope="col">{% translate "Instructor" %}</th>
+            <th scope="col">{% translate "Level" %}</th>
+            <th scope="col" class="text-end">{% translate "Average" %}</th>
+            <th scope="col">{% translate "Next focus" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for assessment in assessments %}
+            <tr>
+              <td class="whitespace-nowrap">{{ assessment.assessed_on }}</td>
+              <td>
+                <a href="{% url 'students:detail' assessment.student_id %}"
+                   class="font-medium text-slate-900 hover:text-brand-700 dark:text-slate-100 dark:hover:text-brand-300">
+                  {{ assessment.student.full_name }}
+                </a>
+                <span class="block text-xs text-slate-500 dark:text-slate-400">{{ assessment.student.student_code }}</span>
+              </td>
+              <td class="truncate">{{ assessment.instructor|default:"—" }}</td>
+              <td>
+                {% if assessment.level_changed %}
+                  <span class="badge-emerald">
+                    {% blocktranslate with before=assessment.get_level_before_display after=assessment.get_level_after_display %}{{ before }} → {{ after }}{% endblocktranslate %}
+                  </span>
+                {% else %}
+                  <span class="badge-slate">{{ assessment.get_level_after_display }}</span>
+                {% endif %}
+              </td>
+              <td class="text-end tabular-nums font-medium">{{ assessment.average_score }}</td>
+              <td class="max-w-xs truncate">{{ assessment.next_focus|default:"—" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% include "partials/pagination.html" %}
+  {% else %}
+    {% include "partials/empty_state.html" with icon_name="clipboard-check" title=_("No assessments recorded") subtitle=_("Assessments appear here as coaches score their students.") %}
+  {% endif %}
+</div>

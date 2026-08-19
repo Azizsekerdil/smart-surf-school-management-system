@@ -1,0 +1,97 @@
+{% load i18n surf_tags %}
+{% comment %}
+  The panel apps.locations pulls into its spot detail page over HTMX. It is
+  deliberately compact and self-contained: no <script>, no chart, nothing that
+  assumes the surrounding page. Reversed by the URL name
+  ``surf_conditions:spot_panel`` so neither app imports the other.
+{% endcomment %}
+{% if condition %}
+  <div class="space-y-3">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <p class="text-xs text-slate-500 dark:text-slate-400">
+        {% blocktranslate with when=condition.recorded_at|date:"d.m.Y H:i" %}Reading of {{ when }}{% endblocktranslate %}
+        {% if condition.is_forecast %} · {% translate "forecast" %}{% endif %}
+      </p>
+      {% if condition.is_stale %}
+        <span class="badge-amber">{% icon "clock" "h-3 w-3" %}{% translate "Out of date" %}</span>
+      {% endif %}
+    </div>
+
+    <dl class="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div class="rounded-lg bg-slate-50 p-2.5 dark:bg-slate-800/60">
+        <dt class="text-[0.68rem] uppercase tracking-wide text-slate-500 dark:text-slate-400">
+          {% translate "Wave" %}
+        </dt>
+        <dd class="mt-0.5 text-sm font-semibold tabular-nums text-slate-900 dark:text-slate-100">
+          {% if condition.wave_height_m is not None %}{{ condition.wave_height_m|floatformat:1 }} m{% else %}—{% endif %}
+        </dd>
+      </div>
+      <div class="rounded-lg bg-slate-50 p-2.5 dark:bg-slate-800/60">
+        <dt class="text-[0.68rem] uppercase tracking-wide text-slate-500 dark:text-slate-400">
+          {% translate "Wind" %}
+        </dt>
+        <dd class="mt-0.5 text-sm font-semibold tabular-nums text-slate-900 dark:text-slate-100">
+          {% if condition.wind_speed_kmh is not None %}
+            {{ condition.wind_speed_kmh|floatformat:0 }} km/h
+          {% else %}—{% endif %}
+        </dd>
+        {% if condition.wind_type %}
+          <dd class="text-[0.68rem] text-slate-500 dark:text-slate-400">{{ condition.get_wind_type_display }}</dd>
+        {% endif %}
+      </div>
+      <div class="rounded-lg bg-slate-50 p-2.5 dark:bg-slate-800/60">
+        <dt class="text-[0.68rem] uppercase tracking-wide text-slate-500 dark:text-slate-400">
+          {% translate "Tide" %}
+        </dt>
+        <dd class="mt-0.5 text-sm font-semibold text-slate-900 dark:text-slate-100">
+          {{ condition.get_tide_state_display }}
+        </dd>
+      </div>
+      <div class="rounded-lg bg-slate-50 p-2.5 dark:bg-slate-800/60">
+        <dt class="text-[0.68rem] uppercase tracking-wide text-slate-500 dark:text-slate-400">
+          {% translate "Water" %}
+        </dt>
+        <dd class="mt-0.5 text-sm font-semibold tabular-nums text-slate-900 dark:text-slate-100">
+          {% if condition.water_temperature_c is not None %}{{ condition.water_temperature_c|floatformat:1 }} °C{% else %}—{% endif %}
+        </dd>
+      </div>
+    </dl>
+
+    {% if condition.water_temperature_c is not None %}
+      <p class="text-xs text-slate-600 dark:text-slate-400">
+        {% blocktranslate with suit=condition.recommended_wetsuit %}Wetsuit: {{ suit }}{% endblocktranslate %}
+      </p>
+    {% endif %}
+
+    {% if spot_level_scores %}
+      <div>
+        <p class="mb-1.5 text-[0.68rem] uppercase tracking-wide text-slate-500 dark:text-slate-400">
+          {% translate "Computed score — levels this spot accepts" %}
+        </p>
+        <div class="flex flex-wrap gap-1.5">
+          {% for score in spot_level_scores %}
+            <span class="badge-{{ score.band_color }}">
+              {{ score.get_level_display }} · {{ score.score }}
+              {% if not score.is_safe_for_level %} · {% translate "unsafe" %}{% endif %}
+            </span>
+          {% endfor %}
+        </div>
+      </div>
+    {% elif not condition.has_wave_data %}
+      <p class="text-xs text-amber-700 dark:text-amber-300">
+        {% translate "The active data source has no wave model, so no surf score can be computed here." %}
+      </p>
+    {% endif %}
+
+    <a href="{{ dashboard_url }}" class="btn-ghost btn-sm ps-0">
+      {% translate "Open surf conditions" %} {% icon "chevron-right" "h-4 w-4" %}
+    </a>
+  </div>
+{% else %}
+  <p class="text-sm text-slate-500 dark:text-slate-400">
+    {% translate "No reading has been stored for this spot yet." %}
+  </p>
+  <a href="{{ dashboard_url }}" class="btn-ghost btn-sm mt-2 ps-0">
+    {% translate "Open surf conditions" %} {% icon "chevron-right" "h-4 w-4" %}
+  </a>
+{% endif %}

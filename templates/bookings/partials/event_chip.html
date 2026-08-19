@@ -1,0 +1,95 @@
+{% load i18n surf_tags %}
+{# Usage: {% include "bookings/partials/event_chip.html" with event=event compact=True %} #}
+<div class="relative" x-data="{ open: false }" @keydown.escape.window="open = false">
+  <button type="button"
+          @click="open = !open"
+          class="w-full rounded-md border-s-4 bg-white/90 px-1.5 py-1 text-start text-xs shadow-sm ring-1 ring-slate-200 transition hover:ring-brand-400 dark:bg-slate-800/90 dark:ring-slate-700"
+          style="border-inline-start-color: {{ event.colour }}"
+          :aria-expanded="open">
+    <span class="flex items-center gap-1">
+      <span class="h-1.5 w-1.5 shrink-0 rounded-full
+        {% if event.fill_state == 'over' or event.fill_state == 'full' %}bg-rose-500
+        {% elif event.fill_state == 'tight' %}bg-amber-500
+        {% elif event.kind == 'camp' %}bg-violet-500
+        {% else %}bg-emerald-500{% endif %}"></span>
+      {% if event.kind == 'lesson' %}
+        <span class="font-semibold tabular-nums text-slate-700 dark:text-slate-200">{{ event.start_label }}</span>
+      {% else %}
+        {% icon "tent" "h-3 w-3 text-violet-500" %}
+      {% endif %}
+      <span class="truncate text-slate-700 dark:text-slate-200">{{ event.title }}</span>
+      <span class="ms-auto shrink-0 tabular-nums font-medium
+        {% if event.is_overbooked %}text-rose-600 dark:text-rose-400{% else %}text-slate-500 dark:text-slate-400{% endif %}">
+        {{ event.capacity_label }}
+      </span>
+    </span>
+  </button>
+
+  <div x-show="open"
+       x-transition.opacity
+       @click.outside="open = false"
+       class="absolute z-20 mt-1 w-64 rounded-xl border border-slate-200 bg-white p-3 text-start shadow-lg dark:border-slate-700 dark:bg-slate-800"
+       style="display: none">
+    <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">{{ event.title }}</p>
+    <dl class="mt-2 space-y-1 text-xs text-slate-600 dark:text-slate-300">
+      <div class="flex justify-between gap-2">
+        <dt>{% translate "When" %}</dt>
+        <dd class="tabular-nums">{{ event.start|date:"d.m.Y H:i" }}–{{ event.end_label }}</dd>
+      </div>
+      <div class="flex justify-between gap-2">
+        <dt>{% translate "Seats" %}</dt>
+        <dd class="tabular-nums">
+          {{ event.capacity_label }}
+          {% if event.is_overbooked %}
+            <span class="badge-rose ms-1">{% translate "Overbooked" %}</span>
+          {% elif event.is_full %}
+            <span class="badge-amber ms-1">{% translate "Full" %}</span>
+          {% endif %}
+        </dd>
+      </div>
+      {% if event.instructor %}
+        <div class="flex justify-between gap-2">
+          <dt>{% translate "Instructor" %}</dt>
+          <dd>{{ event.instructor }}</dd>
+        </div>
+      {% elif event.kind == 'lesson' %}
+        <div class="flex justify-between gap-2">
+          <dt>{% translate "Instructor" %}</dt>
+          <dd class="text-rose-600 dark:text-rose-400">{% translate "Not assigned" %}</dd>
+        </div>
+      {% endif %}
+      <div class="flex justify-between gap-2">
+        <dt>{% translate "Status" %}</dt>
+        <dd>{% status_badge event.status %}</dd>
+      </div>
+    </dl>
+
+    <div class="mt-3 flex flex-wrap gap-2">
+      {% if event.kind == 'lesson' %}
+        <a href="{% url 'bookings:list' %}?lesson={{ event.object_id }}" class="btn-secondary btn-sm">
+          {% icon "list-checks" "h-3.5 w-3.5" %} {% translate "Bookings" %}
+        </a>
+      {% else %}
+        <a href="{% url 'bookings:list' %}?surf_camp={{ event.object_id }}" class="btn-secondary btn-sm">
+          {% icon "list-checks" "h-3.5 w-3.5" %} {% translate "Bookings" %}
+        </a>
+      {% endif %}
+      {% can "bookings.add" as may_add %}
+      {% if may_add and not event.is_full %}
+        {% if event.kind == 'lesson' %}
+          <a href="{% url 'bookings:create' %}?lesson={{ event.object_id }}" class="btn-primary btn-sm">
+            {% icon "plus" "h-3.5 w-3.5" %} {% translate "Book" %}
+          </a>
+        {% else %}
+          <a href="{% url 'bookings:create' %}?surf_camp={{ event.object_id }}" class="btn-primary btn-sm">
+            {% icon "plus" "h-3.5 w-3.5" %} {% translate "Book" %}
+          </a>
+        {% endif %}
+      {% elif may_add and event.is_full %}
+        <a href="{% url 'bookings:waitlist' %}?lesson={{ event.object_id }}" class="btn-secondary btn-sm">
+          {% icon "clock" "h-3.5 w-3.5" %} {% translate "Waiting list" %}
+        </a>
+      {% endif %}
+    </div>
+  </div>
+</div>

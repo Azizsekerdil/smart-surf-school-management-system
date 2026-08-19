@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% blocktranslate with number=sale.sale_number %}Void {{ number }}{% endblocktranslate %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% blocktranslate with number=sale.sale_number %}Void sale {{ number }}{% endblocktranslate %}{% endblock %}
+
+{% block content %}
+  <div class="mx-auto max-w-2xl space-y-4">
+
+    <div class="alert-warning">
+      {% icon "triangle-alert" "h-5 w-5 shrink-0" %}
+      <div>
+        <p class="font-medium">{% translate "This does not delete anything." %}</p>
+        <p class="mt-1">
+          {% translate "The receipt stays exactly as it was rung up. Voiding writes a return movement for every stock-tracked line, so the shelf count goes back up and both the sale and its reversal remain auditable." %}
+        </p>
+      </div>
+    </div>
+
+    {% if not can_void %}
+      <div class="alert-error">
+        {% icon "circle-x" "h-5 w-5 shrink-0" %}
+        <p>
+          {% blocktranslate with status=sale.get_status_display %}Only a completed sale can be voided — this one is {{ status }}.{% endblocktranslate %}
+        </p>
+      </div>
+    {% endif %}
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "What will be reversed" %}</h2>
+        <span class="text-sm font-semibold tabular-nums text-slate-900 dark:text-slate-100">{{ sale.total_amount|money }}</span>
+      </div>
+      <div class="table-wrap rounded-none border-0">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">{% translate "Product" %}</th>
+              <th scope="col" class="text-end">{% translate "Qty" %}</th>
+              <th scope="col">{% translate "Stock" %}</th>
+              <th scope="col" class="text-end">{% translate "Line total" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in sale.items.all %}
+              <tr>
+                <td>{{ item.product.name }}</td>
+                <td class="text-end tabular-nums">{{ item.quantity|floatformat:'-2' }}</td>
+                <td>
+                  {% if item.product.track_stock %}
+                    <span class="badge-emerald">{% translate "Goes back on the shelf" %}</span>
+                  {% else %}
+                    <span class="badge-slate">{% translate "Not tracked" %}</span>
+                  {% endif %}
+                </td>
+                <td class="text-end tabular-nums">{{ item.line_total|money }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    {% if can_void %}
+      <form method="post" novalidate class="card">
+        {% csrf_token %}
+        <div class="card-body space-y-4">
+          {% if form.non_field_errors %}
+            <div class="alert-error">
+              {% icon "circle-alert" "h-5 w-5 shrink-0" %}
+              <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+            </div>
+          {% endif %}
+          {% include "pos/partials/field.html" with field=form.reason %}
+        </div>
+        <div class="flex flex-wrap items-center justify-end gap-2 border-t border-slate-200 px-5 py-4 dark:border-slate-700">
+          <a href="{% url 'pos:detail' sale.pk %}" class="btn-secondary">{% translate "Cancel" %}</a>
+          <button type="submit" class="btn-danger">
+            {% icon "circle-x" "h-4 w-4" %} {% translate "Void this sale" %}
+          </button>
+        </div>
+      </form>
+    {% else %}
+      <a href="{% url 'pos:detail' sale.pk %}" class="btn-secondary">{% translate "Back to the sale" %}</a>
+    {% endif %}
+  </div>
+{% endblock %}

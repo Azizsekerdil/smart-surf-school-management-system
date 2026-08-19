@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Equipment" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Equipment" %}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% blocktranslate with total=summary.total available=summary.available %}{{ total }} items · {{ available }} ready to hand out{% endblocktranslate %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  {% can "equipment.view" as may_view %}
+  {% can "equipment.add" as may_add %}
+  {% can "equipment.export" as may_export %}
+  {% if may_view %}
+    <a href="{% url 'equipment:advisor' %}" class="btn-secondary">
+      {% icon "ruler" "h-4 w-4" %} {% translate "Size advisor" %}
+    </a>
+    <a href="{% url 'equipment:utilisation' %}" class="btn-secondary">
+      {% icon "chart-line" "h-4 w-4" %} {% translate "Utilisation" %}
+    </a>
+    <a href="{% url 'equipment:labels' %}{% query_string page='' %}" class="btn-secondary">
+      {% icon "qr-code" "h-4 w-4" %} {% translate "Print labels" %}
+    </a>
+    <a href="{% url 'equipment:category_list' %}" class="btn-secondary">
+      {% icon "tag" "h-4 w-4" %} {% translate "Categories" %}
+    </a>
+  {% endif %}
+  {% if may_export %}
+    <a href="{% url 'equipment:export' %}{% query_string page='' %}" class="btn-secondary">
+      {% icon "download" "h-4 w-4" %} {% translate "Export CSV" %}
+    </a>
+  {% endif %}
+  {% if may_add %}
+    <a href="{% url 'equipment:import' %}" class="btn-secondary">
+      {% icon "upload" "h-4 w-4" %} {% translate "Import CSV" %}
+    </a>
+    <a href="{% url 'equipment:create' %}" class="btn-primary">
+      {% icon "plus" "h-4 w-4" %} {% translate "New equipment" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  {# ------------------------------------------------------------ headline #}
+  <div class="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Total" %}</p>
+      <p class="stat-value">{{ summary.total }}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Available" %}</p>
+      <p class="stat-value text-emerald-600 dark:text-emerald-400">{{ summary.available }}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Out" %}</p>
+      <p class="stat-value text-sky-600 dark:text-sky-400">{{ summary.out }}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "In maintenance" %}</p>
+      <p class="stat-value text-amber-600 dark:text-amber-400">{{ summary.maintenance }}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Service due" %}</p>
+      <p class="stat-value {% if summary.service_due %}text-rose-600 dark:text-rose-400{% endif %}">{{ summary.service_due }}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Rentable" %}</p>
+      <p class="stat-value">{{ summary.rentable }}</p>
+    </div>
+  </div>
+
+  {# -------------------------------------------------------------- filters #}
+  <form class="card mb-4 p-4"
+        method="get"
+        action="{% url 'equipment:list' %}"
+        hx-get="{% url 'equipment:list' %}"
+        hx-target="#equipment-results"
+        hx-push-url="true"
+        hx-trigger="change, submit, keyup changed delay:400ms from:input[name='q']">
+    <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-6">
+      <div class="lg:col-span-2">
+        <label class="form-label" for="filter-q">{% translate "Search" %}</label>
+        <input id="filter-q" type="search" name="q" value="{{ search_term }}"
+               class="form-input"
+               placeholder="{% translate 'Asset code, brand or serial number' %}">
+      </div>
+      <div>
+        <label class="form-label" for="filter-category">{% translate "Category" %}</label>
+        <select id="filter-category" name="category" class="form-select">
+          <option value="">{% translate "All categories" %}</option>
+          {% for category in categories %}
+            <option value="{{ category.pk }}" {% if current_category == category.pk|stringformat:"s" %}selected{% endif %}>
+              {{ category.full_path }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="form-label" for="filter-status">{% translate "Status" %}</label>
+        <select id="filter-status" name="status" class="form-select">
+          <option value="">{% translate "Any status" %}</option>
+          {% for value, label in statuses %}
+            <option value="{{ value }}" {% if current_status == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="form-label" for="filter-condition">{% translate "Condition" %}</label>
+        <select id="filter-condition" name="condition" class="form-select">
+          <option value="">{% translate "Any condition" %}</option>
+          {% for value, label in conditions %}
+            <option value="{{ value }}" {% if current_condition == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="form-label" for="filter-rentable">{% translate "Rentable" %}</label>
+        <select id="filter-rentable" name="rentable" class="form-select">
+          <option value="">{% translate "All" %}</option>
+          <option value="yes" {% if current_rentable == "yes" %}selected{% endif %}>{% translate "Rentable" %}</option>
+          <option value="no" {% if current_rentable == "no" %}selected{% endif %}>{% translate "Not rentable" %}</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="mt-3 flex flex-wrap items-center gap-3">
+      <label class="inline-flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+        <input type="checkbox" name="needs_service" value="yes"
+               class="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500 dark:border-slate-600"
+               {% if current_needs_service == "yes" %}checked{% endif %}>
+        {% translate "Needs service" %}
+      </label>
+
+      <div class="flex items-center gap-2">
+        <label class="text-sm text-slate-600 dark:text-slate-300" for="filter-sort">{% translate "Sort" %}</label>
+        <select id="filter-sort" name="sort" class="form-select w-auto">
+          <option value="code" {% if current_sort == "code" %}selected{% endif %}>{% translate "Asset code" %}</option>
+          <option value="name" {% if current_sort == "name" %}selected{% endif %}>{% translate "Name" %}</option>
+          <option value="status" {% if current_sort == "status" %}selected{% endif %}>{% translate "Status" %}</option>
+          <option value="category" {% if current_sort == "category" %}selected{% endif %}>{% translate "Category" %}</option>
+          <option value="newest" {% if current_sort == "newest" %}selected{% endif %}>{% translate "Newest first" %}</option>
+          <option value="value" {% if current_sort == "value" %}selected{% endif %}>{% translate "Highest value" %}</option>
+          <option value="service" {% if current_sort == "service" %}selected{% endif %}>{% translate "Service due first" %}</option>
+        </select>
+      </div>
+
+      <div class="ms-auto flex items-center gap-1 rounded-lg border border-slate-300 p-0.5 dark:border-slate-600">
+        <label class="cursor-pointer rounded-md px-2 py-1 {% if view_mode == 'grid' %}bg-brand-600 text-white{% else %}text-slate-500{% endif %}">
+          <input class="sr-only" type="radio" name="view" value="grid" {% if view_mode == "grid" %}checked{% endif %}>
+          {% icon "layout-dashboard" "h-4 w-4" %}
+          <span class="sr-only">{% translate "Grid view" %}</span>
+        </label>
+        <label class="cursor-pointer rounded-md px-2 py-1 {% if view_mode == 'table' %}bg-brand-600 text-white{% else %}text-slate-500{% endif %}">
+          <input class="sr-only" type="radio" name="view" value="table" {% if view_mode == "table" %}checked{% endif %}>
+          {% icon "list-checks" "h-4 w-4" %}
+          <span class="sr-only">{% translate "Table view" %}</span>
+        </label>
+      </div>
+
+      <button type="submit" class="btn-secondary btn-sm">
+        {% icon "filter" "h-4 w-4" %} {% translate "Apply" %}
+      </button>
+      <a href="{% url 'equipment:list' %}" class="btn-ghost btn-sm">{% translate "Clear" %}</a>
+      <span class="htmx-indicator text-slate-400">{% icon "loader-circle" "h-4 w-4 animate-spin" %}</span>
+    </div>
+  </form>
+
+  {# -------------------------------------------------------------- results #}
+  <div id="equipment-results">
+    {% include "equipment/partials/equipment_results.html" %}
+  </div>
+{% endblock %}

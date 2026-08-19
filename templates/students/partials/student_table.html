@@ -1,0 +1,86 @@
+{% load i18n surf_tags %}
+<div id="student-results">
+  {% if students %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">{% translate "Student" %}</th>
+            <th scope="col">{% translate "Level" %}</th>
+            <th scope="col">{% translate "Water competence" %}</th>
+            <th scope="col">{% translate "Preferred instructor" %}</th>
+            <th scope="col" class="text-end">{% translate "Lessons" %}</th>
+            <th scope="col">{% translate "Last lesson" %}</th>
+            <th scope="col"><span class="sr-only">{% translate "Actions" %}</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for student in students %}
+            <tr>
+              <td>
+                <div class="min-w-0">
+                  <a href="{% url 'students:detail' student.pk %}"
+                     class="block truncate font-medium text-slate-900 hover:text-brand-700 dark:text-slate-100 dark:hover:text-brand-300">
+                    {{ student.full_name }}
+                  </a>
+                  <span class="text-xs text-slate-500 dark:text-slate-400">{{ student.student_code }}</span>
+                  {% if student.is_minor %}
+                    <span class="badge-amber ms-1">{% translate "Under 18" %}</span>
+                  {% endif %}
+                  {% if student.has_medical_flags %}
+                    <span class="badge-rose ms-1" title="{% translate 'Medical information on file' %}">
+                      {% translate "Medical" %}
+                    </span>
+                  {% endif %}
+                  {% if not student.is_active %}
+                    <span class="badge-slate ms-1">{% translate "Archived" %}</span>
+                  {% endif %}
+                </div>
+              </td>
+              <td>{% status_badge student.surf_level student.get_surf_level_display level_colors %}</td>
+              <td>
+                {% if student.can_swim %}
+                  <span class="badge-emerald">
+                    {% if student.swim_distance_m %}
+                      {% blocktranslate with m=student.swim_distance_m %}Swims {{ m }} m{% endblocktranslate %}
+                    {% else %}{% translate "Can swim" %}{% endif %}
+                  </span>
+                {% else %}
+                  <span class="badge-rose">{% translate "Non-swimmer" %}</span>
+                {% endif %}
+              </td>
+              <td class="truncate">{{ student.preferred_instructor|default:"—" }}</td>
+              <td class="text-end tabular-nums">{{ student.total_lessons }}</td>
+              <td class="whitespace-nowrap">{{ student.last_lesson_date|default:"—" }}</td>
+              <td class="text-end">
+                {% can "students.change" as may_change %}
+                <div class="flex items-center justify-end gap-1">
+                  <a href="{% url 'students:detail' student.pk %}" class="btn-ghost btn-sm"
+                     aria-label="{% translate 'Open student' %}">{% icon "eye" "h-4 w-4" %}</a>
+                  {% if may_change %}
+                    <a href="{% url 'students:assessment_create' student.pk %}" class="btn-ghost btn-sm"
+                       aria-label="{% translate 'New assessment' %}">{% icon "clipboard-check" "h-4 w-4" %}</a>
+                    <a href="{% url 'students:update' student.pk %}" class="btn-ghost btn-sm"
+                       aria-label="{% translate 'Edit student' %}">{% icon "pencil" "h-4 w-4" %}</a>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% include "partials/pagination.html" %}
+  {% else %}
+    {% can "students.add" as may_add %}
+    {% if search_term %}
+      {% include "partials/empty_state.html" with icon_name="search" title=_("No student matches this search") subtitle=_("Try a different name, student code or customer code.") %}
+    {% elif may_add %}
+      {% url 'students:register' as register_url %}
+      {% include "partials/empty_state.html" with icon_name="graduation-cap" title=_("No students yet") subtitle=_("Register the first student to start tracking progress.") action_url=register_url action_label=_("Register student") %}
+    {% else %}
+      {% include "partials/empty_state.html" with icon_name="graduation-cap" title=_("No students yet") %}
+    {% endif %}
+  {% endif %}
+</div>

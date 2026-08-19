@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ title }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block page_actions %}
+  {% if student %}
+    <a href="{% url 'students:detail' student.pk %}" class="btn-ghost">
+      {% icon "chevron-left" "h-4 w-4" %} {% translate "Back to student" %}
+    </a>
+  {% else %}
+    <a href="{% url 'students:list' %}" class="btn-ghost">
+      {% icon "chevron-left" "h-4 w-4" %} {% translate "Back to list" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <form method="post" class="space-y-5" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="alert-error">
+        {% icon "circle-alert" "h-5 w-5 shrink-0" %}
+        <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+      </div>
+    {% endif %}
+
+    <section class="card">
+      <div class="card-header"><h2 class="card-title">{% translate "Person" %}</h2></div>
+      <div class="card-body grid gap-4 sm:grid-cols-2">
+        <div class="sm:col-span-2">
+          <label class="form-label" for="{{ form.customer.id_for_label }}">{{ form.customer.label }}</label>
+          {{ form.customer }}
+          {% if form.customer.help_text %}<p class="form-help">{{ form.customer.help_text }}</p>{% endif %}
+          {% for error in form.customer.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        </div>
+        <div>
+          <label class="form-label" for="{{ form.joined_at.id_for_label }}">{{ form.joined_at.label }}</label>
+          {{ form.joined_at }}
+          {% for error in form.joined_at.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="flex items-end">
+          <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+            {{ form.is_active }} {{ form.is_active.label }}
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header"><h2 class="card-title">{% translate "Surfing" %}</h2></div>
+      <div class="card-body grid gap-4 sm:grid-cols-2">
+        <div>
+          <label class="form-label" for="{{ form.surf_level.id_for_label }}">{{ form.surf_level.label }}</label>
+          {{ form.surf_level }}
+          {% for error in form.surf_level.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        </div>
+        <div>
+          <label class="form-label" for="{{ form.stance.id_for_label }}">{{ form.stance.label }}</label>
+          {{ form.stance }}
+        </div>
+        <div>
+          <label class="form-label" for="{{ form.board_preference.id_for_label }}">{{ form.board_preference.label }}</label>
+          {{ form.board_preference }}
+        </div>
+        <div>
+          <label class="form-label" for="{{ form.preferred_instructor.id_for_label }}">{{ form.preferred_instructor.label }}</label>
+          {{ form.preferred_instructor }}
+        </div>
+        <div class="sm:col-span-2">
+          <label class="form-label" for="{{ form.goals.id_for_label }}">{{ form.goals.label }}</label>
+          {{ form.goals }}
+          {% if form.goals.help_text %}<p class="form-help">{{ form.goals.help_text }}</p>{% endif %}
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Water competence" %}</h2>
+        <span class="text-xs text-slate-500 dark:text-slate-400">
+          {% translate "Decides how far out this student may be taught" %}
+        </span>
+      </div>
+      <div class="card-body grid gap-4 sm:grid-cols-2">
+        <div class="flex items-end">
+          <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+            {{ form.can_swim }} {{ form.can_swim.label }}
+          </label>
+        </div>
+        <div>
+          <label class="form-label" for="{{ form.swim_distance_m.id_for_label }}">{{ form.swim_distance_m.label }}</label>
+          {{ form.swim_distance_m }}
+          <p class="form-help">{{ form.swim_distance_m.help_text }}</p>
+        </div>
+        <div class="sm:col-span-2">
+          {% for error in form.can_swim.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+          {% for error in form.swim_distance_m.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header"><h2 class="card-title">{% translate "Medical" %}</h2></div>
+      <div class="card-body grid gap-4">
+        <div>
+          <label class="form-label" for="{{ form.medical_conditions.id_for_label }}">{{ form.medical_conditions.label }}</label>
+          {{ form.medical_conditions }}
+          <p class="form-help">{{ form.medical_conditions.help_text }}</p>
+        </div>
+        <div>
+          <label class="form-label" for="{{ form.medications.id_for_label }}">{{ form.medications.label }}</label>
+          {{ form.medications }}
+        </div>
+        <div>
+          <label class="form-label" for="{{ form.allergies.id_for_label }}">{{ form.allergies.label }}</label>
+          {{ form.allergies }}
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header"><h2 class="card-title">{% translate "Sizing" %}</h2></div>
+      <div class="card-body grid gap-4 sm:grid-cols-4">
+        <div>
+          <label class="form-label" for="{{ form.weight_kg.id_for_label }}">{{ form.weight_kg.label }}</label>
+          {{ form.weight_kg }}
+          {% for error in form.weight_kg.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        </div>
+        <div>
+          <label class="form-label" for="{{ form.height_cm.id_for_label }}">{{ form.height_cm.label }}</label>
+          {{ form.height_cm }}
+          {% for error in form.height_cm.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        </div>
+        <div>
+          <label class="form-label" for="{{ form.shoe_size.id_for_label }}">{{ form.shoe_size.label }}</label>
+          {{ form.shoe_size }}
+          <p class="form-help">{{ form.shoe_size.help_text }}</p>
+        </div>
+        <div>
+          <label class="form-label" for="{{ form.wetsuit_size.id_for_label }}">{{ form.wetsuit_size.label }}</label>
+          {{ form.wetsuit_size }}
+          <p class="form-help">{{ form.wetsuit_size.help_text }}</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="flex items-center justify-end gap-2">
+      <a href="{% if student %}{% url 'students:detail' student.pk %}{% else %}{% url 'students:list' %}{% endif %}"
+         class="btn-secondary">{% translate "Cancel" %}</a>
+      <button type="submit" class="btn-primary">
+        {% icon "save" "h-4 w-4" %} {{ submit_label }}
+      </button>
+    </div>
+  </form>
+{% endblock %}

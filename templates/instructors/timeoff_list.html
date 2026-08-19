@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Time off" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Time off" %}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% blocktranslate with pending=pending_count current=current_count %}{{ pending }} awaiting approval · {{ current }} absent today{% endblocktranslate %}
+  </p>
+{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-3 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'instructors:list' %}" class="hover:text-brand-700 dark:hover:text-brand-300">{% translate "Instructors" %}</a>
+    <span class="mx-1">/</span>
+    <span class="text-slate-700 dark:text-slate-300">{% translate "Time off" %}</span>
+  </nav>
+{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'instructors:list' %}" class="btn-secondary">
+    {% icon "user-check" "h-4 w-4" %} {% translate "All instructors" %}
+  </a>
+{% endblock %}
+
+{% block content %}
+  <form method="get"
+        hx-get="{% url 'instructors:timeoff_list' %}"
+        hx-target="#timeoff-results"
+        hx-swap="outerHTML"
+        hx-push-url="true"
+        hx-trigger="submit, change from:select"
+        class="card mb-5 flex flex-wrap items-end gap-3 p-4">
+    <div class="min-w-[14rem] flex-1">
+      <label class="form-label" for="timeoff-search">{% translate "Search" %}</label>
+      <input type="search" id="timeoff-search" name="q" value="{{ search_term }}"
+             class="form-input" placeholder="{% translate 'Instructor name or note' %}">
+    </div>
+    <div>
+      <label class="form-label" for="timeoff-state">{% translate "Status" %}</label>
+      <select id="timeoff-state" name="state" class="form-select">
+        <option value="pending" {% if current_state == "pending" %}selected{% endif %}>{% translate "Awaiting approval" %}</option>
+        <option value="approved" {% if current_state == "approved" %}selected{% endif %}>{% translate "Approved" %}</option>
+        <option value="current" {% if current_state == "current" %}selected{% endif %}>{% translate "Absent today" %}</option>
+        <option value="all" {% if current_state == "all" %}selected{% endif %}>{% translate "All" %}</option>
+      </select>
+    </div>
+    <button type="submit" class="btn-primary">
+      {% icon "filter" "h-4 w-4" %} {% translate "Filter" %}
+    </button>
+  </form>
+
+  {% include "instructors/partials/timeoff_table.html" %}
+{% endblock %}

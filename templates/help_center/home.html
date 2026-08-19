@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Help Center" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Help Center" %}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "The manual for every screen in the system, in Turkish and English." %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'training:home' %}" class="btn-secondary">
+    {% icon "school" "h-4 w-4" %} {% translate "Training Center" %}
+  </a>
+{% endblock %}
+
+{% block content %}
+  {# --- search ----------------------------------------------------------- #}
+  <form method="get" action="{% url 'help_center:search' %}" class="card mb-6 p-4" role="search">
+    <label class="form-label" for="help-search">{% translate "Search the manual" %}</label>
+    <div class="flex flex-col gap-3 sm:flex-row">
+      <div class="relative flex-1">
+        <span class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3 text-slate-400">
+          {% icon "search" "h-4 w-4" %}
+        </span>
+        <input type="search" name="q" id="help-search" class="form-input ps-9"
+               placeholder="{% translate 'What are you trying to do?' %}"
+               autocomplete="off">
+      </div>
+      <div class="sm:w-56">{{ search_form.category }}</div>
+      <button type="submit" class="btn-primary">
+        {% icon "search" "h-4 w-4" %} {% translate "Search" %}
+      </button>
+    </div>
+    <p class="form-help">
+      {% translate "Searching looks inside article titles, keywords and the full text — in both languages." %}
+    </p>
+  </form>
+
+  {# --- headline numbers -------------------------------------------------- #}
+  <div class="mb-6 grid gap-4 sm:grid-cols-3">
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Sections" %}</p>
+      <p class="stat-value">{{ stats.categories }}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Articles" %}</p>
+      <p class="stat-value">{{ stats.articles }}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Times opened" %}</p>
+      <p class="stat-value">{{ stats.reads }}</p>
+    </div>
+  </div>
+
+  {% if categories %}
+    {# --- section grid --------------------------------------------------- #}
+    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      {% for entry in categories %}
+        <section class="card flex flex-col">
+          <div class="card-header">
+            <div class="flex min-w-0 items-center gap-3">
+              <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-300">
+                {% icon entry.category.icon "h-5 w-5" %}
+              </span>
+              <div class="min-w-0">
+                <h2 class="card-title truncate">
+                  <a href="{{ entry.category.get_absolute_url }}" class="hover:text-brand-600 dark:hover:text-brand-400">
+                    {{ entry.category.name }}
+                  </a>
+                </h2>
+                <p class="text-xs text-slate-500 dark:text-slate-400">
+                  {% blocktranslate count counter=entry.category.article_count %}{{ counter }} article{% plural %}{{ counter }} articles{% endblocktranslate %}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="card-body flex-1 pt-3">
+            {% if entry.articles %}
+              <ul class="space-y-1.5">
+                {% for article in entry.articles %}
+                  <li>
+                    <a href="{{ article.get_absolute_url }}"
+                       class="flex items-start gap-2 rounded-lg px-2 py-1.5 text-sm text-slate-700 transition-colors hover:bg-slate-50 hover:text-brand-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-brand-300">
+                      <span class="mt-0.5 shrink-0 text-slate-400">{% icon "file-text" "h-4 w-4" %}</span>
+                      <span class="min-w-0">{{ article.title }}</span>
+                    </a>
+                  </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p class="text-sm text-slate-500 dark:text-slate-400">
+                {% translate "No published articles in this section yet." %}
+              </p>
+            {% endif %}
+          </div>
+          <div class="border-t border-slate-200 px-5 py-3 dark:border-slate-700">
+            <a href="{{ entry.category.get_absolute_url }}"
+               class="inline-flex items-center gap-1 text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400">
+              {% translate "Open section" %} {% icon "chevron-right" "h-4 w-4" %}
+            </a>
+          </div>
+        </section>
+      {% endfor %}
+    </div>
+
+    {# --- popular -------------------------------------------------------- #}
+    {% if popular_articles %}
+      <section class="card mt-6">
+        <div class="card-header">
+          <h2 class="card-title">{% translate "Most opened" %}</h2>
+          <span class="text-xs text-slate-500 dark:text-slate-400">
+            {% translate "What the team keeps coming back to" %}
+          </span>
+        </div>
+        <div class="card-body">
+          <ul class="grid gap-2 sm:grid-cols-2">
+            {% for article in popular_articles %}
+              <li class="flex items-center justify-between gap-3 rounded-lg border border-slate-200 px-3 py-2 dark:border-slate-700">
+                <a href="{{ article.get_absolute_url }}" class="min-w-0 text-sm text-slate-700 hover:text-brand-600 dark:text-slate-300 dark:hover:text-brand-400">
+                  <span class="block truncate font-medium">{{ article.title }}</span>
+                  <span class="block truncate text-xs text-slate-500 dark:text-slate-400">{{ article.category.name }}</span>
+                </a>
+                <span class="badge-slate shrink-0">
+                  {% icon "eye" "h-3 w-3" %} {{ article.view_count }}
+                </span>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </section>
+    {% endif %}
+  {% else %}
+    {% translate "No help content has been loaded" as empty_title %}
+    {% translate "Run the seed_help_content management command to load the shipped manual in Turkish and English." as empty_subtitle %}
+    {% include "partials/empty_state.html" with icon_name="circle-help" title=empty_title subtitle=empty_subtitle %}
+  {% endif %}
+{% endblock %}

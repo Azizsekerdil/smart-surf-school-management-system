@@ -1,0 +1,13 @@
+{% load i18n %}{% spaceless %}
+{% if value == "open" %}
+  <span class="badge-amber">{{ label }}</span>
+{% elif value == "in_progress" %}
+  <span class="badge-sky">{{ label }}</span>
+{% elif value == "on_hold" %}
+  <span class="badge-violet">{{ label }}</span>
+{% elif value == "resolved" or value == "closed" %}
+  <span class="badge-emerald">{{ label }}</span>
+{% else %}
+  <span class="badge-slate">{{ label }}</span>
+{% endif %}
+{% endspaceless %}

@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "My profile" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "My profile" %}{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'accounts:change_password' %}" class="btn-secondary">
+    {% icon "key-round" "h-4 w-4" %} {% translate "Change password" %}
+  </a>
+{% endblock %}
+
+{% block content %}
+<div class="grid gap-6 lg:grid-cols-3">
+
+  <form method="post" enctype="multipart/form-data" class="card lg:col-span-2" novalidate>
+    {% csrf_token %}
+    <div class="card-header"><h2 class="card-title">{% translate "Details" %}</h2></div>
+    <div class="card-body space-y-4">
+      {% if form.non_field_errors %}
+        <div class="alert-error" role="alert">
+          <span class="mt-0.5 shrink-0">{% icon "circle-x" "h-5 w-5" %}</span>
+          <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+        </div>
+      {% endif %}
+      <div class="grid gap-4 sm:grid-cols-2">
+        {% for field in form %}
+          <div class="{% if field.name == 'photo' %}sm:col-span-2{% endif %}">
+            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}<p class="form-help">{{ field.help_text }}</p>{% endif %}
+            {% for error in field.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="flex justify-end border-t border-slate-200 px-5 py-4 dark:border-slate-700">
+      <button type="submit" class="btn-primary">{% icon "save" "h-4 w-4" %} {% translate "Save" %}</button>
+    </div>
+  </form>
+
+  <div class="space-y-6">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "My permissions" %}</h2>
+        <span class="badge-slate">{{ capabilities|length }}</span>
+      </div>
+      <div class="card-body">
+        <p class="mb-3 text-sm text-slate-500 dark:text-slate-400">
+          {% blocktranslate with role=user.role_label %}Your role is “{{ role }}”.{% endblocktranslate %}
+        </p>
+        <div class="flex flex-wrap gap-1.5">
+          {% for capability in capabilities %}
+            <span class="badge-slate font-mono text-[0.68rem]">{{ capability }}</span>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h2 class="card-title">{% translate "Recent sign-ins" %}</h2></div>
+      <div class="card-body">
+        {% if sessions %}
+          <ul class="divide-y divide-slate-200 text-sm dark:divide-slate-700">
+            {% for session in sessions %}
+              <li class="flex items-center justify-between gap-3 py-2">
+                <div class="min-w-0">
+                  <p class="truncate text-slate-800 dark:text-slate-200">{{ session.login_at|date:"d.m.Y H:i" }}</p>
+                  <p class="truncate font-mono text-xs text-slate-500">{{ session.ip_address|default:"—" }}</p>
+                </div>
+                {% if session.was_successful %}
+                  <span class="badge-emerald shrink-0">{% translate "Success" %}</span>
+                {% else %}
+                  <span class="badge-rose shrink-0">{% translate "Failed" %}</span>
+                {% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-sm text-slate-500 dark:text-slate-400">{% translate "No sign-in history yet." %}</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

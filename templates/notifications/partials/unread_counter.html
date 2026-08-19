@@ -1,0 +1,11 @@
+{% load i18n %}
+{# Rendered inline on the list page, and swapped out of band after a row action. #}
+<span id="notifications-unread-total"{% if oob %} hx-swap-oob="true"{% endif %}
+      class="mt-1 inline-flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
+  {% if unread_total %}
+    <span class="h-2 w-2 rounded-full bg-rose-500" aria-hidden="true"></span>
+    {% blocktranslate count counter=unread_total %}{{ counter }} unread notification{% plural %}{{ counter }} unread notifications{% endblocktranslate %}
+  {% else %}
+    {% translate "Everything is read." %}
+  {% endif %}
+</span>

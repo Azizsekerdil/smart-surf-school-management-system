@@ -1,0 +1,79 @@
+{% load i18n surf_tags %}
+<div id="segment-table">
+  {% if segments %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">{% translate "Segment" %}</th>
+            <th scope="col">{% translate "Rules" %}</th>
+            <th scope="col" class="text-end">{% translate "Size" %}</th>
+            <th scope="col">{% translate "Calculated" %}</th>
+            <th scope="col" class="text-end">{% translate "Campaigns" %}</th>
+            <th scope="col"><span class="sr-only">{% translate "Actions" %}</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for segment in segments %}
+            <tr>
+              <td>
+                <a href="{% url 'crm:segment_detail' segment.pk %}"
+                   class="font-medium text-slate-900 hover:text-brand-600 dark:text-slate-100">{{ segment.name }}</a>
+                {% if segment.description %}
+                  <span class="block max-w-sm truncate text-xs text-slate-400">{{ segment.description }}</span>
+                {% endif %}
+              </td>
+              <td class="text-xs text-slate-500 dark:text-slate-400">
+                <ul class="space-y-0.5">
+                  {% for rule in segment.describe_criteria %}
+                    <li class="truncate">{{ rule }}</li>
+                  {% empty %}
+                    <li>{% translate "No rules" %}</li>
+                  {% endfor %}
+                </ul>
+              </td>
+              <td class="text-end tabular-nums font-medium">{{ segment.cached_count }}</td>
+              <td class="text-xs">
+                {% if segment.last_calculated_at %}
+                  <span class="{% if segment.is_stale %}text-amber-600 dark:text-amber-400{% else %}text-slate-500 dark:text-slate-400{% endif %}">
+                    {{ segment.last_calculated_at|date:"d.m.Y H:i" }}
+                  </span>
+                {% else %}
+                  <span class="text-amber-600 dark:text-amber-400">{% translate "Never" %}</span>
+                {% endif %}
+              </td>
+              <td class="text-end tabular-nums">{{ segment.campaign_count }}</td>
+              <td class="text-end">
+                <div class="flex items-center justify-end gap-1">
+                  {% can "crm.change" as may_change %}
+                  {% if may_change %}
+                    <form method="post" action="{% url 'crm:segment_refresh' segment.pk %}" class="inline">
+                      {% csrf_token %}
+                      <button type="submit" class="btn-icon text-slate-500 hover:text-brand-600"
+                              aria-label="{% translate 'Recalculate' %}" title="{% translate 'Recalculate' %}">
+                        {% icon "refresh-cw" "h-4 w-4" %}
+                      </button>
+                    </form>
+                    <a href="{% url 'crm:segment_update' segment.pk %}" class="btn-icon text-slate-500 hover:text-brand-600"
+                       aria-label="{% translate 'Edit' %}">{% icon "pencil" "h-4 w-4" %}</a>
+                  {% endif %}
+                  <a href="{% url 'crm:segment_detail' segment.pk %}" class="btn-icon text-slate-500 hover:text-brand-600"
+                     aria-label="{% translate 'Open' %}">{% icon "chevron-right" "h-4 w-4" %}</a>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% include "partials/pagination.html" %}
+  {% else %}
+    {% can "crm.add" as may_add %}
+    {% url 'crm:segment_create' as segment_create_url %}
+    {% if may_add %}
+      {% include "partials/empty_state.html" with icon_name="users" title=_("No segments yet") subtitle=_("Define an audience once and reuse it for every campaign.") action_url=segment_create_url action_label=_("New segment") %}
+    {% else %}
+      {% include "partials/empty_state.html" with icon_name="users" title=_("No segments yet") %}
+    {% endif %}
+  {% endif %}
+</div>

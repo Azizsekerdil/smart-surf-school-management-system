@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ title }} · {{ instructor.full_name }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-3 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'instructors:list' %}" class="hover:text-brand-700 dark:hover:text-brand-300">{% translate "Instructors" %}</a>
+    <span class="mx-1">/</span>
+    <a href="{% url 'instructors:detail' instructor.pk %}" class="hover:text-brand-700 dark:hover:text-brand-300">{{ instructor.full_name }}</a>
+    <span class="mx-1">/</span>
+    <span class="text-slate-700 dark:text-slate-300">{% translate "Certification" %}</span>
+  </nav>
+{% endblock %}
+
+{% block content %}
+  <div class="alert-info mb-5">
+    <span class="mt-0.5 shrink-0">{% icon "info" "h-5 w-5" %}</span>
+    <div class="flex-1">
+      {% translate "A certification only counts once a named staff member has verified it against the original document. Editing a verified record resets its verification." %}
+    </div>
+  </div>
+
+  <form method="post" enctype="multipart/form-data" novalidate class="space-y-5">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="alert-error">
+        <span class="mt-0.5 shrink-0">{% icon "circle-x" "h-5 w-5" %}</span>
+        <div class="flex-1">
+          {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+    <section class="card">
+      <div class="card-body grid gap-4 sm:grid-cols-2">
+        {% include "instructors/partials/field.html" with field=form.kind %}
+        {% include "instructors/partials/field.html" with field=form.name %}
+        {% include "instructors/partials/field.html" with field=form.issuing_body %}
+        {% include "instructors/partials/field.html" with field=form.certificate_number %}
+        {% include "instructors/partials/field.html" with field=form.issued_on %}
+        {% include "instructors/partials/field.html" with field=form.expires_on %}
+        {% include "instructors/partials/field.html" with field=form.document wrapper_class="sm:col-span-2" %}
+      </div>
+    </section>
+
+    <div class="flex flex-wrap items-center gap-3">
+      <button type="submit" class="btn-primary">
+        {% icon "save" "h-4 w-4" %} {% translate "Save" %}
+      </button>
+      <a href="{{ cancel_url }}" class="btn-secondary">{% translate "Cancel" %}</a>
+    </div>
+  </form>
+{% endblock %}

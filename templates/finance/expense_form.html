@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ form_title }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ form_title }}{% endblock %}
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "Enter the net amount and the tax separately — the profit figures need both." %}
+  </p>
+{% endblock %}
+
+{% block content %}
+  <form method="post" enctype="multipart/form-data" novalidate class="space-y-5">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="alert-error">
+        {% icon "circle-alert" "h-5 w-5 shrink-0" %}
+        <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+      </div>
+    {% endif %}
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">
+          {% icon "receipt" "inline h-4 w-4 text-brand-500" %} {% translate "The cost" %}
+        </h2>
+      </div>
+      <div class="card-body grid gap-4 sm:grid-cols-2">
+        {% include "finance/partials/field.html" with field=form.category %}
+        {% include "finance/partials/field.html" with field=form.spent_on %}
+        {% include "finance/partials/field.html" with field=form.description wrapper_class="sm:col-span-2" %}
+        {% include "finance/partials/field.html" with field=form.amount %}
+        {% include "finance/partials/field.html" with field=form.tax_amount %}
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">
+          {% icon "building-2" "inline h-4 w-4 text-brand-500" %} {% translate "Paperwork" %}
+        </h2>
+      </div>
+      <div class="card-body grid gap-4 sm:grid-cols-2">
+        {% include "finance/partials/field.html" with field=form.supplier %}
+        {% include "finance/partials/field.html" with field=form.invoice_reference %}
+        {% include "finance/partials/field.html" with field=form.equipment %}
+        {% include "finance/partials/field.html" with field=form.receipt %}
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">
+          {% icon "refresh-cw" "inline h-4 w-4 text-brand-500" %} {% translate "Recurrence" %}
+        </h2>
+      </div>
+      <div class="card-body grid gap-4 sm:grid-cols-2">
+        {% include "finance/partials/field.html" with field=form.is_recurring %}
+        {% include "finance/partials/field.html" with field=form.recurrence_months %}
+      </div>
+    </section>
+
+    <div class="flex flex-wrap items-center gap-2">
+      <button type="submit" class="btn-primary">
+        {% icon "check" "h-4 w-4" %} {% translate "Save expense" %}
+      </button>
+      <a href="{{ cancel_url }}" class="btn-secondary">{% translate "Cancel" %}</a>
+    </div>
+  </form>
+{% endblock %}

@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+{% load i18n static surf_tags %}
+
+{% block title %}{% translate "Shop sales" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Shop sales" %}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% blocktranslate with period=range_label %}Every receipt written at the till · {{ period }}{% endblocktranslate %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  {% can "pos.add" as may_sell %}
+  {% if may_sell %}
+    <a href="{% url 'pos:terminal' %}" class="btn-primary">
+      {% icon "shopping-cart" "h-4 w-4" %} {% translate "Open the till" %}
+    </a>
+  {% endif %}
+  <a href="{% url 'pos:movement_list' %}" class="btn-secondary">
+    {% icon "arrow-left-right" "h-4 w-4" %} {% translate "Stock" %}
+  </a>
+{% endblock %}
+
+{% block content %}
+  {# --- headline numbers ------------------------------------------------- #}
+  <div class="mb-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Takings" %}</p>
+      <p class="stat-value">{{ summary.revenue|money }}</p>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {% blocktranslate with tax=summary.tax|money %}{{ tax }} of it is tax{% endblocktranslate %}
+      </p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Sales" %}</p>
+      <p class="stat-value">{{ summary.sale_count }}</p>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {% blocktranslate with average=summary.average_sale|money %}{{ average }} average basket{% endblocktranslate %}
+      </p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Units sold" %}</p>
+      <p class="stat-value">{{ summary.units|floatformat:'-2' }}</p>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {% blocktranslate with discount=summary.discount|money %}{{ discount }} given away in discounts{% endblocktranslate %}
+      </p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Voided" %}</p>
+      <p class="stat-value {% if summary.voided_count %}text-rose-600 dark:text-rose-400{% endif %}">{{ summary.voided_count }}</p>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {% translate "Reversed receipts, excluded from takings" %}
+      </p>
+    </div>
+  </div>
+
+  {# --- trend + breakdowns ------------------------------------------------ #}
+  <div class="mb-5 grid gap-4 lg:grid-cols-3">
+    <div class="card lg:col-span-2">
+      <div class="card-header">
+        <h2 class="card-title">{% icon "chart-line" "inline h-4 w-4 text-brand-500" %} {% translate "Daily takings" %}</h2>
+        <span class="text-xs text-slate-500 dark:text-slate-400">{{ range_label }}</span>
+      </div>
+      <div class="card-body">
+        {% if summary.daily %}
+          <div class="h-64"><canvas id="pos-sales-chart"
+                                    aria-label="{% translate 'Daily shop takings' %}" role="img"></canvas></div>
+        {% else %}
+          <p class="py-10 text-center text-sm text-slate-500 dark:text-slate-400">
+            {% translate "No sales in this period yet." %}
+          </p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% icon "trending-up" "inline h-4 w-4 text-brand-500" %} {% translate "Best sellers" %}</h2>
+      </div>
+      <div class="card-body">
+        {% if top_products %}
+          <ol class="space-y-2.5">
+            {% for row in top_products %}
+              <li class="flex items-start justify-between gap-2 text-sm">
+                <span class="min-w-0">
+                  <span class="block truncate text-slate-900 dark:text-slate-100">{{ row.name }}</span>
+                  <span class="block text-xs text-slate-500 dark:text-slate-400">
+                    {{ row.units|floatformat:'-2' }} × · {{ row.sku }}
+                  </span>
+                </span>
+                <span class="shrink-0 tabular-nums font-medium text-slate-900 dark:text-slate-100">
+                  {{ row.revenue|money }}
+                </span>
+              </li>
+            {% endfor %}
+          </ol>
+        {% else %}
+          <p class="py-6 text-center text-sm text-slate-500 dark:text-slate-400">
+            {% translate "Nothing sold in this period." %}
+          </p>
+        {% endif %}
+
+        {% if summary.by_method %}
+          <div class="mt-4 border-t border-slate-200 pt-3 dark:border-slate-700">
+            <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              {% translate "By payment method" %}
+            </p>
+            <ul class="space-y-1.5 text-sm">
+              {% for row in summary.by_method %}
+                <li class="flex items-center justify-between gap-2">
+                  <span class="text-slate-600 dark:text-slate-300">{{ row.label }} <span class="text-xs text-slate-400">({{ row.count }})</span></span>
+                  <span class="tabular-nums text-slate-900 dark:text-slate-100">{{ row.revenue|money }}</span>
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {% comment %} --- filters -----------------------------------------------------------
+     A full page load on purpose: the stat tiles and the chart are computed
+     from the same period as the table, so swapping only the table would leave
+     an operator reading yesterday's takings above today's rows. {% endcomment %}
+  <form method="get" action="{% url 'pos:list' %}" class="card mb-5 p-4">
+    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div class="lg:col-span-2">
+        <label class="form-label" for="id_q">{% translate "Search" %}</label>
+        <div class="relative">
+          <span class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3 text-slate-400">
+            {% icon "search" "h-4 w-4" %}
+          </span>
+          <input type="search" name="q" id="id_q" value="{{ search_term }}"
+                 class="form-input ps-9" placeholder="{% translate 'Receipt number or customer…' %}">
+        </div>
+      </div>
+      <div>
+        <label class="form-label" for="{{ filter_form.status.id_for_label }}">{{ filter_form.status.label }}</label>
+        {{ filter_form.status }}
+      </div>
+      <div>
+        <label class="form-label" for="{{ filter_form.payment_method.id_for_label }}">{{ filter_form.payment_method.label }}</label>
+        {{ filter_form.payment_method }}
+      </div>
+    </div>
+    <div class="mt-3 flex flex-wrap items-end justify-between gap-3">
+      <div class="w-full sm:w-56">
+        <label class="form-label" for="id_range">{% translate "Period" %}</label>
+        <select name="range" id="id_range" class="form-select">
+          <option value="today" {% if range_key == "today" %}selected{% endif %}>{% translate "Today" %}</option>
+          <option value="7" {% if range_key == "7" %}selected{% endif %}>{% translate "Last 7 days" %}</option>
+          <option value="30" {% if range_key == "30" %}selected{% endif %}>{% translate "Last 30 days" %}</option>
+          <option value="90" {% if range_key == "90" %}selected{% endif %}>{% translate "Last 3 months" %}</option>
+          <option value="365" {% if range_key == "365" %}selected{% endif %}>{% translate "Last year" %}</option>
+          <option value="all" {% if range_key == "all" %}selected{% endif %}>{% translate "All time" %}</option>
+        </select>
+      </div>
+      <div class="flex items-center gap-2">
+        {% if has_filters %}
+          <a href="{% url 'pos:list' %}" class="btn-secondary">
+            {% icon "rotate-ccw" "h-4 w-4" %} {% translate "Reset" %}
+          </a>
+        {% endif %}
+        <button type="submit" class="btn-primary">
+          {% icon "filter" "h-4 w-4" %} {% translate "Apply" %}
+        </button>
+      </div>
+    </div>
+  </form>
+
+  {# --- results ---------------------------------------------------------- #}
+  <div id="sale-results">
+    {% include "pos/partials/sale_results.html" %}
+  </div>
+{% endblock %}
+
+{% block extra_scripts %}
+  {% if summary.daily %}
+    <script src="{% static 'vendor/chartjs/chart.umd.js' %}"></script>
+    <script id="pos-chart-data" type="application/json">
+      {"labels": {{ chart_labels|to_json }}, "revenue": {{ chart_revenue|to_json }}, "counts": {{ chart_counts|to_json }}}
+    </script>
+    <script>
+      (function () {
+        var canvas = document.getElementById('pos-sales-chart');
+        var payload = document.getElementById('pos-chart-data');
+        if (!canvas || !payload || typeof Chart === 'undefined') return;
+
+        var data = JSON.parse(payload.textContent);
+        var options = window.surfChartDefaults();
+        var colors = window.surfChartColors;
+
+        options.scales.y1 = {
+          position: 'right',
+          beginAtZero: true,
+          grid: { drawOnChartArea: false },
+          ticks: options.scales.y.ticks,
+        };
+
+        new Chart(canvas, {
+          type: 'bar',
+          data: {
+            labels: data.labels,
+            datasets: [
+              {
+                label: '{% translate "Takings" as label_takings %}{{ label_takings|escapejs }}',
+                data: data.revenue,
+                backgroundColor: colors[0],
+                borderRadius: 4,
+                yAxisID: 'y',
+              },
+              {
+                label: '{% translate "Sales" as label_sales %}{{ label_sales|escapejs }}',
+                data: data.counts,
+                type: 'line',
+                borderColor: colors[1],
+                backgroundColor: colors[1],
+                tension: 0.3,
+                pointRadius: 2,
+                yAxisID: 'y1',
+              },
+            ],
+          },
+          options: options,
+        });
+      })();
+    </script>
+  {% endif %}
+{% endblock %}

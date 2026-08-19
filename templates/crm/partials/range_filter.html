@@ -1,0 +1,14 @@
+{% load i18n %}
+{# Shared period selector. Submits as a plain GET form so it works without JS. #}
+<form method="get" class="flex items-center gap-2">
+  <label for="crm-range" class="sr-only">{% translate "Period" %}</label>
+  <select id="crm-range" name="range" class="form-select w-auto" onchange="this.form.submit()">
+    <option value="today" {% if range_key == "today" %}selected{% endif %}>{% translate "Today" %}</option>
+    <option value="7" {% if range_key == "7" %}selected{% endif %}>{% translate "Last 7 days" %}</option>
+    <option value="30" {% if range_key == "30" %}selected{% endif %}>{% translate "Last 30 days" %}</option>
+    <option value="90" {% if range_key == "90" %}selected{% endif %}>{% translate "Last 3 months" %}</option>
+    <option value="365" {% if range_key == "365" %}selected{% endif %}>{% translate "Last year" %}</option>
+    <option value="all" {% if range_key == "all" %}selected{% endif %}>{% translate "All time" %}</option>
+  </select>
+  <noscript><button type="submit" class="btn-secondary btn-sm">{% translate "Apply" %}</button></noscript>
+</form>

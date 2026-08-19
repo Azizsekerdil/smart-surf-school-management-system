@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ form_title }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ form_title }}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "A coach standing on the beach beats a grid cell three kilometres offshore. What you log here is marked as a staff reading and scored by exactly the same arithmetic." %}
+  </p>
+{% endblock %}
+
+{% block content %}
+  <form method="post" novalidate class="space-y-5">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="alert-error">
+        {% icon "circle-alert" "h-5 w-5 shrink-0" %}
+        <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+      </div>
+    {% endif %}
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">
+          {% icon "map-pin" "inline h-4 w-4 text-brand-500" %} {% translate "Where and when" %}
+        </h2>
+      </div>
+      <div class="card-body grid gap-4 sm:grid-cols-2">
+        {% include "surf_conditions/partials/field.html" with field=form.spot %}
+        {% include "surf_conditions/partials/field.html" with field=form.recorded_at %}
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">
+          {% icon "waves" "inline h-4 w-4 text-brand-500" %} {% translate "The wave" %}
+        </h2>
+      </div>
+      <div class="card-body grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {% include "surf_conditions/partials/field.html" with field=form.wave_height_m %}
+        {% include "surf_conditions/partials/field.html" with field=form.wave_period_s %}
+        {% include "surf_conditions/partials/field.html" with field=form.wave_direction_deg %}
+        {% include "surf_conditions/partials/field.html" with field=form.swell_height_m %}
+        {% include "surf_conditions/partials/field.html" with field=form.swell_period_s %}
+        {% include "surf_conditions/partials/field.html" with field=form.swell_direction_deg %}
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">
+          {% icon "wind" "inline h-4 w-4 text-brand-500" %} {% translate "Wind and tide" %}
+        </h2>
+      </div>
+      <div class="card-body">
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {% include "surf_conditions/partials/field.html" with field=form.wind_speed_kmh %}
+          {% include "surf_conditions/partials/field.html" with field=form.wind_gust_kmh %}
+          {% include "surf_conditions/partials/field.html" with field=form.wind_direction_deg %}
+          {% include "surf_conditions/partials/field.html" with field=form.tide_state %}
+        </div>
+        <p class="mt-3 text-xs text-slate-500 dark:text-slate-400">
+          {% translate "Wind direction is the bearing the wind blows FROM. It is classified against the spot's beach bearing to decide offshore or onshore." %}
+        </p>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">
+          {% icon "thermometer" "inline h-4 w-4 text-brand-500" %} {% translate "Temperature and sky" %}
+        </h2>
+      </div>
+      <div class="card-body grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {% include "surf_conditions/partials/field.html" with field=form.water_temperature_c %}
+        {% include "surf_conditions/partials/field.html" with field=form.air_temperature_c %}
+        {% include "surf_conditions/partials/field.html" with field=form.weather_description %}
+        {% include "surf_conditions/partials/field.html" with field=form.precipitation_mm %}
+        {% include "surf_conditions/partials/field.html" with field=form.visibility_km %}
+      </div>
+    </section>
+
+    <div class="flex flex-wrap items-center justify-end gap-2">
+      <a href="{{ cancel_url }}" class="btn-secondary">{% translate "Cancel" %}</a>
+      <button type="submit" class="btn-primary">
+        {% icon "save" "h-4 w-4" %} {% translate "Save reading" %}
+      </button>
+    </div>
+  </form>
+{% endblock %}

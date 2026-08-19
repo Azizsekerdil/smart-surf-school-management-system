@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Maintenance" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Maintenance" %}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "Damage reports, repairs and what they cost." %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'maintenance:predictions' %}" class="btn-secondary">
+    {% icon "trending-up" "h-4 w-4" %} {% translate "Predicted maintenance" %}
+  </a>
+  <a href="{% url 'maintenance:schedule_list' %}" class="btn-secondary">
+    {% icon "calendar-days" "h-4 w-4" %} {% translate "Service plans" %}
+    {% if workload.due_now %}<span class="badge-amber ms-1">{{ workload.due_now }}</span>{% endif %}
+  </a>
+  <a href="{% url 'maintenance:cost_report' %}" class="btn-secondary">
+    {% icon "banknote" "h-4 w-4" %} {% translate "Costs" %}
+  </a>
+  {% can "maintenance.add" as may_add %}
+  {% if may_add %}
+    <a href="{% url 'maintenance:create' %}" class="btn-primary">
+      {% icon "plus" "h-4 w-4" %} {% translate "Report a problem" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+
+  {# --- headline numbers ------------------------------------------------- #}
+  <div class="mb-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Open records" %}</p>
+      <p class="stat-value">{{ workload.total|default:"0" }}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Critical or high" %}</p>
+      <p class="stat-value">{{ workload.critical|add:workload.high }}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Items out of service" %}</p>
+      <p class="stat-value">{{ workload.out_of_service|default:"0" }}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Unassigned" %}</p>
+      <p class="stat-value">{{ workload.unassigned|default:"0" }}</p>
+    </div>
+  </div>
+
+  {# --- tabs -------------------------------------------------------------- #}
+  <div class="mb-4 flex flex-wrap items-center gap-1 border-b border-slate-200 dark:border-slate-700">
+    {% for key, label in tab_labels %}
+      <a href="{% query_string tab=key page=None %}"
+         class="-mb-px border-b-2 px-3 py-2 text-sm font-medium transition
+                {% if tab == key %}border-brand-600 text-brand-700 dark:border-brand-400 dark:text-brand-300{% else %}border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200{% endif %}">
+        {{ label }}
+        <span class="ms-1 rounded-full bg-slate-100 px-1.5 py-0.5 text-xs tabular-nums text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+          {{ tab_counts|get_item:key|default:"0" }}
+        </span>
+      </a>
+    {% endfor %}
+  </div>
+
+  {# --- filters ----------------------------------------------------------- #}
+  <form method="get" class="card mb-4 p-4"
+        hx-get="{% url 'maintenance:list' %}"
+        hx-target="#maintenance-results"
+        hx-push-url="true"
+        hx-trigger="change from:select, submit">
+    <input type="hidden" name="tab" value="{{ tab }}">
+    <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-5">
+      <div class="lg:col-span-2">
+        <label for="filter-q" class="form-label">{% translate "Search" %}</label>
+        <input type="search" id="filter-q" name="q" value="{{ search_term }}"
+               class="form-input" placeholder="{% translate 'Record code, description, equipment' %}">
+      </div>
+      <div>
+        <label for="filter-severity" class="form-label">{% translate "Severity" %}</label>
+        <select id="filter-severity" name="severity" class="form-select">
+          <option value="">{% translate "Any severity" %}</option>
+          {% for value, label in severities %}
+            <option value="{{ value }}" {% if current_severity == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="filter-damage" class="form-label">{% translate "Damage type" %}</label>
+        <select id="filter-damage" name="damage_type" class="form-select">
+          <option value="">{% translate "Any damage type" %}</option>
+          {% for value, label in damage_types %}
+            <option value="{{ value }}" {% if current_damage_type == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="filter-category" class="form-label">{% translate "Equipment category" %}</label>
+        <select id="filter-category" name="category" class="form-select">
+          <option value="">{% translate "Any category" %}</option>
+          {% for value, label in categories %}
+            <option value="{{ value }}" {% if current_category == value|stringformat:"s" %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="mt-3 flex flex-wrap items-center gap-2">
+      <select name="assigned" class="form-select w-auto" aria-label="{% translate 'Assignment' %}">
+        <option value="">{% translate "Anyone" %}</option>
+        <option value="mine" {% if current_assigned == "mine" %}selected{% endif %}>{% translate "Assigned to me" %}</option>
+        <option value="unassigned" {% if current_assigned == "unassigned" %}selected{% endif %}>{% translate "Unassigned" %}</option>
+      </select>
+      <button type="submit" class="btn-primary btn-sm">
+        {% icon "filter" "h-4 w-4" %} {% translate "Apply" %}
+      </button>
+      <a href="{% url 'maintenance:list' %}?tab={{ tab }}" class="btn-ghost btn-sm">
+        {% translate "Clear" %}
+      </a>
+    </div>
+  </form>
+
+  <div id="maintenance-results">
+    {% include "maintenance/partials/record_table.html" %}
+  </div>
+{% endblock %}

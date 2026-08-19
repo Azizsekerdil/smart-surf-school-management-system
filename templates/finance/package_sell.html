@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ form_title }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ form_title }}{% endblock %}
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "Selling a package issues the card and records the payment in one step." %}
+  </p>
+{% endblock %}
+
+{% block content %}
+  <div class="grid gap-4 lg:grid-cols-3">
+    <form method="post" novalidate class="space-y-5 lg:col-span-2">
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="alert-error">
+          {% icon "circle-alert" "h-5 w-5 shrink-0" %}
+          <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+        </div>
+      {% endif %}
+
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">
+            {% icon "package" "inline h-4 w-4 text-brand-500" %} {% translate "The sale" %}
+          </h2>
+        </div>
+        <div class="card-body grid gap-4 sm:grid-cols-2">
+          {% include "finance/partials/field.html" with field=form.customer wrapper_class="sm:col-span-2" %}
+          {% include "finance/partials/field.html" with field=form.package wrapper_class="sm:col-span-2" %}
+          {% include "finance/partials/field.html" with field=form.payment_method %}
+          {% include "finance/partials/field.html" with field=form.reference %}
+        </div>
+      </section>
+
+      <div class="alert-info">
+        {% icon "info" "h-5 w-5 shrink-0" %}
+        <div>
+          <p class="font-medium">{% translate "Revenue is recognised now, not lesson by lesson." %}</p>
+          <p class="mt-1">
+            {% translate "The full price is booked as revenue today. Redeeming a lesson later settles the booking without recording the money a second time." %}
+          </p>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <button type="submit" class="btn-primary">
+          {% icon "check" "h-4 w-4" %} {% translate "Sell and take payment" %}
+        </button>
+        <a href="{{ cancel_url }}" class="btn-secondary">{% translate "Cancel" %}</a>
+      </div>
+    </form>
+
+    <aside class="card h-fit">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "On sale" %}</h2>
+      </div>
+      <div class="card-body p-0">
+        {% if packages %}
+          <ul class="divide-y divide-slate-100 dark:divide-slate-800">
+            {% for package in packages %}
+              <li class="px-5 py-3">
+                <div class="flex items-center justify-between gap-3">
+                  <span class="truncate text-sm font-medium text-slate-900 dark:text-slate-100">
+                    {{ package.name }}
+                  </span>
+                  <span class="tabular-nums text-sm font-semibold">{{ package.price|money }}</span>
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400">
+                  {% blocktranslate with count=package.lesson_count each=package.price_per_lesson|money days=package.validity_days %}{{ count }} lessons · {{ each }} each · valid {{ days }} days{% endblocktranslate %}
+                </p>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="px-5 py-6 text-center text-sm text-slate-500 dark:text-slate-400">
+            {% translate "No package is currently on sale." %}
+          </p>
+        {% endif %}
+      </div>
+    </aside>
+  </div>
+{% endblock %}

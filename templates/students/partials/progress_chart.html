@@ -1,0 +1,54 @@
+{% load i18n surf_tags %}
+{% comment %} Progress chart. Plain inline SVG built from coordinates computed in the view —
+   no chart library, no network call, and it prints correctly on a paper report. {% endcomment %}
+<section class="card">
+  <div class="card-header">
+    <h2 class="card-title">{% translate "Progress" %}</h2>
+    {% if latest_assessment %}
+      <span class="text-sm text-slate-500 dark:text-slate-400">
+        {% blocktranslate with score=latest_assessment.average_score %}Latest average {{ score }} / 5{% endblocktranslate %}
+      </span>
+    {% endif %}
+  </div>
+  <div class="card-body">
+    {% if chart.points|length > 1 %}
+      <div class="overflow-x-auto">
+        <svg viewBox="0 0 640 200" class="h-48 w-full min-w-[420px]" role="img"
+             aria-label="{% translate 'Average assessment score over time' %}">
+          {% for grid in chart.grid %}
+            <line x1="40" x2="620" y1="{{ grid.y }}" y2="{{ grid.y }}"
+                  stroke="currentColor" stroke-width="0.5"
+                  class="text-slate-200 dark:text-slate-700"></line>
+            <text x="24" y="{{ grid.label_y }}" font-size="10" fill="currentColor"
+                  class="text-slate-400">{{ grid.score }}</text>
+          {% endfor %}
+
+          <polyline fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linejoin="round" stroke-linecap="round"
+                    class="text-brand-600 dark:text-brand-400"
+                    points="{{ chart.polyline }}"></polyline>
+
+          {% for point in chart.points %}
+            <circle cx="{{ point.x }}" cy="{{ point.y }}" r="4"
+                    fill="currentColor" class="text-brand-600 dark:text-brand-400">
+              <title>{{ point.label }}</title>
+            </circle>
+          {% endfor %}
+        </svg>
+      </div>
+      <div class="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
+        <span>{{ chart.first_date }}</span>
+        <span>{% translate "Scale: 1 (struggling) to 5 (strong)" %}</span>
+        <span>{{ chart.last_date }}</span>
+      </div>
+    {% elif chart.points %}
+      <p class="text-sm text-slate-600 dark:text-slate-300">
+        {% blocktranslate with date=chart.first_date score=chart.points.0.average %}One assessment so far, on {{ date }}, averaging {{ score }} out of 5. A second assessment draws the progress line.{% endblocktranslate %}
+      </p>
+    {% else %}
+      <p class="text-sm text-slate-500 dark:text-slate-400">
+        {% translate "No assessments recorded yet — the progress chart appears after the first one." %}
+      </p>
+    {% endif %}
+  </div>
+</section>

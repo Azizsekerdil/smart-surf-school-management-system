@@ -1,0 +1,20 @@
+{% load surf_tags %}
+{% if messages %}
+  <div class="mb-5 space-y-2">
+    {% for message in messages %}
+      <div class="alert-{% if message.tags == 'error' %}error{% elif message.tags == 'warning' %}warning{% elif message.tags == 'success' %}success{% else %}info{% endif %} animate-slide-in"
+           x-data="{ show: true }" x-show="show" role="alert">
+        <span class="mt-0.5 shrink-0">
+          {% if message.tags == 'error' %}{% icon "circle-x" "h-5 w-5" %}
+          {% elif message.tags == 'warning' %}{% icon "triangle-alert" "h-5 w-5" %}
+          {% elif message.tags == 'success' %}{% icon "circle-check" "h-5 w-5" %}
+          {% else %}{% icon "info" "h-5 w-5" %}{% endif %}
+        </span>
+        <div class="flex-1">{{ message }}</div>
+        <button type="button" @click="show = false" class="shrink-0 opacity-60 hover:opacity-100" aria-label="Close">
+          {% icon "x" "h-4 w-4" %}
+        </button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}

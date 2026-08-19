@@ -1,0 +1,74 @@
+{% load i18n surf_tags %}
+
+<div class="card">
+  <div class="card-header">
+    <h2 class="card-title">{% translate "Settlement" %}</h2>
+  </div>
+  <div class="card-body">
+    <dl class="space-y-2 text-sm">
+      <div class="flex justify-between">
+        <dt class="text-slate-500 dark:text-slate-400">{% translate "Hire charge" %}</dt>
+        <dd class="tabular-nums">{{ rental.subtotal|money }}</dd>
+      </div>
+      <div class="flex justify-between">
+        <dt class="text-slate-500 dark:text-slate-400">{% translate "Discount" %}</dt>
+        <dd class="tabular-nums">−{{ rental.discount_amount|money }}</dd>
+      </div>
+      <div class="flex justify-between {% if late_fee > 0 %}text-rose-700 dark:text-rose-300{% endif %}">
+        <dt>
+          {% translate "Late fee" %}
+          {% if hours_overdue > 0 %}
+            <span class="block text-xs">
+              {% blocktranslate with hours=hours_overdue %}{{ hours }} h overdue{% endblocktranslate %}
+            </span>
+          {% endif %}
+        </dt>
+        <dd class="tabular-nums">{{ late_fee|money }}</dd>
+      </div>
+      <div class="flex justify-between {% if damage_total > 0 %}text-rose-700 dark:text-rose-300{% endif %}">
+        <dt class="text-slate-500 dark:text-slate-400">{% translate "Damage charges" %}</dt>
+        <dd class="tabular-nums">{{ damage_total|money }}</dd>
+      </div>
+      <div class="flex justify-between border-t border-slate-200 pt-2 text-base font-semibold dark:border-slate-700">
+        <dt>{% translate "Total" %}</dt>
+        <dd class="tabular-nums">{{ projected_total|money }}</dd>
+      </div>
+      <div class="flex justify-between">
+        <dt class="text-slate-500 dark:text-slate-400">{% translate "Already paid" %}</dt>
+        <dd class="tabular-nums">{{ rental.paid_amount|money }}</dd>
+      </div>
+    </dl>
+
+    <div class="mt-4 rounded-lg bg-slate-50 p-3 text-sm dark:bg-slate-800/60">
+      <p class="font-medium text-slate-900 dark:text-slate-100">{% translate "Deposit" %}</p>
+      <div class="mt-1 flex justify-between tabular-nums">
+        <span class="text-slate-500 dark:text-slate-400">{% translate "Held" %}</span>
+        <span>{{ rental.deposit_amount|money }}</span>
+      </div>
+      <div class="flex justify-between tabular-nums {% if deposit_withheld > 0 %}text-rose-700 dark:text-rose-300{% endif %}">
+        <span>{% translate "Withheld for charges" %}</span>
+        <span>{{ deposit_withheld|money }}</span>
+      </div>
+      <div class="flex justify-between tabular-nums font-semibold text-emerald-700 dark:text-emerald-300">
+        <span>{% translate "Refund to customer" %}</span>
+        <span>{{ deposit_refund|money }}</span>
+      </div>
+    </div>
+
+    <div class="mt-4 flex justify-between text-base font-semibold">
+      <span>{% translate "Still to collect" %}</span>
+      <span class="tabular-nums {% if projected_balance > 0 %}text-amber-600 dark:text-amber-400{% endif %}">
+        {{ projected_balance|money }}
+      </span>
+    </div>
+
+    {% if item_forms %}
+      <button type="submit" class="btn-primary mt-5 w-full">
+        {% icon "rotate-ccw" "h-4 w-4" %} {% translate "Confirm check-in" %}
+      </button>
+      <a href="{% url 'rentals:detail' rental.pk %}" class="btn-ghost mt-2 w-full justify-center">
+        {% translate "Cancel" %}
+      </a>
+    {% endif %}
+  </div>
+</div>

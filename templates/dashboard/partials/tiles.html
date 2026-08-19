@@ -1,0 +1,55 @@
+{% load i18n surf_tags %}
+{% comment %} The whole grid is the HTMX swap target, so the refreshed fragment carries the
+   same polling attributes and keeps updating after every swap. {% endcomment %}
+<div id="dashboard-tiles"
+     hx-get="{{ tiles_url }}"
+     hx-trigger="every 120s"
+     hx-swap="outerHTML"
+     class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+
+  {% for tile in tiles %}
+    {% if tile.url %}<a href="{{ tile.url }}" class="stat-card block transition hover:border-brand-300 dark:hover:border-brand-500/50">{% else %}<div class="stat-card">{% endif %}
+
+      <div class="flex items-start justify-between gap-3">
+        <p class="stat-label">{{ tile.label }}</p>
+        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg
+                     {% if tile.tone == 'danger' %}bg-rose-100 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300
+                     {% elif tile.tone == 'warning' %}bg-amber-100 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300
+                     {% elif tile.tone == 'ok' %}bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300
+                     {% else %}bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400{% endif %}">
+          {% icon tile.icon "h-4 w-4" %}
+        </span>
+      </div>
+
+      {% if tile.has_value %}
+        <p class="stat-value
+                  {% if tile.tone == 'danger' %}text-rose-600 dark:text-rose-400
+                  {% elif tile.tone == 'warning' %}text-amber-600 dark:text-amber-400{% endif %}">
+          {% if tile.kind == 'money' %}{{ tile.value|money }}
+          {% elif tile.kind == 'score' %}{{ tile.value }}<span class="text-base font-normal text-slate-400">/100</span>
+          {% else %}{{ tile.value }}{% endif %}
+        </p>
+      {% else %}
+        <p class="stat-value text-slate-300 dark:text-slate-600" aria-label="{% translate 'No data yet' %}">—</p>
+      {% endif %}
+
+      {% if tile.detail %}
+        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ tile.detail }}</p>
+      {% endif %}
+      {% if tile.note %}
+        <p class="mt-1 text-xs italic text-slate-400 dark:text-slate-500">{{ tile.note }}</p>
+      {% endif %}
+
+    {% if tile.url %}</a>{% else %}</div>{% endif %}
+  {% empty %}
+    <div class="sm:col-span-2 xl:col-span-4">
+      {% include "partials/empty_state.html" with icon_name="layout-dashboard" title=_("Nothing to show yet") subtitle=_("Your role does not include any of the dashboard metrics.") %}
+    </div>
+  {% endfor %}
+
+  {% if tiles and refreshed_at %}
+    <p class="text-xs text-slate-400 sm:col-span-2 xl:col-span-4 dark:text-slate-500">
+      {% blocktranslate with when=refreshed_at|time:"H:i" %}Figures as of {{ when }}. Refreshed automatically every two minutes.{% endblocktranslate %}
+    </p>
+  {% endif %}
+</div>

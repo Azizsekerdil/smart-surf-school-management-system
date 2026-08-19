@@ -1,0 +1,18 @@
+{% load i18n %}
+<footer class="border-t border-slate-200 px-4 py-4 text-xs text-slate-500 sm:px-6 lg:px-8 dark:border-slate-800 dark:text-slate-400">
+  <div class="flex flex-wrap items-center justify-between gap-2">
+    <p>
+      {{ SCHOOL_NAME }} · {% translate "Smart Surf School Management System" %} v{{ APP_VERSION }}
+    </p>
+    <p class="flex flex-wrap items-center gap-x-3 gap-y-1">
+      {# Attribution required by the Open-Meteo terms of use. #}
+      <span>
+        {% translate "Weather data by" %}
+        <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer"
+           class="underline hover:text-brand-600">Open-Meteo.com</a>
+        <span class="text-slate-400">(CC BY 4.0)</span>
+      </span>
+      {% if DEBUG %}<span class="badge-amber">DEBUG</span>{% endif %}
+    </p>
+  </div>
+</footer>

@@ -1,0 +1,82 @@
+{% load i18n surf_tags %}
+<div class="table-wrap">
+  <table class="table">
+    <thead>
+      <tr>
+        <th scope="col">{% translate "Code" %}</th>
+        <th scope="col">{% translate "Spot" %}</th>
+        <th scope="col">{% translate "Break" %}</th>
+        <th scope="col">{% translate "Levels" %}</th>
+        <th scope="col">{% translate "Faces" %}</th>
+        <th scope="col">{% translate "Ideal" %}</th>
+        <th scope="col" class="text-end">{% translate "Capacity" %}</th>
+        <th scope="col">{% translate "Safety" %}</th>
+        <th scope="col"><span class="sr-only">{% translate "Actions" %}</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for spot in spots %}
+        <tr>
+          <td class="font-mono text-xs text-slate-500 dark:text-slate-400">{{ spot.code }}</td>
+          <td>
+            <div class="flex items-center gap-2">
+              <a href="{% url 'locations:detail' spot.pk %}"
+                 class="font-medium text-slate-900 hover:underline dark:text-slate-100">{{ spot.name }}</a>
+              {% if spot.is_primary %}
+                <span class="badge-sky">{% translate "Default" %}</span>
+              {% endif %}
+              {% if not spot.is_active %}
+                <span class="badge-slate">{% translate "Archived" %}</span>
+              {% endif %}
+            </div>
+            <p class="text-xs text-slate-500 dark:text-slate-400">{{ spot.coordinates_display }}</p>
+          </td>
+          <td>
+            {{ spot.get_break_type_display }}
+            <p class="text-xs text-slate-500 dark:text-slate-400">{{ spot.get_bottom_type_display }}</p>
+          </td>
+          <td>{{ spot.level_range_display }}</td>
+          <td class="whitespace-nowrap">
+            {{ spot.facing_compass }}
+            <span class="text-xs text-slate-500 dark:text-slate-400">({{ spot.beach_facing_deg|floatformat:0 }}°)</span>
+          </td>
+          <td class="whitespace-nowrap text-xs">
+            <span class="block">{% icon "wind" "inline h-3 w-3" %} {{ spot.get_ideal_wind_display }}</span>
+            <span class="block text-slate-500 dark:text-slate-400">{% icon "droplets" "inline h-3 w-3" %} {{ spot.get_ideal_tide_display }}</span>
+          </td>
+          <td class="text-end tabular-nums">{{ spot.capacity }}</td>
+          <td>
+            <div class="flex flex-wrap items-center gap-1">
+              {% if spot.lifeguard_on_duty %}
+                <span class="badge-emerald">{% translate "Patrolled" %}</span>
+              {% else %}
+                <span class="badge-amber">{% translate "Unpatrolled" %}</span>
+              {% endif %}
+              {% if spot.serious_hazard_count %}
+                <span class="badge-rose">
+                  {% icon "triangle-alert" "h-3 w-3" %}
+                  {% blocktranslate with n=spot.serious_hazard_count %}{{ n }} serious{% endblocktranslate %}
+                </span>
+              {% elif spot.active_hazard_count %}
+                <span class="badge-slate">
+                  {% blocktranslate with n=spot.active_hazard_count %}{{ n }} hazards{% endblocktranslate %}
+                </span>
+              {% endif %}
+            </div>
+          </td>
+          <td class="text-end">
+            <div class="flex items-center justify-end gap-1">
+              <a href="{% url 'locations:detail' spot.pk %}" class="btn-ghost btn-sm"
+                 aria-label="{% translate 'Open spot' %}">{% icon "eye" "h-4 w-4" %}</a>
+              {% can "locations.change" as may_change %}
+              {% if may_change %}
+                <a href="{% url 'locations:update' spot.pk %}" class="btn-ghost btn-sm"
+                   aria-label="{% translate 'Edit spot' %}">{% icon "pencil" "h-4 w-4" %}</a>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,78 @@
+{% load i18n surf_tags %}
+
+{% if invoices %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">{% translate "Number" %}</th>
+          <th scope="col">{% translate "Customer" %}</th>
+          <th scope="col">{% translate "Issued" %}</th>
+          <th scope="col">{% translate "Due" %}</th>
+          <th scope="col">{% translate "Status" %}</th>
+          <th scope="col" class="text-end">{% translate "Total" %}</th>
+          <th scope="col" class="text-end">{% translate "Paid" %}</th>
+          <th scope="col" class="text-end">{% translate "Balance" %}</th>
+          <th scope="col"><span class="sr-only">{% translate "Actions" %}</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for invoice in invoices %}
+          <tr class="{% if invoice.is_overdue %}bg-rose-50/70 dark:bg-rose-500/10{% endif %}">
+            <td class="font-medium text-slate-900 dark:text-slate-100">
+              <a href="{% url 'finance:invoice_detail' invoice.pk %}" class="hover:underline">
+                {{ invoice.invoice_number }}
+              </a>
+            </td>
+            <td class="truncate">{{ invoice.customer }}</td>
+            <td class="whitespace-nowrap">{{ invoice.issue_date|date:"d.m.Y" }}</td>
+            <td class="whitespace-nowrap {% if invoice.is_overdue %}font-semibold text-rose-700 dark:text-rose-300{% endif %}">
+              {{ invoice.due_date|date:"d.m.Y" }}
+              {% if invoice.is_overdue %}
+                <span class="block text-xs">
+                  {% blocktranslate with days=invoice.days_overdue %}{{ days }} days late{% endblocktranslate %}
+                </span>
+              {% endif %}
+            </td>
+            <td>{% status_badge invoice.status invoice.get_status_display %}</td>
+            <td class="text-end tabular-nums">{{ invoice.total_amount|money }}</td>
+            <td class="text-end tabular-nums text-slate-500 dark:text-slate-400">
+              {{ invoice.paid_amount|money }}
+            </td>
+            <td class="text-end tabular-nums">
+              {% if invoice.balance_due > 0 %}
+                <span class="font-semibold text-amber-700 dark:text-amber-300">{{ invoice.balance_due|money }}</span>
+              {% else %}
+                <span class="text-slate-400">—</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <div class="flex items-center justify-end gap-1">
+                {% can "finance.add" as may_pay %}
+                {% if may_pay and invoice.balance_due > 0 and invoice.status != "draft" %}
+                  <a href="{% url 'finance:payment_create' %}?invoice={{ invoice.pk }}&customer={{ invoice.customer_id }}"
+                     class="btn-secondary btn-sm">
+                    {% icon "banknote" "h-3.5 w-3.5" %} {% translate "Take payment" %}
+                  </a>
+                {% endif %}
+                <a href="{% url 'finance:invoice_detail' invoice.pk %}" class="btn-ghost btn-sm">
+                  {% translate "Open" %}
+                </a>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% include "partials/pagination.html" %}
+{% else %}
+  {% can "finance.add" as may_add %}
+  {% if may_add %}
+    {% url 'finance:invoice_create' as create_url %}
+    {% include "partials/empty_state.html" with icon_name="file-text" title=_("No invoices here") subtitle=_("Nothing matches this period or filter.") action_url=create_url action_label=_("New invoice") %}
+  {% else %}
+    {% include "partials/empty_state.html" with icon_name="file-text" title=_("No invoices here") subtitle=_("Nothing matches this period or filter.") %}
+  {% endif %}
+{% endif %}

@@ -1,0 +1,111 @@
+{% load i18n surf_tags %}
+
+{% if basket_error %}
+  <div class="alert-error mb-4">
+    {% icon "circle-alert" "h-5 w-5 shrink-0" %}
+    <p>{{ basket_error }}</p>
+  </div>
+{% elif basket_notice %}
+  <div class="alert-success mb-4">
+    {% icon "circle-check" "h-5 w-5 shrink-0" %}
+    <p>{{ basket_notice }}</p>
+  </div>
+{% endif %}
+
+{% for warning in basket_warnings %}
+  <div class="alert-warning mb-4">
+    {% icon "triangle-alert" "h-5 w-5 shrink-0" %}
+    <p>{{ warning }}</p>
+  </div>
+{% endfor %}
+
+<div class="card">
+  <div class="card-header flex items-center justify-between">
+    <h2 class="card-title">{% translate "Basket" %}</h2>
+    <span class="text-sm text-slate-500 dark:text-slate-400">
+      {% blocktranslate count units=basket_units %}{{ units }} unit charged{% plural %}{{ units }} units charged{% endblocktranslate %}
+    </span>
+  </div>
+
+  {% if basket_lines %}
+    <div class="table-wrap rounded-none border-0">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">{% translate "Asset" %}</th>
+            <th scope="col" class="text-end">{% translate "Qty" %}</th>
+            <th scope="col" class="text-end">{% translate "Unit price" %}</th>
+            <th scope="col" class="text-end">{% translate "Line total" %}</th>
+            <th scope="col"><span class="sr-only">{% translate "Remove" %}</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for line in basket_lines %}
+            <tr>
+              <td>
+                <span class="font-medium text-slate-900 dark:text-slate-100">{{ line.code }}</span>
+                <span class="block text-xs text-slate-500 dark:text-slate-400">{{ line.label }}</span>
+              </td>
+              <td class="text-end tabular-nums">{{ line.quantity }}</td>
+              <td class="text-end tabular-nums">{{ line.unit_price|money }}</td>
+              <td class="text-end tabular-nums">{{ line.line_total|money }}</td>
+              <td class="text-end">
+                <button type="button" class="btn-ghost btn-sm text-rose-600"
+                        hx-post="{% url 'rentals:basket_remove' %}"
+                        hx-vals='{"equipment_id": "{{ line.equipment_id }}"}'
+                        hx-include="#checkout-form"
+                        hx-target="#basket"
+                        hx-swap="innerHTML">
+                  {% icon "trash-2" "h-3.5 w-3.5" %}
+                  <span class="sr-only">{% translate "Remove" %}</span>
+                </button>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card-body border-t border-slate-200 dark:border-slate-700">
+      <dl class="space-y-2 text-sm">
+        <div class="flex justify-between">
+          <dt class="text-slate-500 dark:text-slate-400">{% translate "Hire charge" %}</dt>
+          <dd class="tabular-nums">{{ basket_subtotal|money }}</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-slate-500 dark:text-slate-400">{% translate "Discount" %}</dt>
+          <dd class="tabular-nums">−{{ basket_discount|money }}</dd>
+        </div>
+        <div class="flex justify-between border-t border-slate-200 pt-2 text-base font-semibold dark:border-slate-700">
+          <dt>{% translate "Hire total" %}</dt>
+          <dd class="tabular-nums">{{ basket_total|money }}</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-slate-500 dark:text-slate-400">{% translate "Deposit held" %}</dt>
+          <dd class="tabular-nums">{{ basket_deposit|money }}</dd>
+        </div>
+        <div class="flex justify-between font-semibold text-brand-700 dark:text-brand-300">
+          <dt>{% translate "Collect now" %}</dt>
+          <dd class="tabular-nums">{{ basket_due_now|money }}</dd>
+        </div>
+      </dl>
+
+      <div class="mt-4 flex flex-wrap items-center justify-between gap-2">
+        <button type="button" class="btn-ghost btn-sm"
+                hx-post="{% url 'rentals:basket_clear' %}"
+                hx-include="#checkout-form"
+                hx-target="#basket"
+                hx-swap="innerHTML">
+          {% icon "x" "h-3.5 w-3.5" %} {% translate "Clear basket" %}
+        </button>
+        <button type="submit" class="btn-primary">
+          {% icon "package" "h-4 w-4" %} {% translate "Check out" %}
+        </button>
+      </div>
+    </div>
+  {% else %}
+    <div class="card-body">
+      {% include "partials/empty_state.html" with icon_name="barcode" title=_("Nothing scanned yet") subtitle=_("Scan an asset code above to add the first line.") %}
+    </div>
+  {% endif %}
+</div>

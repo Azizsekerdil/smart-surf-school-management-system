@@ -1,0 +1,7 @@
+{% comment %}
+Response to a per-row HTMX action: the row itself is swapped in place, and the
+unread counter is refreshed out of band so the header stays honest without a
+second request.
+{% endcomment %}
+{% include "notifications/partials/notification_row.html" %}
+{% include "notifications/partials/unread_counter.html" with oob=1 %}

@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ title }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-4 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'lessons:type_list' %}" class="hover:underline">{% translate "Lesson types" %}</a>
+    <span class="mx-2">/</span>
+    <span class="text-slate-700 dark:text-slate-300">{{ title }}</span>
+  </nav>
+{% endblock %}
+
+{% block content %}
+<form method="post" class="mx-auto max-w-3xl space-y-5">
+  {% csrf_token %}
+
+  {% if form.non_field_errors %}
+    <div class="alert-error">
+      {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+    </div>
+  {% endif %}
+
+  <div class="card">
+    <div class="card-header"><h2 class="card-title">{% translate "Identity" %}</h2></div>
+    <div class="card-body grid gap-4 sm:grid-cols-2">
+      {% include "lessons/partials/field.html" with field=form.code %}
+      {% include "lessons/partials/field.html" with field=form.name %}
+      {% include "lessons/partials/field.html" with field=form.category %}
+      {% include "lessons/partials/field.html" with field=form.sort_order %}
+      <div class="sm:col-span-2">
+        {% include "lessons/partials/field.html" with field=form.description %}
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h2 class="card-title">{% translate "Who it is for" %}</h2></div>
+    <div class="card-body">
+      <p class="mb-4 text-sm text-slate-500 dark:text-slate-400">
+        {% translate "The hardest level taught also sets the safety ratio for every lesson of this type." %}
+      </p>
+      <div class="grid gap-4 sm:grid-cols-2">
+        {% include "lessons/partials/field.html" with field=form.min_level %}
+        {% include "lessons/partials/field.html" with field=form.max_level %}
+        {% include "lessons/partials/field.html" with field=form.min_age %}
+        {% include "lessons/partials/field.html" with field=form.max_age %}
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h2 class="card-title">{% translate "Format and price" %}</h2></div>
+    <div class="card-body grid gap-4 sm:grid-cols-2">
+      {% include "lessons/partials/field.html" with field=form.duration_minutes %}
+      {% include "lessons/partials/field.html" with field=form.colour %}
+      {% include "lessons/partials/field.html" with field=form.min_students %}
+      {% include "lessons/partials/field.html" with field=form.max_students %}
+      {% include "lessons/partials/field.html" with field=form.base_price %}
+      {% include "lessons/partials/field.html" with field=form.price_per_extra_student %}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h2 class="card-title">{% translate "Equipment and availability" %}</h2></div>
+    <div class="card-body space-y-3">
+      {% include "lessons/partials/checkbox_field.html" with field=form.requires_board %}
+      {% include "lessons/partials/checkbox_field.html" with field=form.requires_wetsuit %}
+      {% include "lessons/partials/checkbox_field.html" with field=form.requires_leash %}
+      {% include "lessons/partials/checkbox_field.html" with field=form.is_active %}
+    </div>
+  </div>
+
+  <div class="flex flex-wrap items-center gap-3">
+    <button type="submit" class="btn-primary">
+      {% icon "save" "h-4 w-4" %} {% translate "Save lesson type" %}
+    </button>
+    <a href="{% url 'lessons:type_list' %}" class="btn-ghost">{% translate "Cancel" %}</a>
+  </div>
+</form>
+{% endblock %}

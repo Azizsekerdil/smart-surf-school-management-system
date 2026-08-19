@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Service plans" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Service plans" %}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "Preventive maintenance: what is due, and what is due soon." %}
+  </p>
+{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-3 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'maintenance:list' %}" class="hover:underline">{% translate "Maintenance" %}</a>
+    <span class="mx-1" aria-hidden="true">/</span>
+    <span>{% translate "Service plans" %}</span>
+  </nav>
+{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'maintenance:predictions' %}" class="btn-secondary">
+    {% icon "trending-up" "h-4 w-4" %} {% translate "Predicted maintenance" %}
+  </a>
+  {% can "maintenance.add" as may_add %}
+  {% if may_add %}
+    <a href="{% url 'maintenance:schedule_create' %}" class="btn-primary">
+      {% icon "plus" "h-4 w-4" %} {% translate "New service plan" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+
+  <div class="mb-5 grid gap-4 sm:grid-cols-3">
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Due now" %}</p>
+      <p class="stat-value {% if due_count %}text-amber-600 dark:text-amber-400{% endif %}">{{ due_count }}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Due within 14 days" %}</p>
+      <p class="stat-value">{{ soon_count }}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Plans in total" %}</p>
+      <p class="stat-value">{{ total_count }}</p>
+    </div>
+  </div>
+
+  <div class="mb-4 flex flex-wrap items-center gap-1 border-b border-slate-200 dark:border-slate-700">
+    {% for key, label in scope_labels %}
+      <a href="{% query_string scope=key page=None %}"
+         class="-mb-px border-b-2 px-3 py-2 text-sm font-medium transition
+                {% if scope == key %}border-brand-600 text-brand-700 dark:border-brand-400 dark:text-brand-300{% else %}border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200{% endif %}">
+        {{ label }}
+      </a>
+    {% endfor %}
+  </div>
+
+  <form method="get" class="mb-4 flex flex-wrap items-end gap-2">
+    <input type="hidden" name="scope" value="{{ scope }}">
+    <div class="grow sm:max-w-sm">
+      <label for="schedule-q" class="form-label">{% translate "Search" %}</label>
+      <input type="search" id="schedule-q" name="q" value="{{ search_term }}" class="form-input"
+             placeholder="{% translate 'Equipment code or name' %}">
+    </div>
+    <button type="submit" class="btn-primary">{% icon "search" "h-4 w-4" %} {% translate "Search" %}</button>
+  </form>
+
+  <div id="schedule-results">
+    {% include "maintenance/partials/schedule_table.html" %}
+  </div>
+{% endblock %}

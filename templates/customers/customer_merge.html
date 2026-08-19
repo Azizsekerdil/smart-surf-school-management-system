@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Merge customers" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Merge customers" %}{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'customers:detail' primary.pk %}" class="btn-ghost">
+    {% icon "chevron-left" "h-4 w-4" %} {% translate "Cancel" %}
+  </a>
+{% endblock %}
+
+{% block content %}
+  <div class="alert-warning mb-5">
+    {% icon "triangle-alert" "h-5 w-5 shrink-0" %}
+    <div>
+      <p class="font-medium">{% translate "This cannot be undone" %}</p>
+      <p>
+        {% translate "Bookings, rentals, payments, documents and notes move to the surviving record. The duplicate is archived, keeping its history for the audit log." %}
+      </p>
+    </div>
+  </div>
+
+  <div class="mb-5 grid gap-5 md:grid-cols-2">
+    {% for c in pair %}
+      <section class="card {% if forloop.first %}border-emerald-300 dark:border-emerald-500/40{% endif %}">
+        <div class="card-header">
+          <h2 class="card-title">{{ c.full_name }}</h2>
+          {% if forloop.first %}
+            <span class="badge-emerald">{% translate "Survives" %}</span>
+          {% else %}
+            <span class="badge-rose">{% translate "Archived" %}</span>
+          {% endif %}
+        </div>
+        <div class="card-body">
+          <dl class="divide-y divide-slate-100 text-sm dark:divide-slate-800">
+            <div class="flex justify-between gap-3 py-2">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Code" %}</dt>
+              <dd>{{ c.customer_code }}</dd>
+            </div>
+            <div class="flex justify-between gap-3 py-2">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "E-mail" %}</dt>
+              <dd class="min-w-0 truncate">{{ c.email|default:"—" }}</dd>
+            </div>
+            <div class="flex justify-between gap-3 py-2">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Phone" %}</dt>
+              <dd>{{ c.phone|default:"—" }}</dd>
+            </div>
+            <div class="flex justify-between gap-3 py-2">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Bookings" %}</dt>
+              <dd class="tabular-nums">{{ c.total_bookings }}</dd>
+            </div>
+            <div class="flex justify-between gap-3 py-2">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Lifetime value" %}</dt>
+              <dd class="tabular-nums">{{ c.lifetime_value|money }}</dd>
+            </div>
+            <div class="flex justify-between gap-3 py-2">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Created" %}</dt>
+              <dd>{{ c.created_at|date:"d.m.Y" }}</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+    {% endfor %}
+  </div>
+
+  <form method="post" class="card">
+    {% csrf_token %}
+    <div class="card-body space-y-3">
+      {% if form.non_field_errors %}
+        <div class="alert-error">
+          {% icon "circle-alert" "h-5 w-5 shrink-0" %}
+          <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+        </div>
+      {% endif %}
+      {{ form.primary }}
+      {{ form.duplicate }}
+      <label class="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-300">
+        {{ form.confirm }} <span>{{ form.confirm.label }}</span>
+      </label>
+      {% for error in form.confirm.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+      <div class="flex items-center justify-end gap-2">
+        <a href="{% url 'customers:detail' primary.pk %}" class="btn-secondary">{% translate "Cancel" %}</a>
+        <button type="submit" class="btn-danger">
+          {% icon "copy" "h-4 w-4" %}
+          {% blocktranslate with dup=duplicate.customer_code code=primary.customer_code %}Merge {{ dup }} into {{ code }}{% endblocktranslate %}
+        </button>
+      </div>
+    </div>
+  </form>
+{% endblock %}

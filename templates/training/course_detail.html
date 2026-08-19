@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ course.title }} · {% translate "Training" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ course.title }}{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-4 flex flex-wrap items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400"
+       aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'training:home' %}" class="hover:text-brand-600 dark:hover:text-brand-400">
+      {% translate "Training Center" %}
+    </a>
+    {% icon "chevron-right" "h-4 w-4" %}
+    <span class="truncate text-slate-700 dark:text-slate-300">{{ course.title }}</span>
+  </nav>
+{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{ course.description }}</p>
+{% endblock %}
+
+{% block page_actions %}
+  {% if summary.next_step and not summary.is_completed %}
+    <form method="post" action="{% url 'training:course_start' course.pk %}">
+      {% csrf_token %}
+      <button type="submit" class="btn-primary">
+        {% icon "play" "h-4 w-4" %}
+        {% if summary.is_started %}{% translate "Continue" %}{% else %}{% translate "Start course" %}{% endif %}
+      </button>
+    </form>
+  {% endif %}
+  {% if summary.is_started %}
+    <form method="post" action="{% url 'training:course_reset' course.pk %}">
+      {% csrf_token %}
+      <button type="submit" class="btn-secondary"
+              hx-confirm-danger="{% translate 'Clear your progress on this course and start again?' %}">
+        {% icon "rotate-ccw" "h-4 w-4" %} {% translate "Reset progress" %}
+      </button>
+    </form>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
+    <div class="min-w-0 space-y-4">
+      {% for entry in lessons %}
+        <section class="card">
+          <div class="card-header">
+            <div class="flex min-w-0 items-center gap-3">
+              <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold
+                           {% if entry.is_complete %}bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300
+                           {% else %}bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300{% endif %}">
+                {% if entry.is_complete %}{% icon "check" "h-4 w-4" %}{% else %}{{ entry.lesson.order }}{% endif %}
+              </span>
+              <div class="min-w-0">
+                <h2 class="card-title truncate">{{ entry.lesson.title }}</h2>
+                <p class="text-xs text-slate-500 dark:text-slate-400">
+                  {% blocktranslate with done=entry.completed total=entry.total %}{{ done }} of {{ total }} steps{% endblocktranslate %}
+                  · {{ entry.lesson.estimated_minutes|duration_hm }}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="card-body">
+            {% if entry.lesson.summary %}
+              <p class="mb-3 text-sm text-slate-600 dark:text-slate-400">{{ entry.lesson.summary }}</p>
+            {% endif %}
+
+            {% if entry.steps %}
+              <ol class="space-y-1">
+                {% for step in entry.steps %}
+                  <li>
+                    <a href="{% url 'training:step' step.pk %}"
+                       class="flex items-start gap-3 rounded-lg px-2 py-2 text-sm transition-colors hover:bg-slate-50 dark:hover:bg-slate-800">
+                      <span class="mt-0.5 shrink-0
+                                   {% if step.pk in completed_ids %}text-emerald-600 dark:text-emerald-400{% else %}text-slate-300 dark:text-slate-600{% endif %}">
+                        {% if step.pk in completed_ids %}
+                          {% icon "circle-check" "h-5 w-5" %}
+                        {% else %}
+                          {% icon "circle-help" "h-5 w-5" %}
+                        {% endif %}
+                      </span>
+                      <span class="min-w-0">
+                        <span class="block font-medium text-slate-800 dark:text-slate-200">{{ step.title }}</span>
+                        {% if step.action_hint %}
+                          <span class="block text-xs text-slate-500 dark:text-slate-400">{{ step.action_hint }}</span>
+                        {% endif %}
+                      </span>
+                    </a>
+                  </li>
+                {% endfor %}
+              </ol>
+            {% else %}
+              <p class="text-sm text-slate-500 dark:text-slate-400">
+                {% translate "This lesson has no steps yet." %}
+              </p>
+            {% endif %}
+          </div>
+        </section>
+      {% empty %}
+        {% translate "This course has no lessons yet" as empty_title %}
+        {% translate "Lessons and steps are added in the admin, or loaded with the seed_training_content command." as empty_subtitle %}
+        {% include "partials/empty_state.html" with icon_name="book-open" title=empty_title subtitle=empty_subtitle %}
+      {% endfor %}
+    </div>
+
+    {# --- side rail ------------------------------------------------------ #}
+    <aside class="space-y-4 lg:sticky lg:top-6 lg:self-start">
+      <div class="card">
+        <div class="card-body flex items-center gap-4">
+          {% include "training/partials/progress_ring.html" with percent=summary.percent ring_class="h-16 w-16" %}
+          <div class="min-w-0">
+            <p class="text-sm font-medium text-slate-900 dark:text-slate-100">{{ summary.status_label }}</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400">
+              {% blocktranslate with done=summary.completed_steps total=summary.total_steps %}{{ done }} of {{ total }} steps{% endblocktranslate %}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body space-y-3 text-sm">
+          <div class="flex items-center justify-between gap-3">
+            <span class="text-slate-500 dark:text-slate-400">{% translate "Difficulty" %}</span>
+            <span class="badge-{{ course.difficulty_color }}">{{ course.get_difficulty_display }}</span>
+          </div>
+          <div class="flex items-center justify-between gap-3">
+            <span class="text-slate-500 dark:text-slate-400">{% translate "Estimated time" %}</span>
+            <span class="font-medium text-slate-800 dark:text-slate-200">{{ course.estimated_minutes|duration_hm }}</span>
+          </div>
+          <div class="flex items-center justify-between gap-3">
+            <span class="text-slate-500 dark:text-slate-400">{% translate "Lessons" %}</span>
+            <span class="font-medium text-slate-800 dark:text-slate-200">{{ course.lesson_count }}</span>
+          </div>
+          <div class="flex items-center justify-between gap-3">
+            <span class="text-slate-500 dark:text-slate-400">{% translate "Steps" %}</span>
+            <span class="font-medium text-slate-800 dark:text-slate-200">{{ summary.total_steps }}</span>
+          </div>
+          {% if progress.last_activity_at %}
+            <div class="flex items-center justify-between gap-3">
+              <span class="text-slate-500 dark:text-slate-400">{% translate "Last worked on" %}</span>
+              <span class="font-medium text-slate-800 dark:text-slate-200">{{ progress.last_activity_at|date:"d.m.Y H:i" }}</span>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <a href="{% url 'training:home' %}" class="btn-secondary w-full">
+        {% icon "chevron-left" "h-4 w-4" %} {% translate "All courses" %}
+      </a>
+    </aside>
+  </div>
+{% endblock %}

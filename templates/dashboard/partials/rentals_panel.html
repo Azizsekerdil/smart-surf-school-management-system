@@ -1,0 +1,41 @@
+{% load i18n surf_tags %}
+{% comment %} Gear that is late back. Sorted by how long it has been late, because that is
+   the order the counter chases people in. {% endcomment %}
+<div class="card">
+  <div class="card-header">
+    <h2 class="card-title flex items-center gap-2">{% icon "arrow-left-right" "h-4 w-4 text-rose-500" %} {% translate "Overdue rentals" %}</h2>
+    {% if links.rentals_out %}
+      <a href="{{ links.rentals_out }}" class="btn-ghost btn-sm">{% translate "Out now" %} {% icon "chevron-right" "h-4 w-4" %}</a>
+    {% endif %}
+  </div>
+
+  {% if overdue_rentals is None %}
+    <div class="card-body">
+      <p class="text-sm text-slate-500 dark:text-slate-400">{% translate "The rentals module is not available." %}</p>
+    </div>
+  {% elif overdue_rentals %}
+    <ul class="divide-y divide-slate-100 dark:divide-slate-800">
+      {% for rental in overdue_rentals %}
+        <li class="flex items-center justify-between gap-3 px-5 py-3">
+          <div class="min-w-0">
+            <p class="truncate text-sm font-medium text-slate-900 dark:text-slate-100">
+              {{ rental.rental_code }} · {{ rental.customer }}
+            </p>
+            <p class="truncate text-xs text-slate-500 dark:text-slate-400">
+              {% blocktranslate with due=rental.expected_return_at|date:"d.m.Y H:i" count counter=rental.item_count %}Due {{ due }} · {{ counter }} item{% plural %}Due {{ due }} · {{ counter }} items{% endblocktranslate %}
+            </p>
+          </div>
+          <span class="badge-rose shrink-0 tabular-nums">
+            {% blocktranslate with hours=rental.hours_overdue|floatformat:0 %}{{ hours }} h late{% endblocktranslate %}
+          </span>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <div class="card-body">
+      <p class="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
+        {% icon "circle-check" "h-4 w-4" %} {% translate "Nothing is overdue." %}
+      </p>
+    </div>
+  {% endif %}
+</div>

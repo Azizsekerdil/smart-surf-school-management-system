@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Commission" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Instructor commission" %}{% endblock %}
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "Commission is earned on lessons that actually ran. Re-calculating a period never pays twice." %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'finance:dashboard' %}" class="btn-secondary">
+    {% icon "gauge" "h-4 w-4" %} {% translate "Dashboard" %}
+  </a>
+{% endblock %}
+
+{% block content %}
+  <div class="grid gap-4 sm:grid-cols-2">
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Owed to instructors" %}</p>
+      <p class="stat-value">{{ owed_total|money }}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Awaiting approval" %}</p>
+      <p class="stat-value {% if pending_count %}text-amber-600 dark:text-amber-400{% endif %}">
+        {{ pending_count }}
+      </p>
+    </div>
+  </div>
+
+  {% can "finance.add" as may_calculate %}
+  {% if may_calculate %}
+    <form method="post" action="{% url 'finance:commission_generate' %}" class="card mt-4">
+      {% csrf_token %}
+      <div class="card-header">
+        <h2 class="card-title">
+          {% icon "percent" "inline h-4 w-4 text-brand-500" %} {% translate "Calculate a period" %}
+        </h2>
+      </div>
+      <div class="card-body grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div>
+          <label class="form-label" for="commission-instructor">{% translate "Instructor" %}</label>
+          <select name="instructor" id="commission-instructor" class="form-select" required>
+            <option value="">{% translate "Choose an instructor…" %}</option>
+            {% for instructor in instructors %}
+              <option value="{{ instructor.pk }}">
+                {{ instructor }} — {{ instructor.commission_percent|floatformat:2 }}%
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="form-label" for="commission-start">{% translate "From" %}</label>
+          <input type="date" name="period_start" id="commission-start" class="form-input"
+                 value="{{ default_period_start|date:'Y-m-d' }}">
+        </div>
+        <div>
+          <label class="form-label" for="commission-end">{% translate "To" %}</label>
+          <input type="date" name="period_end" id="commission-end" class="form-input"
+                 value="{{ default_period_end|date:'Y-m-d' }}">
+        </div>
+        <div class="flex items-end">
+          <button type="submit" class="btn-primary w-full">
+            {% icon "activity" "h-4 w-4" %} {% translate "Calculate" %}
+          </button>
+        </div>
+        {% if not instructors %}
+          <p class="text-xs text-amber-700 sm:col-span-2 lg:col-span-4 dark:text-amber-300">
+            {% translate "No active instructor has a commission percentage set. Set one on the instructor profile first." %}
+          </p>
+        {% endif %}
+      </div>
+    </form>
+  {% endif %}
+
+  <form method="get" action="{% url 'finance:commission_list' %}" class="card mt-4">
+    <div class="card-body grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {% include "finance/partials/field.html" with field=filter_form.q wrapper_class="lg:col-span-2" %}
+      {% include "finance/partials/field.html" with field=filter_form.status %}
+      <div class="flex items-end gap-2">
+        <button type="submit" class="btn-primary">
+          {% icon "search" "h-4 w-4" %} {% translate "Filter" %}
+        </button>
+        <a href="{% url 'finance:commission_list' %}" class="btn-secondary">{% translate "Reset" %}</a>
+      </div>
+    </div>
+  </form>
+
+  <div id="commission-table" class="mt-4">
+    {% include "finance/partials/commission_table.html" %}
+  </div>
+{% endblock %}

@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ student.full_name }} · {% translate "Students" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ student.full_name }}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+    <span>{{ student.student_code }}</span>
+    {% status_badge student.surf_level student.get_surf_level_display level_colors %}
+    {% if student.is_minor %}<span class="badge-amber">{% translate "Under 18" %}</span>{% endif %}
+    {% if not student.is_active %}<span class="badge-slate">{% translate "Archived" %}</span>{% endif %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  {% can "students.change" as may_change %}
+  <a href="{% url 'students:list' %}" class="btn-ghost">
+    {% icon "chevron-left" "h-4 w-4" %} {% translate "All students" %}
+  </a>
+  {% can "customers.view" as may_view_customer %}
+  {% if may_view_customer %}
+    <a href="{% url 'customers:detail' student.customer_id %}" class="btn-secondary">
+      {% icon "user-round" "h-4 w-4" %} {% translate "Customer record" %}
+    </a>
+  {% endif %}
+  {% if may_change %}
+    <a href="{% url 'students:assessment_create' student.pk %}" class="btn-secondary">
+      {% icon "clipboard-check" "h-4 w-4" %} {% translate "New assessment" %}
+    </a>
+    <a href="{% url 'students:update' student.pk %}" class="btn-primary">
+      {% icon "pencil" "h-4 w-4" %} {% translate "Edit" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  {% if restrictions %}
+    <div class="alert-error mb-5">
+      {% icon "shield-alert" "h-5 w-5 shrink-0" %}
+      <div>
+        <p class="font-medium">{% translate "Safety restriction in force" %}</p>
+        <ul class="mt-1 list-disc ps-5">
+          {% for restriction in restrictions %}<li>{{ restriction }}</li>{% endfor %}
+        </ul>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if not student.can_swim %}
+    <div class="alert-warning mb-5">
+      {% icon "triangle-alert" "h-5 w-5 shrink-0" %}
+      <div>
+        <p class="font-medium">{% translate "Swimming ability not confirmed" %}</p>
+        <p>{% translate "This student may only be taught in whitewater, within standing depth." %}</p>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if not has_valid_waiver %}
+    <div class="alert-warning mb-5">
+      {% icon "triangle-alert" "h-5 w-5 shrink-0" %}
+      <div>
+        <p class="font-medium">{% translate "No valid waiver on file" %}</p>
+        <p>
+          {% translate "Attach the signed waiver to the customer record before the next lesson." %}
+          {% can "customers.change" as may_change_customer %}
+          {% if may_change_customer %}
+            <a href="{% url 'customers:detail' student.customer_id %}?tab=documents" class="underline">
+              {% translate "Upload it now" %}
+            </a>
+          {% endif %}
+        </p>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if student.has_medical_flags %}
+    <div class="alert-info mb-5">
+      {% icon "heart" "h-5 w-5 shrink-0" %}
+      <div class="space-y-1">
+        <p class="font-medium">{% translate "Medical information" %}</p>
+        {% if student.medical_conditions %}
+          <p><span class="font-medium">{% translate "Conditions" %}:</span> {{ student.medical_conditions }}</p>
+        {% endif %}
+        {% if student.medications %}
+          <p><span class="font-medium">{% translate "Medication" %}:</span> {{ student.medications }}</p>
+        {% endif %}
+        {% if student.allergies %}
+          <p><span class="font-medium">{% translate "Allergies" %}:</span> {{ student.allergies }}</p>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="grid gap-5 lg:grid-cols-3">
+    {# ------------------------------------------------------------- column 1 #}
+    <div class="space-y-5">
+      <section class="card">
+        <div class="card-header"><h2 class="card-title">{% translate "Profile" %}</h2></div>
+        <div class="card-body">
+          <dl class="divide-y divide-slate-100 text-sm dark:divide-slate-800">
+            <div class="flex justify-between gap-3 py-2">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Level" %}</dt>
+              <dd>{% status_badge student.surf_level student.get_surf_level_display level_colors %}</dd>
+            </div>
+            <div class="flex justify-between gap-3 py-2">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Stance" %}</dt>
+              <dd class="text-end">{{ student.get_stance_display }}</dd>
+            </div>
+            <div class="flex justify-between gap-3 py-2">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Age" %}</dt>
+              <dd class="text-end">{{ student.age|default:"—" }}</dd>
+            </div>
+            <div class="flex justify-between gap-3 py-2">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Can swim" %}</dt>
+              <dd class="text-end">
+                {% if student.can_swim %}
+                  {% if student.swim_distance_m %}
+                    {% blocktranslate with m=student.swim_distance_m %}Yes — {{ m }} m{% endblocktranslate %}
+                  {% else %}{% translate "Yes" %}{% endif %}
+                {% else %}{% translate "No" %}{% endif %}
+              </dd>
+            </div>
+            <div class="flex justify-between gap-3 py-2">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Preferred instructor" %}</dt>
+              <dd class="text-end">{{ student.preferred_instructor|default:"—" }}</dd>
+            </div>
+            <div class="flex justify-between gap-3 py-2">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Joined" %}</dt>
+              <dd class="text-end">{{ student.joined_at }}</dd>
+            </div>
+            <div class="flex justify-between gap-3 py-2">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Lessons" %}</dt>
+              <dd class="text-end tabular-nums">
+                {{ student.total_lessons }} · {{ student.total_hours }} {% translate "h" %}
+              </dd>
+            </div>
+          </dl>
+          {% if student.goals %}
+            <div class="mt-4">
+              <p class="stat-label">{% translate "Goals" %}</p>
+              <p class="mt-1 whitespace-pre-line text-sm text-slate-700 dark:text-slate-300">{{ student.goals }}</p>
+            </div>
+          {% endif %}
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-header"><h2 class="card-title">{% translate "Equipment fit" %}</h2></div>
+        <div class="card-body">
+          <dl class="divide-y divide-slate-100 text-sm dark:divide-slate-800">
+            <div class="flex justify-between gap-3 py-2">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Weight" %}</dt>
+              <dd class="text-end">{% if student.weight_kg %}{{ student.weight_kg }} kg{% else %}—{% endif %}</dd>
+            </div>
+            <div class="flex justify-between gap-3 py-2">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Height" %}</dt>
+              <dd class="text-end">{% if student.height_cm %}{{ student.height_cm }} cm{% else %}—{% endif %}</dd>
+            </div>
+            <div class="flex justify-between gap-3 py-2">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Recommended board volume" %}</dt>
+              <dd class="text-end font-medium">
+                {% if student.recommended_board_volume %}
+                  {{ student.recommended_board_volume }} L
+                {% else %}
+                  <span class="text-slate-400">{% translate "Add a weight" %}</span>
+                {% endif %}
+              </dd>
+            </div>
+            <div class="flex justify-between gap-3 py-2">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Recommended board" %}</dt>
+              <dd class="text-end">{{ student.recommended_board_type }}</dd>
+            </div>
+            <div class="flex justify-between gap-3 py-2">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Board preference" %}</dt>
+              <dd class="text-end">{{ student.get_board_preference_display|default:"—" }}</dd>
+            </div>
+            <div class="flex justify-between gap-3 py-2">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Wetsuit size" %}</dt>
+              <dd class="text-end">{{ student.wetsuit_size|default:"—" }}</dd>
+            </div>
+            <div class="flex justify-between gap-3 py-2">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Boot size" %}</dt>
+              <dd class="text-end">{{ student.shoe_size|default:"—" }}</dd>
+            </div>
+          </dl>
+          <p class="form-help mt-3">
+            {% translate "Volume is the level coefficient applied to body weight; it sizes the board, not the rider." %}
+          </p>
+        </div>
+      </section>
+
+      {% can "students.change" as may_change %}
+      {% if may_change %}
+        <section class="card">
+          <div class="card-body">
+            <form method="post" action="{% url 'students:toggle_active' student.pk %}">
+              {% csrf_token %}
+              <button type="submit" class="{% if student.is_active %}btn-danger{% else %}btn-success{% endif %} w-full">
+                {% if student.is_active %}
+                  {% icon "lock" "h-4 w-4" %} {% translate "Archive student" %}
+                {% else %}
+                  {% icon "lock-open" "h-4 w-4" %} {% translate "Reactivate student" %}
+                {% endif %}
+              </button>
+            </form>
+          </div>
+        </section>
+      {% endif %}
+    </div>
+
+    {# ------------------------------------------------------- columns 2 & 3 #}
+    <div class="space-y-5 lg:col-span-2">
+      {% include "students/partials/progress_chart.html" %}
+
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">{% translate "Assessment history" %}</h2>
+          {% if may_change %}
+            <a href="{% url 'students:assessment_create' student.pk %}" class="btn-secondary btn-sm">
+              {% icon "plus" "h-4 w-4" %} {% translate "Assess" %}
+            </a>
+          {% endif %}
+        </div>
+        <div class="card-body">
+          {% include "students/partials/assessment_timeline.html" %}
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-header"><h2 class="card-title">{% translate "Lesson history" %}</h2></div>
+        <div class="card-body"
+             hx-get="{% url 'students:lesson_history' student.pk %}"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+          <p class="text-sm text-slate-500 dark:text-slate-400">
+            <a href="{% url 'students:lesson_history' student.pk %}" class="underline">
+              {% translate "Load lesson history" %}
+            </a>
+          </p>
+        </div>
+      </section>
+    </div>
+  </div>
+{% endblock %}

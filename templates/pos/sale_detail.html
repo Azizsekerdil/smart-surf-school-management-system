@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ sale.sale_number }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ sale.sale_number }}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+    {% status_badge sale.status sale.get_status_display status_colors %}
+    <span>{{ sale.sold_at|date:"d F Y H:i" }}</span>
+    {% if sale.cashier %}
+      <span>· {% blocktranslate with name=sale.cashier.get_full_name|default:sale.cashier.username %}served by {{ name }}{% endblocktranslate %}</span>
+    {% endif %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'pos:receipt' sale.pk %}" target="_blank" rel="noopener" class="btn-secondary">
+    {% icon "printer" "h-4 w-4" %} {% translate "Print receipt" %}
+  </a>
+  {% can "pos.delete" as may_void %}
+  {% if may_void and sale.can_be_voided %}
+    <a href="{% url 'pos:void' sale.pk %}" class="btn-danger">
+      {% icon "circle-x" "h-4 w-4" %} {% translate "Void sale" %}
+    </a>
+  {% endif %}
+  <a href="{% url 'pos:list' %}" class="btn-secondary">
+    {% icon "chevron-left" "h-4 w-4" %} {% translate "All sales" %}
+  </a>
+{% endblock %}
+
+{% block content %}
+  {% if sale.is_voided %}
+    <div class="alert-error mb-5">
+      {% icon "circle-x" "h-5 w-5 shrink-0" %}
+      <div>
+        <p class="font-medium">
+          {% blocktranslate with when=sale.voided_at|date:"d.m.Y H:i" %}This sale was voided on {{ when }}. The stock has been put back.{% endblocktranslate %}
+        </p>
+        <p class="mt-1">{{ sale.void_reason }}</p>
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="grid gap-4 lg:grid-cols-3">
+    {# --- lines ---------------------------------------------------------- #}
+    <section class="card lg:col-span-2">
+      <div class="card-header">
+        <h2 class="card-title">{% icon "shopping-cart" "inline h-4 w-4 text-brand-500" %} {% translate "Items" %}</h2>
+        <span class="text-sm text-slate-500 dark:text-slate-400">
+          {% blocktranslate with units=line_totals.units|floatformat:'-2' %}{{ units }} units{% endblocktranslate %}
+        </span>
+      </div>
+      <div class="table-wrap rounded-none border-0">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">{% translate "Product" %}</th>
+              <th scope="col" class="text-end">{% translate "Qty" %}</th>
+              <th scope="col" class="text-end">{% translate "Unit price" %}</th>
+              <th scope="col" class="text-end">{% translate "Discount" %}</th>
+              <th scope="col" class="text-end">{% translate "Tax" %}</th>
+              <th scope="col" class="text-end">{% translate "Line total" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in sale.items.all %}
+              <tr>
+                <td>
+                  <span class="font-medium text-slate-900 dark:text-slate-100">{{ item.product.name }}</span>
+                  <span class="block font-mono text-xs text-slate-400">{{ item.product.sku }}</span>
+                </td>
+                <td class="text-end tabular-nums">{{ item.quantity|floatformat:'-2' }}</td>
+                <td class="text-end tabular-nums">{{ item.unit_price|money }}</td>
+                <td class="text-end tabular-nums">{% if item.discount_amount %}−{{ item.discount_amount|money }}{% else %}—{% endif %}</td>
+                <td class="text-end tabular-nums text-slate-500 dark:text-slate-400">{{ item.tax_amount|money }}</td>
+                <td class="text-end font-medium tabular-nums text-slate-900 dark:text-slate-100">{{ item.line_total|money }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    {# --- money ---------------------------------------------------------- #}
+    <div class="space-y-4">
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">{% icon "wallet" "inline h-4 w-4 text-brand-500" %} {% translate "Money" %}</h2>
+        </div>
+        <div class="card-body">
+          <dl class="space-y-2 text-sm">
+            <div class="flex justify-between gap-2">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Subtotal" %}</dt>
+              <dd class="tabular-nums">{{ sale.subtotal|money }}</dd>
+            </div>
+            {% if sale.discount_amount %}
+              <div class="flex justify-between gap-2 text-emerald-600 dark:text-emerald-400">
+                <dt>
+                  {% translate "Discount" %}{% if sale.discount_percent %} ({{ sale.discount_percent|floatformat:'-2' }}%){% endif %}
+                </dt>
+                <dd class="tabular-nums">−{{ sale.discount_amount|money }}</dd>
+              </div>
+            {% endif %}
+            <div class="flex justify-between gap-2 border-t border-slate-200 pt-2 text-base font-semibold dark:border-slate-700">
+              <dt>{% translate "Total" %}</dt>
+              <dd class="tabular-nums">{{ sale.total_amount|money }}</dd>
+            </div>
+            <div class="flex justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
+              <dt>{% translate "Tax included" %}</dt>
+              <dd class="tabular-nums">{{ sale.tax_amount|money }}</dd>
+            </div>
+            <div class="flex justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
+              <dt>{% translate "Net of tax" %}</dt>
+              <dd class="tabular-nums">{{ sale.net_amount|money }}</dd>
+            </div>
+            <div class="flex justify-between gap-2 border-t border-slate-200 pt-2 dark:border-slate-700">
+              <dt class="text-slate-500 dark:text-slate-400">{{ sale.get_payment_method_display }}</dt>
+              <dd class="tabular-nums">{{ sale.paid_amount|money }}</dd>
+            </div>
+            {% if sale.change_given %}
+              <div class="flex justify-between gap-2">
+                <dt class="text-slate-500 dark:text-slate-400">{% translate "Change given" %}</dt>
+                <dd class="tabular-nums">{{ sale.change_given|money }}</dd>
+              </div>
+            {% endif %}
+          </dl>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">{% icon "user-round" "inline h-4 w-4 text-brand-500" %} {% translate "Details" %}</h2>
+        </div>
+        <div class="card-body">
+          <dl class="space-y-2 text-sm">
+            <div>
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Customer" %}</dt>
+              <dd class="text-slate-900 dark:text-slate-100">
+                {% if sale.customer %}{{ sale.customer }}{% else %}{% translate "Walk-in — no customer attached" %}{% endif %}
+              </dd>
+            </div>
+            {% if sale.note %}
+              <div>
+                <dt class="text-slate-500 dark:text-slate-400">{% translate "Note" %}</dt>
+                <dd class="text-slate-900 dark:text-slate-100">{{ sale.note }}</dd>
+              </div>
+            {% endif %}
+          </dl>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  {# --- stock trail ------------------------------------------------------ #}
+  <section class="card mt-4">
+    <div class="card-header">
+      <h2 class="card-title">{% icon "arrow-left-right" "inline h-4 w-4 text-brand-500" %} {% translate "Stock movements from this sale" %}</h2>
+    </div>
+    {% if sale.stock_movements.all %}
+      <div class="table-wrap rounded-none border-0">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">{% translate "When" %}</th>
+              <th scope="col">{% translate "Product" %}</th>
+              <th scope="col">{% translate "Movement" %}</th>
+              <th scope="col" class="text-end">{% translate "Quantity" %}</th>
+              <th scope="col" class="text-end">{% translate "Balance after" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for movement in sale.stock_movements.all %}
+              <tr>
+                <td class="whitespace-nowrap">{{ movement.created_at|date:"d.m.Y H:i" }}</td>
+                <td>{{ movement.product.name }}</td>
+                <td>{{ movement.get_movement_type_display }}</td>
+                <td class="text-end tabular-nums {% if movement.is_incoming %}text-emerald-600 dark:text-emerald-400{% else %}text-rose-600 dark:text-rose-400{% endif %}">
+                  {{ movement.signed_display }}
+                </td>
+                <td class="text-end tabular-nums">{{ movement.balance_after|floatformat:'-2' }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="card-body">
+        <p class="text-sm text-slate-500 dark:text-slate-400">
+          {% translate "Nothing on this receipt is stock tracked, so the ledger was not touched." %}
+        </p>
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}

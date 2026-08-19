@@ -1,0 +1,19 @@
+{% load i18n surf_tags %}
+{% if equipment_items %}
+  {% if view_mode == "table" %}
+    {% include "equipment/partials/equipment_table.html" %}
+  {% else %}
+    {% include "equipment/partials/equipment_grid.html" %}
+  {% endif %}
+  {% include "partials/pagination.html" %}
+{% else %}
+  {% can "equipment.add" as may_add %}
+  {% url 'equipment:create' as create_url %}
+  {% if search_term or current_status or current_category or current_condition or current_rentable or current_needs_service %}
+    {% include "partials/empty_state.html" with icon_name="search" title=_("Nothing matches these filters") subtitle=_("Clear a filter or widen the search to see more of the fleet.") %}
+  {% elif may_add %}
+    {% include "partials/empty_state.html" with icon_name="package" title=_("No equipment yet") subtitle=_("Add your boards, wetsuits and safety gear so they can be booked, rented and serviced.") action_url=create_url action_label=_("Add the first item") %}
+  {% else %}
+    {% include "partials/empty_state.html" with icon_name="package" title=_("No equipment yet") subtitle=_("Ask an equipment manager to set up the fleet.") %}
+  {% endif %}
+{% endif %}

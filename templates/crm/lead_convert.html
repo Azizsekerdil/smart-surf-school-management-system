@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Convert lead" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% blocktranslate with name=lead.full_name %}Convert {{ name }}{% endblocktranslate %}{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-3 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'crm:lead_list' %}" class="hover:text-brand-600">{% translate "Leads" %}</a>
+    <span class="mx-1">/</span>
+    <a href="{% url 'crm:lead_detail' lead.pk %}" class="hover:text-brand-600">{{ lead.full_name }}</a>
+    <span class="mx-1">/</span>
+    <span class="text-slate-700 dark:text-slate-300">{% translate "Convert" %}</span>
+  </nav>
+{% endblock %}
+
+{% block content %}
+  <div class="max-w-2xl">
+
+    {% if lead.converted_customer %}
+      <div class="alert-info">
+        {% icon "info" "h-5 w-5" %}
+        <div>
+          {% blocktranslate with customer=lead.converted_customer %}This lead is already the customer “{{ customer }}”.{% endblocktranslate %}
+        </div>
+      </div>
+      <a href="{% url 'crm:lead_detail' lead.pk %}" class="btn-secondary mt-4">
+        {% icon "chevron-left" "h-4 w-4" %} {% translate "Back to the lead" %}
+      </a>
+    {% else %}
+
+      {% if duplicate %}
+        <div class="alert-warning mb-5">
+          {% icon "triangle-alert" "h-5 w-5" %}
+          <div>
+            <p class="font-medium">{% translate "This person may already be a customer" %}</p>
+            <p class="mt-1 text-sm">
+              {% blocktranslate with customer=duplicate %}“{{ customer }}” has the same e-mail address or phone number. Link to that record instead of creating a second one, or their history and packages will be split in two.{% endblocktranslate %}
+            </p>
+          </div>
+        </div>
+      {% endif %}
+
+      <section class="card">
+        <div class="card-header"><h2 class="card-title">{% translate "What will happen" %}</h2></div>
+        <div class="card-body">
+          <ul class="space-y-2 text-sm text-slate-700 dark:text-slate-300">
+            <li class="flex items-start gap-2">
+              <span class="mt-0.5 text-emerald-500">{% icon "check" "h-4 w-4" %}</span>
+              <span>{% translate "The lead is marked as won and locked." %}</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="mt-0.5 text-emerald-500">{% icon "check" "h-4 w-4" %}</span>
+              <span>
+                {% blocktranslate count counter=interaction_count %}Its 1 interaction moves onto the customer record.{% plural %}Its {{ counter }} interactions move onto the customer record.{% endblocktranslate %}
+              </span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="mt-0.5 text-emerald-500">{% icon "check" "h-4 w-4" %}</span>
+              <span>{% translate "The name, e-mail, phone and source are copied across." %}</span>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <form method="post" novalidate class="mt-5">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+          <div class="alert-error mb-5">
+            {% icon "circle-x" "h-5 w-5" %}
+            <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+          </div>
+        {% endif %}
+
+        <section class="card">
+          <div class="card-body space-y-4">
+            <fieldset>
+              <legend class="form-label">{{ form.mode.label }}</legend>
+              <div class="mt-1 space-y-2">
+                {% for radio in form.mode %}
+                  <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+                    {{ radio.tag }} <span>{{ radio.choice_label }}</span>
+                  </label>
+                {% endfor %}
+              </div>
+              {% for error in form.mode.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+            </fieldset>
+
+            {% include "crm/partials/field.html" with field=form.customer %}
+          </div>
+        </section>
+
+        <div class="mt-5 flex items-center gap-3">
+          <button type="submit" class="btn-primary">
+            {% icon "user-check" "h-4 w-4" %} {% translate "Convert" %}
+          </button>
+          <a href="{% url 'crm:lead_detail' lead.pk %}" class="btn-secondary">{% translate "Cancel" %}</a>
+        </div>
+      </form>
+    {% endif %}
+  </div>
+{% endblock %}

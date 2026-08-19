@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ form_title }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ form_title }}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "Only confirmed shifts count as cover on the dashboard and in the spot readiness check." %}
+  </p>
+{% endblock %}
+
+{% block content %}
+  <form method="post" novalidate class="space-y-5">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="alert-error">
+        {% icon "circle-alert" "h-5 w-5 shrink-0" %}
+        <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+      </div>
+    {% endif %}
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">
+          {% icon "life-buoy" "inline h-4 w-4 text-brand-500" %} {% translate "Shift" %}
+        </h2>
+      </div>
+      <div class="card-body grid gap-4 sm:grid-cols-2">
+        {% include "safety/partials/field.html" with field=form.spot %}
+        {% include "safety/partials/field.html" with field=form.lifeguard %}
+        {% include "safety/partials/field.html" with field=form.date %}
+        <div class="grid grid-cols-2 gap-4">
+          {% include "safety/partials/field.html" with field=form.start_time %}
+          {% include "safety/partials/field.html" with field=form.end_time %}
+        </div>
+        {% include "safety/partials/field.html" with field=form.notes wrapper_class="sm:col-span-2" %}
+        {% include "safety/partials/field.html" with field=form.is_confirmed wrapper_class="sm:col-span-2" %}
+      </div>
+    </section>
+
+    <div class="flex flex-wrap items-center justify-end gap-2">
+      <a href="{{ cancel_url }}" class="btn-secondary">{% translate "Cancel" %}</a>
+      <button type="submit" class="btn-primary">
+        {% icon "save" "h-4 w-4" %} {% translate "Save shift" %}
+      </button>
+    </div>
+  </form>
+{% endblock %}

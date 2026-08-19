@@ -1,0 +1,20 @@
+{% load i18n %}
+{# Usage: {% include "maintenance/partials/form_field.html" with field=form.severity %} #}
+<div class="{{ wrapper_class|default:'' }}">
+  {% if field.field.widget.input_type == "checkbox" %}
+    <label class="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-300">
+      {{ field }}
+      <span>
+        <span class="font-medium">{{ field.label }}</span>
+        {% if field.help_text %}<span class="form-help block">{{ field.help_text }}</span>{% endif %}
+      </span>
+    </label>
+  {% else %}
+    <label for="{{ field.id_for_label }}" class="form-label">
+      {{ field.label }}{% if field.field.required %}<span class="text-rose-600" aria-hidden="true">*</span>{% endif %}
+    </label>
+    {{ field }}
+    {% if field.help_text %}<p class="form-help">{{ field.help_text }}</p>{% endif %}
+  {% endif %}
+  {% for error in field.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+</div>

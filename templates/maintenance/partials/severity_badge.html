@@ -1,0 +1,11 @@
+{% load i18n %}{% spaceless %}
+{% if value == "critical" %}
+  <span class="badge-rose">{{ label }}</span>
+{% elif value == "high" %}
+  <span class="badge-amber">{{ label }}</span>
+{% elif value == "medium" %}
+  <span class="badge-sky">{{ label }}</span>
+{% else %}
+  <span class="badge-slate">{{ label }}</span>
+{% endif %}
+{% endspaceless %}

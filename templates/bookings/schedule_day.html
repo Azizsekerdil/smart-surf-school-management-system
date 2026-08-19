@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Run sheet" %} · {{ day_label }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Run sheet" %}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ day_label }}</p>
+{% endblock %}
+
+{% block page_actions %}
+  <div class="flex items-center gap-1"
+       hx-target="#schedule-body"
+       hx-swap="outerHTML"
+       hx-push-url="true">
+    <button type="button" class="btn-secondary btn-sm"
+            hx-get="{% url 'bookings:schedule' %}?date={{ previous_day|date:'Y-m-d' }}"
+            aria-label="{% translate 'Previous day' %}">
+      {% icon "chevron-left" "h-4 w-4" %}
+    </button>
+    <button type="button" class="btn-secondary btn-sm"
+            hx-get="{% url 'bookings:schedule' %}">
+      {% translate "Today" %}
+    </button>
+    <button type="button" class="btn-secondary btn-sm"
+            hx-get="{% url 'bookings:schedule' %}?date={{ next_day|date:'Y-m-d' }}"
+            aria-label="{% translate 'Next day' %}">
+      {% icon "chevron-right" "h-4 w-4" %}
+    </button>
+  </div>
+  <a href="{% url 'bookings:calendar' %}?view=day&date={{ day|date:'Y-m-d' }}" class="btn-secondary">
+    {% icon "calendar-days" "h-4 w-4" %} {% translate "Calendar" %}
+  </a>
+{% endblock %}
+
+{% block content %}
+  {% include "bookings/partials/schedule_body.html" %}
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Edit rental" %} {{ rental.rental_code }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Edit rental" %} — {{ rental.rental_code }}{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-4 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'rentals:list' %}" class="hover:underline">{% translate "Rentals" %}</a>
+    <span class="mx-1">/</span>
+    <a href="{% url 'rentals:detail' rental.pk %}" class="hover:underline">{{ rental.rental_code }}</a>
+    <span class="mx-1">/</span>
+    <span class="text-slate-700 dark:text-slate-300">{% translate "Edit" %}</span>
+  </nav>
+{% endblock %}
+
+{% block content %}
+  <div class="max-w-2xl">
+    <div class="alert-info mb-5">
+      {% icon "info" "h-5 w-5 shrink-0" %}
+      <p>
+        {% translate "Dates and equipment are changed through Extend and Check in, so the hire is always re-priced correctly." %}
+      </p>
+    </div>
+
+    <form method="post" class="card" novalidate>
+      {% csrf_token %}
+      <div class="card-body space-y-4">
+        {% if form.non_field_errors %}
+          <div class="alert-error">
+            {% icon "triangle-alert" "h-5 w-5 shrink-0" %}
+            <ul>{% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}</ul>
+          </div>
+        {% endif %}
+
+        {% for field in form %}
+          <div>
+            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}<p class="form-help">{{ field.help_text }}</p>{% endif %}
+            {% for error in field.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+          </div>
+        {% endfor %}
+      </div>
+      <div class="card-body flex justify-end gap-2 border-t border-slate-200 dark:border-slate-700">
+        <a href="{% url 'rentals:detail' rental.pk %}" class="btn-ghost">{% translate "Cancel" %}</a>
+        <button type="submit" class="btn-primary">
+          {% icon "save" "h-4 w-4" %} {% translate "Save changes" %}
+        </button>
+      </div>
+    </form>
+  </div>
+{% endblock %}

@@ -1,0 +1,230 @@
+{% load i18n surf_tags %}
+{% can "surf_camps.change" as may_change %}
+
+<div id="participants-panel">
+  {% if panel_error %}
+    <div class="alert-error mb-4">
+      {% icon "circle-alert" "h-5 w-5 shrink-0" %}
+      <span>{{ panel_error }}</span>
+    </div>
+  {% endif %}
+
+  <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+    <p class="text-sm text-slate-500 dark:text-slate-400">
+      {% blocktranslate with booked=finance.participants capacity=finance.capacity %}{{ booked }} of {{ capacity }} places taken{% endblocktranslate %}
+      {% if staffing.minors %}
+        · {% blocktranslate count minors=staffing.minors %}{{ minors }} under 18{% plural %}{{ minors }} under 18{% endblocktranslate %}
+      {% endif %}
+    </p>
+    {% if may_change and not participant_form %}
+      <a href="{% url 'surf_camps:participant_create' camp.pk %}" class="btn-primary btn-sm"
+         hx-get="{% url 'surf_camps:participant_create' camp.pk %}"
+         hx-target="#participants-panel"
+         hx-swap="outerHTML">
+        {% icon "user-plus" "h-4 w-4" %} {% translate "Add participant" %}
+      </a>
+    {% endif %}
+  </div>
+
+  {% if participant_form %}
+    <form class="card mb-5"
+          method="post"
+          action="{% url 'surf_camps:participant_create' camp.pk %}"
+          hx-post="{% url 'surf_camps:participant_create' camp.pk %}"
+          hx-target="#participants-panel"
+          hx-swap="outerHTML">
+      {% csrf_token %}
+      <div class="card-header">
+        <h3 class="card-title">{% translate "Add a participant" %}</h3>
+        <a href="{% url 'surf_camps:detail' camp.pk %}?tab=participants" class="btn-ghost btn-sm"
+           hx-get="{% url 'surf_camps:participant_panel' camp.pk %}"
+           hx-target="#participants-panel"
+           hx-swap="outerHTML"
+           aria-label="{% translate 'Close' %}">
+          {% icon "x" "h-4 w-4" %}
+        </a>
+      </div>
+      <div class="card-body space-y-4">
+        {% if participant_form.non_field_errors %}
+          <div class="alert-error">
+            {% icon "circle-alert" "h-5 w-5 shrink-0" %}
+            <div>{% for error in participant_form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+          </div>
+        {% endif %}
+
+        <div class="grid gap-4 sm:grid-cols-2">
+          {% include "surf_camps/partials/field.html" with field=participant_form.student %}
+          {% include "surf_camps/partials/field.html" with field=participant_form.booking %}
+          {% include "surf_camps/partials/field.html" with field=participant_form.room_type %}
+          {% include "surf_camps/partials/field.html" with field=participant_form.room_number %}
+          {% include "surf_camps/partials/field.html" with field=participant_form.arrival_datetime %}
+          {% include "surf_camps/partials/field.html" with field=participant_form.arrival_flight %}
+          {% include "surf_camps/partials/field.html" with field=participant_form.departure_datetime %}
+          {% include "surf_camps/partials/field.html" with field=participant_form.departure_flight %}
+          {% include "surf_camps/partials/field.html" with field=participant_form.roommate_preference %}
+          {% include "surf_camps/partials/field.html" with field=participant_form.t_shirt_size %}
+          {% include "surf_camps/partials/field.html" with field=participant_form.dietary_requirements %}
+          {% include "surf_camps/partials/field.html" with field=participant_form.amount_paid %}
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2">
+          {% include "surf_camps/partials/field.html" with field=participant_form.medical_notes %}
+          <div class="space-y-1">
+            {% include "surf_camps/partials/field.html" with field=participant_form.needs_transfer %}
+            {% include "surf_camps/partials/field.html" with field=participant_form.deposit_paid %}
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 border-t border-slate-200 px-5 py-3 dark:border-slate-700">
+        <a href="{% url 'surf_camps:detail' camp.pk %}?tab=participants" class="btn-secondary"
+           hx-get="{% url 'surf_camps:participant_panel' camp.pk %}"
+           hx-target="#participants-panel"
+           hx-swap="outerHTML">
+          {% translate "Cancel" %}
+        </a>
+        <button type="submit" class="btn-primary">
+          {% icon "user-plus" "h-4 w-4" %} {% translate "Add to camp" %}
+        </button>
+      </div>
+    </form>
+  {% endif %}
+
+  {% if participants %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>{% translate "Student" %}</th>
+            <th>{% translate "Status" %}</th>
+            <th>{% translate "Room" %}</th>
+            <th>{% translate "Arrival" %}</th>
+            <th>{% translate "Departure" %}</th>
+            <th>{% translate "Balance" %}</th>
+            <th><span class="sr-only">{% translate "Actions" %}</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for participant in participants %}
+            <tr>
+              <td>
+                <p class="font-medium text-slate-900 dark:text-slate-100">{{ participant.student }}</p>
+                <p class="flex flex-wrap items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                  {% if participant.needs_transfer %}
+                    <span class="badge-sky">{% translate "Transfer" %}</span>
+                  {% endif %}
+                  {% if participant.dietary_requirements %}
+                    <span class="badge-amber">{{ participant.dietary_requirements }}</span>
+                  {% endif %}
+                  {% if participant.has_medical_flag %}
+                    <span class="badge-rose">{% translate "Medical note" %}</span>
+                  {% endif %}
+                </p>
+              </td>
+              <td>{% status_badge participant.status participant.get_status_display participant_status_colors %}</td>
+              <td>
+                <span class="text-slate-900 dark:text-slate-100">{{ participant.room_number|default:"—" }}</span>
+                <span class="block text-xs text-slate-500 dark:text-slate-400">{{ participant.get_room_type_display }}</span>
+              </td>
+              <td class="whitespace-nowrap">
+                {% if participant.arrival_datetime %}
+                  {{ participant.arrival_datetime|date:"d.m H:i" }}
+                  {% if participant.arrival_flight %}
+                    <span class="block text-xs text-slate-500 dark:text-slate-400">{{ participant.arrival_flight }}</span>
+                  {% endif %}
+                {% else %}—{% endif %}
+              </td>
+              <td class="whitespace-nowrap">
+                {% if participant.departure_datetime %}
+                  {{ participant.departure_datetime|date:"d.m H:i" }}
+                  {% if participant.departure_flight %}
+                    <span class="block text-xs text-slate-500 dark:text-slate-400">{{ participant.departure_flight }}</span>
+                  {% endif %}
+                {% else %}—{% endif %}
+              </td>
+              <td class="whitespace-nowrap">
+                {% if participant.is_fully_paid %}
+                  <span class="badge-emerald">{% translate "Paid" %}</span>
+                {% else %}
+                  <span class="font-medium text-amber-600 dark:text-amber-400">{{ participant.balance_due|money }}</span>
+                {% endif %}
+              </td>
+              <td class="text-end">
+                {% if may_change %}
+                  <div class="flex justify-end gap-1">
+                    {% if participant.status == "registered" %}
+                      <form method="post" action="{% url 'surf_camps:participant_status' participant.pk %}"
+                            hx-post="{% url 'surf_camps:participant_status' participant.pk %}"
+                            hx-target="#participants-panel" hx-swap="outerHTML">
+                        {% csrf_token %}
+                        <input type="hidden" name="status" value="confirmed">
+                        <button type="submit" class="btn-ghost btn-sm" title="{% translate 'Confirm' %}">
+                          {% icon "check" "h-4 w-4" %}
+                        </button>
+                      </form>
+                    {% endif %}
+                    {% if participant.status == "registered" or participant.status == "confirmed" %}
+                      <form method="post" action="{% url 'surf_camps:participant_status' participant.pk %}"
+                            hx-post="{% url 'surf_camps:participant_status' participant.pk %}"
+                            hx-target="#participants-panel" hx-swap="outerHTML">
+                        {% csrf_token %}
+                        <input type="hidden" name="status" value="arrived">
+                        <button type="submit" class="btn-ghost btn-sm" title="{% translate 'Check in' %}">
+                          {% icon "user-check" "h-4 w-4" %}
+                        </button>
+                      </form>
+                    {% endif %}
+                    {% if participant.status == "arrived" %}
+                      <form method="post" action="{% url 'surf_camps:participant_status' participant.pk %}"
+                            hx-post="{% url 'surf_camps:participant_status' participant.pk %}"
+                            hx-target="#participants-panel" hx-swap="outerHTML">
+                        {% csrf_token %}
+                        <input type="hidden" name="status" value="departed">
+                        <button type="submit" class="btn-ghost btn-sm" title="{% translate 'Check out' %}">
+                          {% icon "log-out" "h-4 w-4" %}
+                        </button>
+                      </form>
+                    {% endif %}
+                    <a href="{% url 'surf_camps:participant_update' participant.pk %}"
+                       class="btn-ghost btn-sm" title="{% translate 'Edit' %}">
+                      {% icon "pencil" "h-4 w-4" %}
+                    </a>
+                    <form method="post" action="{% url 'surf_camps:participant_remove' participant.pk %}"
+                          hx-post="{% url 'surf_camps:participant_remove' participant.pk %}"
+                          hx-confirm="{% translate 'Cancel this place and free it for someone else?' %}"
+                          hx-target="#participants-panel" hx-swap="outerHTML">
+                      {% csrf_token %}
+                      <button type="submit" class="btn-ghost btn-sm text-rose-600 dark:text-rose-400"
+                              title="{% translate 'Remove from camp' %}">
+                        {% icon "circle-x" "h-4 w-4" %}
+                      </button>
+                    </form>
+                  </div>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    {% include "partials/empty_state.html" with icon_name="users" title=_("Nobody is registered yet") subtitle=_("Add the first participant to start the rooming list.") %}
+  {% endif %}
+
+  {% if cancelled_participants %}
+    <details class="card mt-4">
+      <summary class="cursor-pointer px-5 py-3 text-sm font-medium text-slate-600 dark:text-slate-300">
+        {% blocktranslate count count=cancelled_participants|length %}{{ count }} cancelled place{% plural %}{{ count }} cancelled places{% endblocktranslate %}
+      </summary>
+      <ul class="divide-y divide-slate-100 px-5 pb-4 dark:divide-slate-800">
+        {% for participant in cancelled_participants %}
+          <li class="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
+            <span class="text-slate-700 dark:text-slate-300">{{ participant.student }}</span>
+            <span class="text-xs text-slate-500 dark:text-slate-400">
+              {{ participant.cancellation_reason|default:"—" }}
+            </span>
+          </li>
+        {% endfor %}
+      </ul>
+    </details>
+  {% endif %}
+</div>

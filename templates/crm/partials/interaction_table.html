@@ -1,0 +1,80 @@
+{% load i18n surf_tags %}
+<div id="interaction-table">
+  {% if interactions %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">{% translate "When" %}</th>
+            <th scope="col">{% translate "Type" %}</th>
+            <th scope="col">{% translate "Subject" %}</th>
+            <th scope="col">{% translate "Contact" %}</th>
+            <th scope="col">{% translate "Handled by" %}</th>
+            <th scope="col">{% translate "Sentiment" %}</th>
+            <th scope="col">{% translate "Follow-up" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for interaction in interactions %}
+            <tr>
+              <td class="whitespace-nowrap text-xs">{{ interaction.occurred_at|date:"d.m.Y H:i" }}</td>
+              <td class="text-xs">
+                {{ interaction.get_kind_display }}
+                <span class="block text-slate-400">{{ interaction.get_direction_display }}</span>
+              </td>
+              <td>
+                <span class="block max-w-xs truncate font-medium text-slate-900 dark:text-slate-100">{{ interaction.subject }}</span>
+                {% if interaction.duration_minutes %}
+                  <span class="text-xs text-slate-400">{{ interaction.duration_minutes|duration_hm }}</span>
+                {% endif %}
+              </td>
+              <td class="text-xs">
+                {% if interaction.lead %}
+                  <a href="{% url 'crm:lead_detail' interaction.lead.pk %}" class="hover:text-brand-600">
+                    {{ interaction.lead.full_name }}
+                  </a>
+                {% else %}
+                  {{ interaction.contact_display|default:"—" }}
+                {% endif %}
+              </td>
+              <td class="text-xs">{{ interaction.handled_by.get_display_name|default:"—" }}</td>
+              <td>
+                {% if interaction.sentiment %}
+                  <span class="badge-{% if interaction.sentiment == 'positive' %}emerald{% elif interaction.sentiment == 'negative' %}rose{% else %}slate{% endif %}">
+                    {{ interaction.get_sentiment_display }}
+                  </span>
+                {% else %}
+                  <span class="text-xs text-slate-400">—</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if interaction.follow_up_required %}
+                  <div class="flex items-center gap-2">
+                    <span class="badge-{% if interaction.is_follow_up_overdue %}rose{% else %}amber{% endif %}">
+                      {{ interaction.follow_up_at|date:"d.m.Y" }}
+                    </span>
+                    {% can "crm.change" as may_change %}
+                    {% if may_change %}
+                      <button type="button" class="btn-icon h-7 w-7 text-slate-400 hover:text-emerald-600"
+                              hx-post="{% url 'crm:follow_up_complete' interaction.pk %}"
+                              hx-swap="none"
+                              aria-label="{% translate 'Mark done' %}"
+                              title="{% translate 'Mark done' %}">
+                        {% icon "check" "h-4 w-4" %}
+                      </button>
+                    {% endif %}
+                  </div>
+                {% else %}
+                  <span class="text-xs text-slate-400">—</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% include "partials/pagination.html" %}
+  {% else %}
+    {% include "partials/empty_state.html" with icon_name="message-square" title=_("No interactions match") subtitle=_("Adjust the filters, or log the first contact from a lead or customer page.") %}
+  {% endif %}
+</div>

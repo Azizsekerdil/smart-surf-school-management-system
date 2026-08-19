@@ -1,0 +1,43 @@
+{% load i18n surf_tags %}
+{% comment %} A confirmed, authoritative warning. Never used for AI suggestions —
+   those render through safety/partials/ai_warning_card.html. {% endcomment %}
+<article class="rounded-lg border p-4
+                {% if warning.severity == 'critical' %}border-rose-300 bg-rose-50 dark:border-rose-500/30 dark:bg-rose-500/10
+                {% elif warning.severity == 'high' %}border-amber-300 bg-amber-50 dark:border-amber-500/30 dark:bg-amber-500/10
+                {% else %}border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/50{% endif %}">
+  <div class="flex flex-wrap items-start justify-between gap-2">
+    <div class="min-w-0">
+      <h3 class="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
+        {% icon "shield-alert" "h-4 w-4 shrink-0" %}
+        {{ warning.title }}
+      </h3>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {{ warning.scope_label }} ·
+        {{ warning.starts_at|date:"d.m H:i" }} – {{ warning.ends_at|date:"d.m H:i" }} ·
+        {{ warning.get_source_display }}
+      </p>
+    </div>
+    <div class="flex shrink-0 flex-wrap items-center gap-1">
+      {% if warning.severity == "critical" %}
+        <span class="badge-rose">{{ warning.get_severity_display }}</span>
+      {% elif warning.severity == "high" %}
+        <span class="badge-amber">{{ warning.get_severity_display }}</span>
+      {% else %}
+        <span class="badge-sky">{{ warning.get_severity_display }}</span>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if warning.description %}
+    <p class="mt-2 text-sm text-slate-700 dark:text-slate-300">{{ warning.description }}</p>
+  {% endif %}
+
+  {% if warning.ai_suggested %}
+    <p class="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
+      {% ai_chip %}
+      {% blocktranslate with who=warning.acknowledged_by.get_display_name when=warning.acknowledged_at|date:"d.m.Y H:i" %}
+        Originally an AI suggestion, confirmed by {{ who }} on {{ when }}.
+      {% endblocktranslate %}
+    </p>
+  {% endif %}
+</article>

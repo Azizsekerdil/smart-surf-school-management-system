@@ -1,0 +1,116 @@
+{% load i18n surf_tags %}
+{# The whole shell is the HTMX target so the navigation keeps working after a swap. #}
+<div id="calendar-shell"
+     hx-target="#calendar-shell"
+     hx-swap="outerHTML"
+     hx-push-url="true"
+     hx-indicator="#calendar-busy"
+     class="space-y-4">
+
+  {# ------------------------------------------------------------- toolbar #}
+  <div class="card p-3">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+
+      <div class="flex items-center gap-1">
+        <button type="button"
+                hx-get="{{ calendar_url }}{% query_string date=previous|date:'Y-m-d' %}"
+                class="btn-secondary btn-sm"
+                aria-label="{% translate 'Previous period' %}">
+          {% icon "chevron-left" "h-4 w-4" %}
+        </button>
+        <button type="button"
+                hx-get="{{ calendar_url }}{% query_string date=today|date:'Y-m-d' %}"
+                class="btn-secondary btn-sm">
+          {% translate "Today" %}
+        </button>
+        <button type="button"
+                hx-get="{{ calendar_url }}{% query_string date=next|date:'Y-m-d' %}"
+                class="btn-secondary btn-sm"
+                aria-label="{% translate 'Next period' %}">
+          {% icon "chevron-right" "h-4 w-4" %}
+        </button>
+        <p class="ms-3 text-base font-semibold text-slate-900 dark:text-slate-50">{{ period_label }}</p>
+        <span id="calendar-busy" class="htmx-indicator ms-2 text-slate-400">
+          {% icon "loader-circle" "h-4 w-4 animate-spin" %}
+        </span>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="inline-flex rounded-lg border border-slate-200 p-0.5 dark:border-slate-700" role="group"
+             aria-label="{% translate 'Calendar view' %}">
+          <button type="button"
+                  hx-get="{{ calendar_url }}{% query_string view='month' %}"
+                  class="btn-sm rounded-md {% if view == 'month' %}bg-brand-600 text-white{% else %}text-slate-600 dark:text-slate-300{% endif %}">
+            {% translate "Month" %}
+          </button>
+          <button type="button"
+                  hx-get="{{ calendar_url }}{% query_string view='week' %}"
+                  class="btn-sm rounded-md {% if view == 'week' %}bg-brand-600 text-white{% else %}text-slate-600 dark:text-slate-300{% endif %}">
+            {% translate "Week" %}
+          </button>
+          <button type="button"
+                  hx-get="{{ calendar_url }}{% query_string view='day' %}"
+                  class="btn-sm rounded-md {% if view == 'day' %}bg-brand-600 text-white{% else %}text-slate-600 dark:text-slate-300{% endif %}">
+            {% translate "Day" %}
+          </button>
+        </div>
+
+        <form hx-get="{{ calendar_url }}"
+              hx-trigger="change, submit"
+              class="flex flex-wrap items-center gap-2">
+          <input type="hidden" name="view" value="{{ view }}">
+          <input type="hidden" name="date" value="{{ anchor|date:'Y-m-d' }}">
+
+          {% if lesson_types %}
+            <select name="lesson_type" class="form-select btn-sm w-40" aria-label="{% translate 'Lesson type' %}">
+              <option value="">{% translate "All lesson types" %}</option>
+              {% for type in lesson_types %}
+                <option value="{{ type.pk }}" {% if filters.lesson_type == type.pk %}selected{% endif %}>{{ type }}</option>
+              {% endfor %}
+            </select>
+          {% endif %}
+
+          {% if instructors %}
+            <select name="instructor" class="form-select btn-sm w-40" aria-label="{% translate 'Instructor' %}">
+              <option value="">{% translate "All instructors" %}</option>
+              {% for instructor in instructors %}
+                <option value="{{ instructor.pk }}" {% if filters.instructor == instructor.pk %}selected{% endif %}>{{ instructor }}</option>
+              {% endfor %}
+            </select>
+          {% endif %}
+
+          <label class="inline-flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+            <input type="checkbox" name="only_available" value="1"
+                   class="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500 dark:border-slate-600"
+                   {% if filters.only_available %}checked{% endif %}>
+            {% translate "Free seats only" %}
+          </label>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  {# ---------------------------------------------------------------- grid #}
+  {% if view == 'month' %}
+    {% include "bookings/partials/calendar_month.html" %}
+  {% else %}
+    {% include "bookings/partials/calendar_time_grid.html" %}
+  {% endif %}
+
+  {# --------------------------------------------------------------- legend #}
+  <div class="flex flex-wrap items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
+    <span class="inline-flex items-center gap-1.5">
+      <span class="h-2.5 w-2.5 rounded-full bg-emerald-500"></span>{% translate "Seats free" %}
+    </span>
+    <span class="inline-flex items-center gap-1.5">
+      <span class="h-2.5 w-2.5 rounded-full bg-amber-500"></span>{% translate "Almost full" %}
+    </span>
+    <span class="inline-flex items-center gap-1.5">
+      <span class="h-2.5 w-2.5 rounded-full bg-rose-500"></span>{% translate "Full or overbooked" %}
+    </span>
+    <span class="inline-flex items-center gap-1.5">
+      <span class="h-2.5 w-2.5 rounded-full bg-violet-500"></span>{% translate "Surf camp" %}
+    </span>
+    <span>{% translate "The left edge of each block is the lesson type colour." %}</span>
+  </div>
+</div>

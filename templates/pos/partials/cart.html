@@ -1,0 +1,285 @@
+{% load i18n surf_tags %}
+{# The live cart. Every till action re-renders exactly this fragment. #}
+<div class="card">
+  <div class="card-header">
+    <h2 class="card-title">
+      {% icon "shopping-cart" "inline h-4 w-4 text-brand-500" %}
+      {% translate "Current sale" %}
+      {% if totals.line_count %}
+        <span class="badge-sky ms-1">{{ totals.line_count }}</span>
+      {% endif %}
+    </h2>
+    {% if cart_lines %}
+      <button type="button" class="btn-ghost btn-sm"
+              hx-post="{% url 'pos:cart_clear' %}"
+              hx-target="#pos-cart"
+              hx-swap="innerHTML"
+              hx-confirm-danger="{% translate 'Empty the cart and start over?' %}">
+        {% icon "trash-2" "h-4 w-4" %} {% translate "Clear" %}
+      </button>
+    {% endif %}
+  </div>
+
+  {% if cart_error %}
+    <div class="border-b border-rose-200 bg-rose-50 px-5 py-3 dark:border-rose-500/30 dark:bg-rose-500/10">
+      <p class="flex items-start gap-2 text-sm text-rose-800 dark:text-rose-200">
+        {% icon "circle-alert" "h-4 w-4 shrink-0" %} <span>{{ cart_error }}</span>
+      </p>
+    </div>
+  {% endif %}
+
+  {% for warning in cart_warnings %}
+    <div class="border-b border-amber-200 bg-amber-50 px-5 py-3 dark:border-amber-500/30 dark:bg-amber-500/10">
+      <p class="flex items-start gap-2 text-sm text-amber-800 dark:text-amber-200">
+        {% icon "triangle-alert" "h-4 w-4 shrink-0" %} <span>{{ warning }}</span>
+      </p>
+    </div>
+  {% endfor %}
+
+  {# ------------------------------------------------------------- lines #}
+  {% if cart_lines %}
+    <ul class="divide-y divide-slate-100 dark:divide-slate-800">
+      {% for line in cart_lines %}
+        <li class="px-4 py-3" x-data="{ discounting: false }">
+          <div class="flex items-start justify-between gap-2">
+            <div class="min-w-0">
+              <p class="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{{ line.product.name }}</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400">
+                {{ line.unit_price|money }} · {{ line.product.get_unit_display }}
+                {% if line.discount_amount %}
+                  · <span class="text-emerald-600 dark:text-emerald-400">−{{ line.discount_amount|money }}</span>
+                {% endif %}
+              </p>
+            </div>
+            <button type="button" class="btn-ghost btn-sm shrink-0"
+                    hx-post="{% url 'pos:cart_remove' %}"
+                    hx-vals='{"product": "{{ line.product.pk }}"}'
+                    hx-target="#pos-cart"
+                    hx-swap="innerHTML"
+                    aria-label="{% blocktranslate with name=line.product.name %}Remove {{ name }}{% endblocktranslate %}">
+              {% icon "x" "h-4 w-4" %}
+            </button>
+          </div>
+
+          <div class="mt-2 flex items-center justify-between gap-2">
+            <div class="inline-flex items-center rounded-lg border border-slate-300 dark:border-slate-600">
+              <button type="button" class="px-2.5 py-1.5 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                      hx-post="{% url 'pos:cart_update' %}"
+                      hx-vals='{"product": "{{ line.product.pk }}", "delta": "-1"}'
+                      hx-target="#pos-cart"
+                      hx-swap="innerHTML"
+                      aria-label="{% translate 'One less' %}">
+                {% icon "minus" "h-4 w-4" %}
+              </button>
+              <input type="number" name="quantity" value="{{ line.quantity|floatformat:'-2' }}"
+                     step="{% if line.product.allows_fractional_quantity %}0.25{% else %}1{% endif %}"
+                     min="0" inputmode="decimal"
+                     class="w-16 border-x border-slate-300 bg-transparent px-1 py-1.5 text-center text-sm tabular-nums text-slate-900 focus:outline-none dark:border-slate-600 dark:text-slate-100"
+                     hx-post="{% url 'pos:cart_update' %}"
+                     hx-vals='{"product": "{{ line.product.pk }}"}'
+                     hx-trigger="change"
+                     hx-target="#pos-cart"
+                     hx-swap="innerHTML"
+                     aria-label="{% blocktranslate with name=line.product.name %}Quantity of {{ name }}{% endblocktranslate %}">
+              <button type="button" class="px-2.5 py-1.5 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                      hx-post="{% url 'pos:cart_update' %}"
+                      hx-vals='{"product": "{{ line.product.pk }}", "delta": "1"}'
+                      hx-target="#pos-cart"
+                      hx-swap="innerHTML"
+                      aria-label="{% translate 'One more' %}">
+                {% icon "plus" "h-4 w-4" %}
+              </button>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button type="button" class="btn-ghost btn-sm" @click="discounting = !discounting"
+                      aria-label="{% translate 'Discount this line' %}">
+                {% icon "percent" "h-4 w-4" %}
+              </button>
+              <span class="text-sm font-semibold tabular-nums text-slate-900 dark:text-slate-50">
+                {{ line.line_total|money }}
+              </span>
+            </div>
+          </div>
+
+          <div x-show="discounting" x-cloak style="display: none" class="mt-2 flex items-end gap-2">
+            <div class="flex-1">
+              <label class="form-label text-xs" for="line-discount-{{ line.product.pk }}">
+                {% translate "Line discount" %}
+              </label>
+              <input type="number" name="amount" id="line-discount-{{ line.product.pk }}"
+                     value="{{ line.discount_amount|floatformat:'-2' }}"
+                     step="0.01" min="0" inputmode="decimal" class="form-input"
+                     hx-post="{% url 'pos:cart_line_discount' %}"
+                     hx-vals='{"product": "{{ line.product.pk }}"}'
+                     hx-trigger="change"
+                     hx-target="#pos-cart"
+                     hx-swap="innerHTML">
+            </div>
+          </div>
+
+          {% if line.exceeds_stock %}
+            <p class="mt-2 flex items-start gap-1.5 text-xs text-rose-600 dark:text-rose-400">
+              {% icon "triangle-alert" "h-3.5 w-3.5 shrink-0" %}
+              {% blocktranslate with available=line.available %}Only {{ available }} left in stock — reduce the quantity before completing.{% endblocktranslate %}
+            </p>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <div class="px-5 py-10 text-center">
+      <span class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400 dark:bg-slate-800">
+        {% icon "shopping-cart" "h-6 w-6" %}
+      </span>
+      <p class="text-sm font-medium text-slate-900 dark:text-slate-100">{% translate "The cart is empty" %}</p>
+      <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+        {% translate "Scan a barcode or tap a product to start a sale." %}
+      </p>
+    </div>
+  {% endif %}
+
+  {# ---------------------------------------------------------- customer #}
+  <div class="border-t border-slate-200 px-4 py-3 dark:border-slate-700" x-data="{ searching: false }">
+    {% if cart_customer %}
+      <div class="flex items-center justify-between gap-2">
+        <p class="flex min-w-0 items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+          {% icon "user-round" "h-4 w-4 shrink-0 text-brand-500" %}
+          <span class="truncate">{{ cart_customer }}</span>
+        </p>
+        <button type="button" class="btn-ghost btn-sm"
+                hx-post="{% url 'pos:cart_customer' %}"
+                hx-vals='{"customer": ""}'
+                hx-target="#pos-cart"
+                hx-swap="innerHTML">
+          {% translate "Detach" %}
+        </button>
+      </div>
+    {% else %}
+      <button type="button" class="btn-ghost btn-sm w-full justify-start" @click="searching = !searching">
+        {% icon "user-plus" "h-4 w-4" %} {% translate "Attach a customer (optional)" %}
+      </button>
+      <div x-show="searching" x-cloak style="display: none" class="mt-2">
+        <input type="search" name="customer_q" autocomplete="off" class="form-input"
+               placeholder="{% translate 'Name, phone, e-mail or code…' %}"
+               hx-get="{% url 'pos:customer_search' %}"
+               hx-trigger="input changed delay:300ms"
+               hx-target="#pos-customer-results"
+               hx-swap="innerHTML">
+        <div id="pos-customer-results" class="mt-2"></div>
+      </div>
+    {% endif %}
+  </div>
+
+  {# ----------------------------------------------------------- totals #}
+  <div class="border-t border-slate-200 px-4 py-3 dark:border-slate-700">
+    <div class="flex items-center justify-between gap-2 text-sm">
+      <span class="text-slate-500 dark:text-slate-400">{% translate "Subtotal" %}</span>
+      <span class="tabular-nums text-slate-900 dark:text-slate-100">{{ totals.subtotal|money }}</span>
+    </div>
+
+    <div class="mt-2 flex items-end gap-2">
+      <div class="w-24">
+        <label class="form-label text-xs" for="pos-discount-percent">{% translate "Discount %" %}</label>
+        <input type="number" name="percent" id="pos-discount-percent"
+               value="{{ totals.discount_percent|floatformat:'-2' }}"
+               step="0.5" min="0" max="100" inputmode="decimal" class="form-input"
+               hx-post="{% url 'pos:cart_discount' %}"
+               hx-trigger="change"
+               hx-target="#pos-cart"
+               hx-swap="innerHTML">
+      </div>
+      <div class="flex-1">
+        <label class="form-label text-xs" for="pos-discount-amount">{% translate "or amount" %}</label>
+        <input type="number" name="amount" id="pos-discount-amount"
+               value="{% if not totals.discount_percent %}{{ totals.discount_amount|floatformat:'-2' }}{% endif %}"
+               step="0.01" min="0" inputmode="decimal" class="form-input"
+               hx-post="{% url 'pos:cart_discount' %}"
+               hx-trigger="change"
+               hx-target="#pos-cart"
+               hx-swap="innerHTML">
+      </div>
+      {% if totals.discount_amount %}
+        <button type="button" class="btn-secondary btn-sm mb-0.5"
+                hx-post="{% url 'pos:cart_discount' %}"
+                hx-vals='{"clear": "1"}'
+                hx-target="#pos-cart"
+                hx-swap="innerHTML"
+                aria-label="{% translate 'Remove the discount' %}">
+          {% icon "rotate-ccw" "h-4 w-4" %}
+        </button>
+      {% endif %}
+    </div>
+
+    {% if totals.discount_amount %}
+      <div class="mt-2 flex items-center justify-between gap-2 text-sm">
+        <span class="text-emerald-600 dark:text-emerald-400">{% translate "Discount" %}</span>
+        <span class="tabular-nums text-emerald-600 dark:text-emerald-400">−{{ totals.discount_amount|money }}</span>
+      </div>
+    {% endif %}
+
+    <div class="mt-3 flex items-baseline justify-between gap-2 border-t border-slate-200 pt-3 dark:border-slate-700">
+      <span class="text-sm font-medium text-slate-700 dark:text-slate-300">{% translate "Total" %}</span>
+      <span class="text-2xl font-semibold tabular-nums text-slate-900 dark:text-slate-50">
+        {{ totals.total_amount|money }}
+      </span>
+    </div>
+    <p class="mt-1 text-end text-xs text-slate-500 dark:text-slate-400">
+      {% blocktranslate with tax=totals.tax_amount|money %}Includes {{ tax }} tax{% endblocktranslate %}
+    </p>
+  </div>
+
+  {# ---------------------------------------------------------- payment #}
+  <div class="border-t border-slate-200 px-4 py-3 dark:border-slate-700">
+    <p class="form-label">{% translate "Payment method" %}</p>
+    <div class="grid grid-cols-3 gap-1.5" role="group" aria-label="{% translate 'Payment method' %}">
+      {% for value, label in payment_methods %}
+        <button type="button"
+                hx-post="{% url 'pos:cart_payment_method' %}"
+                hx-vals='{"payment_method": "{{ value }}"}'
+                hx-target="#pos-cart"
+                hx-swap="innerHTML"
+                aria-pressed="{% if selected_method == value %}true{% else %}false{% endif %}"
+                class="rounded-lg border px-2 py-2 text-xs font-medium transition
+                       {% if selected_method == value %}border-brand-600 bg-brand-600 text-white{% else %}border-slate-300 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300{% endif %}">
+          {{ label }}
+        </button>
+      {% endfor %}
+    </div>
+  </div>
+
+  {# --------------------------------------------------------- checkout #}
+  <form class="border-t border-slate-200 px-4 py-4 dark:border-slate-700"
+        x-data="{ tendered: '', total: {{ totals.total_amount|to_json }} }"
+        hx-post="{% url 'pos:checkout' %}"
+        hx-target="#pos-cart"
+        hx-swap="innerHTML">
+    {% csrf_token %}
+    <input type="hidden" name="payment_method" value="{{ selected_method }}">
+
+    {% if selected_method == "cash" %}
+      <label class="form-label" for="pos-tendered">{% translate "Amount tendered" %}</label>
+      <input type="number" name="amount_tendered" id="pos-tendered" x-model="tendered"
+             step="0.01" min="0" inputmode="decimal" class="form-input text-lg tabular-nums"
+             placeholder="{{ totals.total_amount|floatformat:'-2' }}">
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400"
+         x-show="tendered !== '' && Number(tendered) >= total" x-cloak style="display: none">
+        {% translate "Change to give" %}:
+        <span class="font-semibold tabular-nums text-slate-900 dark:text-slate-100"
+              x-text="(Number(tendered) - total).toFixed(2)"></span>
+      </p>
+      <p class="mt-1 text-xs text-rose-600 dark:text-rose-400"
+         x-show="tendered !== '' && Number(tendered) < total" x-cloak style="display: none">
+        {% translate "That is less than the total." %}
+      </p>
+      <p class="mt-1 text-xs text-slate-400">{% translate "Leave empty for the exact amount." %}</p>
+    {% endif %}
+
+    <button type="submit" id="pos-complete" class="btn-success mt-3 w-full py-3 text-base"
+            {% if not cart_lines %}disabled{% endif %}>
+      {% icon "circle-check" "h-5 w-5" %}
+      {% blocktranslate with total=totals.total_amount|money %}Complete sale · {{ total }}{% endblocktranslate %}
+    </button>
+    <p class="mt-2 text-center text-xs text-slate-400">{% translate "Shortcut: F9" %}</p>
+  </form>
+</div>

@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Reports" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Reports" %}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "Everything the school needs on paper: operations sheets, financial statements, rosters and registers." %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'reporting:history' %}" class="btn-secondary">
+    {% icon "history" "h-4 w-4" %} {% translate "Export history" %}
+  </a>
+  {% can "reporting.view" as may_view %}
+  {% if may_view %}
+    <a href="{% url 'reporting:definition_list' %}" class="btn-secondary">
+      {% icon "bookmark" "h-4 w-4" %} {% translate "Saved reports" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  {% if not groups %}
+    {% include "partials/empty_state.html" with icon_name="file-text" title=_("No reports available") subtitle=_("Your role does not grant access to any report yet. Ask a manager to widen your permissions.") %}
+  {% else %}
+
+    {# --- what is available ------------------------------------------------ #}
+    <div class="mb-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div class="stat-card">
+        <p class="stat-label">{% translate "Reports you can run" %}</p>
+        <p class="stat-value">{{ report_count }}</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">{% translate "Saved configurations" %}</p>
+        <p class="stat-value">{{ saved_definitions|length }}</p>
+        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          {% blocktranslate count counter=scheduled_count %}{{ counter }} report runs on a schedule{% plural %}{{ counter }} reports run on a schedule{% endblocktranslate %}
+        </p>
+      </div>
+      <div class="stat-card sm:col-span-2">
+        <p class="stat-label">{% translate "Your recent exports" %}</p>
+        {% if recent_reports %}
+          <ul class="mt-2 space-y-1.5">
+            {% for report in recent_reports %}
+              <li class="flex items-center justify-between gap-3 text-sm">
+                <span class="flex min-w-0 items-center gap-2 text-slate-700 dark:text-slate-300">
+                  {% icon report.format_icon "h-4 w-4 shrink-0 text-slate-400" %}
+                  <span class="truncate">{{ report.title }}</span>
+                </span>
+                {% can "reporting.export" as may_export %}
+                {% if may_export %}
+                  <a href="{% url 'reporting:download' report.pk %}"
+                     class="shrink-0 text-xs font-medium text-brand-600 hover:underline dark:text-brand-400">
+                    {% translate "Download" %}
+                  </a>
+                {% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
+            {% translate "Nothing yet. Pick a report below to make your first export." %}
+          </p>
+        {% endif %}
+      </div>
+    </div>
+
+    {# --- saved configurations -------------------------------------------- #}
+    {% if saved_definitions %}
+      <section class="card mb-6">
+        <div class="card-header">
+          <h2 class="card-title">{% translate "Saved reports" %}</h2>
+          <a href="{% url 'reporting:definition_list' %}"
+             class="text-sm font-medium text-brand-600 hover:underline dark:text-brand-400">
+            {% translate "Manage" %}
+          </a>
+        </div>
+        <div class="card-body grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {% for definition in saved_definitions %}
+            <div class="flex items-start justify-between gap-3 rounded-lg border border-slate-200 p-3 dark:border-slate-700">
+              <div class="min-w-0">
+                <p class="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{{ definition.name }}</p>
+                <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                  {{ definition.get_default_format_display }}
+                  {% if definition.is_scheduled %}
+                    · <span class="text-brand-600 dark:text-brand-400">{{ definition.schedule_cron }}</span>
+                  {% endif %}
+                </p>
+              </div>
+              {% can "reporting.export" as may_export %}
+              {% if may_export %}
+                <form method="post" action="{% url 'reporting:definition_run' definition.pk %}" class="shrink-0">
+                  {% csrf_token %}
+                  <button type="submit" class="btn-secondary btn-sm" title="{% translate 'Run now' %}">
+                    {% icon "play" "h-4 w-4" %}
+                  </button>
+                </form>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      </section>
+    {% endif %}
+
+    {# --- the catalogue ---------------------------------------------------- #}
+    {% for area_key, area_label, area_icon, specs in groups %}
+      <section class="mb-6">
+        <h2 class="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+          {% icon area_icon "h-4 w-4" %} {{ area_label }}
+        </h2>
+        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {% for spec in specs %}
+            <article class="card flex flex-col p-5">
+              <div class="flex items-start gap-3">
+                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-300">
+                  {% icon spec.icon "h-5 w-5" %}
+                </span>
+                <div class="min-w-0">
+                  <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ spec.title }}</h3>
+                  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ spec.description }}</p>
+                </div>
+              </div>
+              <div class="mt-4 flex items-center justify-between gap-3">
+                <span class="badge-slate">{{ spec.capability }}</span>
+                <a href="{% url 'reporting:run' spec.key %}" class="btn-primary btn-sm">
+                  {% icon "play" "h-4 w-4" %} {% translate "Run" %}
+                </a>
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+      </section>
+    {% endfor %}
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% load i18n static surf_tags %}
+
+{% block title %}{{ title }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-3 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'ai:knowledge_list' %}" class="hover:underline">{% translate "Knowledge base" %}</a>
+    <span class="mx-1">/</span>
+    <span class="text-slate-700 dark:text-slate-300">
+      {% if document %}{{ document.title }}{% else %}{% translate "New document" %}{% endif %}
+    </span>
+  </nav>
+{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "Saving re-embeds the document. Until that finishes the assistant cannot quote it." %}
+  </p>
+{% endblock %}
+
+{% block content %}
+  <div class="mx-auto max-w-3xl space-y-5">
+
+    <div class="alert-warning" role="note">
+      {% icon "shield-alert" "h-5 w-5 shrink-0" %}
+      <div>
+        <p class="font-medium">{% translate "Anything you put here can be quoted back to any staff member who may use the assistant." %}</p>
+        <p class="mt-1">
+          {% translate "Never paste passwords, API keys, card numbers, ID numbers or a customer's medical details into a knowledge document." %}
+        </p>
+      </div>
+    </div>
+
+    {% if document %}
+      <section class="card">
+        <div class="card-header flex-wrap">
+          <h2 class="card-title">{% translate "Index state" %}</h2>
+          <div class="flex flex-wrap items-center gap-2">
+            {% if document.is_indexed %}
+              <span class="badge-emerald">{% icon "circle-check" "h-3 w-3" %} {% translate "Indexed" %}</span>
+            {% else %}
+              <span class="badge-amber">{% icon "circle-alert" "h-3 w-3" %} {% translate "Not indexed" %}</span>
+            {% endif %}
+            <span class="text-xs text-slate-500 dark:text-slate-400">
+              {% blocktranslate with chunks=document.chunk_count %}{{ chunks }} chunks{% endblocktranslate %}
+            </span>
+            {% if document.indexed_at %}
+              <span class="text-xs text-slate-500 dark:text-slate-400">
+                <time datetime="{{ document.indexed_at|date:'c' }}">{{ document.indexed_at|date:"d.m.Y H:i" }}</time>
+              </span>
+            {% endif %}
+          </div>
+        </div>
+      </section>
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data" novalidate class="space-y-5">
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="alert-error">
+          {% icon "circle-alert" "h-5 w-5 shrink-0" %}
+          <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+        </div>
+      {% endif %}
+
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">{% icon "file-text" "inline h-4 w-4 text-brand-500" %} {% translate "Document" %}</h2>
+        </div>
+        <div class="card-body grid gap-4 sm:grid-cols-2">
+          {% include "ai/partials/field.html" with field=form.title wrapper_class="sm:col-span-2" %}
+          {% include "ai/partials/field.html" with field=form.source_type %}
+          {% include "ai/partials/field.html" with field=form.language %}
+          {% include "ai/partials/field.html" with field=form.source_url wrapper_class="sm:col-span-2" %}
+          {% include "ai/partials/field.html" with field=form.file wrapper_class="sm:col-span-2" %}
+          {% include "ai/partials/field.html" with field=form.content wrapper_class="sm:col-span-2" %}
+          {% include "ai/partials/field.html" with field=form.is_active wrapper_class="sm:col-span-2" %}
+        </div>
+      </section>
+
+      <div class="flex flex-wrap items-center justify-end gap-2">
+        <a href="{% url 'ai:knowledge_list' %}" class="btn-secondary">{% translate "Cancel" %}</a>
+        <button type="submit" class="btn-primary">
+          {% icon "save" "h-4 w-4" %} {% translate "Save and index" %}
+        </button>
+      </div>
+    </form>
+  </div>
+{% endblock %}

@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Cancel booking" %} {{ booking.booking_code }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Cancel booking" %} {{ booking.booking_code }}{% endblock %}
+
+{% block content %}
+  <div class="grid max-w-4xl gap-5 lg:grid-cols-3">
+
+    <form method="post" class="card lg:col-span-2">
+      {% csrf_token %}
+      <div class="card-body space-y-4">
+        {% if form.non_field_errors %}
+          <div class="alert-error">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <div>
+          <label class="form-label" for="{{ form.reason_code.id_for_label }}">{{ form.reason_code.label }}</label>
+          {{ form.reason_code }}
+          {% for error in form.reason_code.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        </div>
+
+        <div>
+          <label class="form-label" for="{{ form.reason.id_for_label }}">{{ form.reason.label }}</label>
+          {{ form.reason }}
+          <p class="form-help">{{ form.reason.help_text }}</p>
+          {% for error in form.reason.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        </div>
+
+        <div x-data="{ override: {{ form.override_fee.value|yesno:'true,false,false' }} }">
+          <label class="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
+            <input type="checkbox" name="override_fee" value="on" x-model="override"
+                   class="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500 dark:border-slate-600">
+            {{ form.override_fee.label }}
+          </label>
+          <div class="mt-2" x-show="override" x-transition style="display: none">
+            <label class="form-label" for="{{ form.fee.id_for_label }}">{{ form.fee.label }}</label>
+            {{ form.fee }}
+            {% for error in form.fee.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 border-t border-slate-200 p-4 dark:border-slate-700">
+        <a href="{% url 'bookings:detail' booking.pk %}" class="btn-ghost">{% translate "Keep the booking" %}</a>
+        <button type="submit" class="btn-danger">
+          {% icon "circle-x" "h-4 w-4" %} {% translate "Cancel the booking" %}
+        </button>
+      </div>
+    </form>
+
+    <div class="space-y-4">
+      <section class="card">
+        <div class="card-header"><h2 class="card-title">{% translate "What will happen" %}</h2></div>
+        <div class="card-body space-y-2 text-sm text-slate-600 dark:text-slate-300">
+          <p>
+            {% blocktranslate with seats=booking.participants %}{{ seats }} seat(s) will be released back to the session.{% endblocktranslate %}
+          </p>
+          <p>{% translate "The student is removed from the roster." %}</p>
+          {% if waitlist %}
+            <p class="text-emerald-700 dark:text-emerald-400">
+              {% blocktranslate with name=waitlist.0.customer %}{{ name }} is first on the waiting list and will be offered the seat automatically.{% endblocktranslate %}
+            </p>
+          {% endif %}
+          <div class="rounded-lg bg-slate-50 p-3 dark:bg-slate-800">
+            <p class="font-medium text-slate-800 dark:text-slate-100">
+              {% translate "Automatic cancellation fee" %}: {{ suggested_fee|money }}
+            </p>
+            <p class="mt-1 text-xs">
+              {% if booking.is_cancellable_free %}
+                {% translate "This is outside the notice window, so no fee applies." %}
+              {% else %}
+                {% blocktranslate with hours=booking.hours_until_start %}The session starts in {{ hours }} hour(s), which is inside the notice window.{% endblocktranslate %}
+              {% endif %}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-header"><h2 class="card-title">{% translate "Booking" %}</h2></div>
+        <div class="card-body space-y-1 text-sm text-slate-600 dark:text-slate-300">
+          <p>{{ booking.customer }}</p>
+          <p>{{ booking.activity_label }}</p>
+          {% if booking.scheduled_start %}
+            <p class="tabular-nums">{{ booking.scheduled_start|date:"d.m.Y H:i" }}</p>
+          {% endif %}
+          <p>{% translate "Paid" %}: {{ booking.paid_amount|money }} / {{ booking.total_amount|money }}</p>
+        </div>
+      </section>
+    </div>
+  </div>
+{% endblock %}

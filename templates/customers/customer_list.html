@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Customers" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Customers" %}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% blocktranslate with active=active_count total=total_count %}{{ active }} active of {{ total }} on file{% endblocktranslate %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  {% can "customers.manage" as may_manage %}
+  {% if may_manage %}
+    <a href="{% url 'customers:duplicates' %}" class="btn-secondary">
+      {% icon "copy" "h-4 w-4" %} {% translate "Find duplicates" %}
+    </a>
+  {% endif %}
+  {% can "customers.add" as may_add %}
+  {% if may_add %}
+    <a href="{% url 'customers:create' %}" class="btn-primary">
+      {% icon "user-plus" "h-4 w-4" %} {% translate "New customer" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <form method="get"
+        action="{% url 'customers:list' %}"
+        class="card mb-5"
+        hx-get="{% url 'customers:list' %}"
+        hx-target="#customer-results"
+        hx-select="#customer-results"
+        hx-swap="outerHTML"
+        hx-trigger="submit, change from:select, change from:input[type=checkbox], keyup changed delay:400ms from:input[name=q]"
+        hx-push-url="true"
+        hx-indicator="#customer-loading">
+    <div class="card-body grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
+      <div class="lg:col-span-2">
+        <label class="form-label" for="{{ filter_form.q.id_for_label }}">{% translate "Search" %}</label>
+        {{ filter_form.q }}
+      </div>
+      <div>
+        <label class="form-label" for="{{ filter_form.status.id_for_label }}">{% translate "Status" %}</label>
+        {{ filter_form.status }}
+      </div>
+      <div>
+        <label class="form-label" for="{{ filter_form.source.id_for_label }}">{% translate "Source" %}</label>
+        {{ filter_form.source }}
+      </div>
+      <div>
+        <label class="form-label" for="{{ filter_form.has_bookings.id_for_label }}">{% translate "Bookings" %}</label>
+        {{ filter_form.has_bookings }}
+      </div>
+      <div>
+        <label class="form-label" for="{{ filter_form.tag.id_for_label }}">{% translate "Tag" %}</label>
+        {{ filter_form.tag }}
+      </div>
+      <div class="flex items-end justify-between gap-3 sm:col-span-2 lg:col-span-6">
+        <label class="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+          {{ filter_form.minors_only }} {% translate "Under 18 only" %}
+        </label>
+        <div class="flex items-center gap-2">
+          <span id="customer-loading" class="htmx-indicator text-slate-400">
+            {% icon "loader-circle" "h-4 w-4 animate-spin" %}
+          </span>
+          <a href="{% url 'customers:list' %}" class="btn-ghost btn-sm">{% translate "Reset" %}</a>
+          <button type="submit" class="btn-secondary btn-sm">
+            {% icon "filter" "h-4 w-4" %} {% translate "Apply" %}
+          </button>
+        </div>
+      </div>
+    </div>
+  </form>
+
+  {% include "customers/partials/customer_table.html" %}
+{% endblock %}

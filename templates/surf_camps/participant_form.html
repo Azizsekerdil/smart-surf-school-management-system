@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ title }} · {{ camp.name }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="text-sm text-slate-500 dark:text-slate-400">
+    {{ participant.student }} ·
+    <a href="{% url 'surf_camps:detail' camp.pk %}" class="hover:text-brand-600">{{ camp.name }}</a>
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'surf_camps:detail' camp.pk %}?tab=participants" class="btn-secondary">
+    {% icon "chevron-left" "h-4 w-4" %} {% translate "Back to camp" %}
+  </a>
+{% endblock %}
+
+{% block content %}
+  <form method="post" class="space-y-4" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="alert-error">
+        {% icon "circle-alert" "h-5 w-5 shrink-0" %}
+        <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+      </div>
+    {% endif %}
+
+    <section class="card">
+      <div class="card-header"><h2 class="card-title">{% translate "Place" %}</h2></div>
+      <div class="card-body grid gap-4 sm:grid-cols-2">
+        {% include "surf_camps/partials/field.html" with field=form.student %}
+        {% include "surf_camps/partials/field.html" with field=form.booking %}
+        {% include "surf_camps/partials/field.html" with field=form.room_type %}
+        {% include "surf_camps/partials/field.html" with field=form.room_number %}
+        {% include "surf_camps/partials/field.html" with field=form.roommate_preference %}
+        {% include "surf_camps/partials/field.html" with field=form.t_shirt_size %}
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header"><h2 class="card-title">{% translate "Travel" %}</h2></div>
+      <div class="card-body grid gap-4 sm:grid-cols-2">
+        {% include "surf_camps/partials/field.html" with field=form.arrival_datetime %}
+        {% include "surf_camps/partials/field.html" with field=form.arrival_flight %}
+        {% include "surf_camps/partials/field.html" with field=form.departure_datetime %}
+        {% include "surf_camps/partials/field.html" with field=form.departure_flight %}
+        {% include "surf_camps/partials/field.html" with field=form.needs_transfer %}
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header"><h2 class="card-title">{% translate "Care and money" %}</h2></div>
+      <div class="card-body grid gap-4 sm:grid-cols-2">
+        {% include "surf_camps/partials/field.html" with field=form.dietary_requirements %}
+        {% include "surf_camps/partials/field.html" with field=form.amount_paid %}
+        <div class="sm:col-span-2">
+          {% include "surf_camps/partials/field.html" with field=form.medical_notes %}
+        </div>
+        {% include "surf_camps/partials/field.html" with field=form.deposit_paid %}
+      </div>
+    </section>
+
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <p class="text-sm text-slate-500 dark:text-slate-400">
+        {% blocktranslate with total=participant.total_price|money balance=participant.balance_due|money %}Total {{ total }} · balance {{ balance }}{% endblocktranslate %}
+      </p>
+      <div class="flex gap-2">
+        <a href="{% url 'surf_camps:detail' camp.pk %}?tab=participants" class="btn-secondary">{% translate "Cancel" %}</a>
+        <button type="submit" class="btn-primary">
+          {% icon "save" "h-4 w-4" %} {% translate "Save participant" %}
+        </button>
+      </div>
+    </div>
+  </form>
+{% endblock %}

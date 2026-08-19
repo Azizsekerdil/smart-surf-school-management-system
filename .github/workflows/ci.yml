@@ -1,0 +1,136 @@
+name: CI
+
+# Every quality gate this project talks about runs here, so a claim in the
+# README is something a reader can check rather than something they have to
+# take on trust.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Tests (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+    env:
+      DJANGO_SETTINGS_MODULE: config.settings.test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Check for missing migrations
+        run: python manage.py makemigrations --check --dry-run
+
+      - name: Migration dry run
+        run: python manage.py migrate --plan
+
+      - name: Django system checks
+        run: python manage.py check --fail-level WARNING
+
+      - name: Tests
+        run: python -m pytest -q --maxfail=1
+
+      - name: Security-marked tests, reported separately
+        run: python -m pytest -q -m security
+
+  lint:
+    name: Lint and format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+      - run: pip install ruff
+      - name: ruff check
+        run: ruff check --output-format=github .
+      # `ruff format --check` is deliberately NOT a gate. The codebase predates
+      # the formatter and running it would rewrite 253 files, burying a security
+      # release in a whitespace diff. Formatting is available
+      # (`ruff format <path>`) and is applied to new files; enforcing it across
+      # the tree is a separate, single-purpose change.
+
+  security:
+    name: Static analysis and dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: bandit
+        run: bandit -q -r apps config -x "*/tests/*"
+
+      - name: pip-audit
+        # Reports known CVEs in the resolved dependency set. Kept non-blocking so
+        # a fresh upstream advisory does not stop an unrelated pull request; the
+        # result is still visible in the job log and in the summary below.
+        continue-on-error: true
+        run: pip-audit --strict --progress-spinner off
+
+      - name: gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build:
+    name: Front-end build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: npm audit
+        continue-on-error: true
+        run: npm audit --omit=dev
+
+  sbom:
+    name: SBOM
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: anchore/sbom-action@v0
+        with:
+          format: spdx-json
+          artifact-name: sbom.spdx.json

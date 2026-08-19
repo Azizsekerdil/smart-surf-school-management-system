@@ -1,0 +1,344 @@
+{% extends "base.html" %}
+{% load i18n static surf_tags %}
+
+{% block title %}{% translate "Finance" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Finance" %}{% endblock %}
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% blocktranslate with period=range_label %}Money in, money out and what is still owed — {{ period }}.{% endblocktranslate %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  {% can "finance.add" as may_add %}
+  {% if may_add %}
+    <a href="{% url 'finance:payment_create' %}" class="btn-primary">
+      {% icon "plus" "h-4 w-4" %} {% translate "Take a payment" %}
+    </a>
+    <a href="{% url 'finance:expense_create' %}" class="btn-secondary">
+      {% icon "receipt" "h-4 w-4" %} {% translate "Record an expense" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <div class="mb-5">
+    {% include "finance/partials/range_filter.html" %}
+  </div>
+
+  {# --- headline tiles ------------------------------------------------- #}
+  <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    {% include "finance/partials/stat_tile.html" with label=_("Net revenue") value=summary.revenue.current previous=summary.revenue.previous change=summary.revenue.change icon_name="banknote" %}
+    {% include "finance/partials/stat_tile.html" with label=_("Expenses") value=summary.expenses.current previous=summary.expenses.previous change=summary.expenses.change icon_name="receipt" lower_is_better=True %}
+    {% include "finance/partials/stat_tile.html" with label=_("Gross profit") value=summary.gross_profit.current previous=summary.gross_profit.previous change=summary.gross_profit.change icon_name="trending-up" %}
+    {% include "finance/partials/stat_tile.html" with label=_("Refunds") value=summary.refunds.current previous=summary.refunds.previous change=summary.refunds.change icon_name="rotate-ccw" lower_is_better=True %}
+  </div>
+
+  {# --- secondary figures ---------------------------------------------- #}
+  <div class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <a href="{% url 'finance:invoice_list' %}?status=open" class="stat-card transition hover:border-brand-400">
+      <p class="stat-label">{% translate "Outstanding receivables" %}</p>
+      <p class="stat-value">{{ summary.outstanding_receivables|money }}</p>
+      <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
+        {% blocktranslate with invoiced=summary.invoiced_receivables|money uninvoiced=summary.uninvoiced_receivables|money %}{{ invoiced }} invoiced · {{ uninvoiced }} not yet invoiced{% endblocktranslate %}
+      </p>
+    </a>
+
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Overdue invoices" %}</p>
+      <p class="stat-value {% if summary.overdue_count %}text-rose-600 dark:text-rose-400{% endif %}">
+        {{ summary.overdue_count }}
+      </p>
+      <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
+        {% translate "Past the due date with a balance." %}
+      </p>
+    </div>
+
+    <a href="{% url 'finance:commission_list' %}?status=owed" class="stat-card transition hover:border-brand-400">
+      <p class="stat-label">{% translate "Commission owed" %}</p>
+      <p class="stat-value">{{ summary.commission_owed|money }}</p>
+      <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
+        {% blocktranslate with paid=summary.commission_paid|money %}{{ paid }} paid this period{% endblocktranslate %}
+      </p>
+    </a>
+
+    <a href="{% url 'finance:customer_package_list' %}" class="stat-card transition hover:border-brand-400">
+      <p class="stat-label">{% translate "Unused package value" %}</p>
+      <p class="stat-value">{{ summary.package_liability|money }}</p>
+      <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
+        {% translate "Lessons already paid for but not yet delivered." %}
+      </p>
+    </a>
+  </div>
+
+  {# --- charts ---------------------------------------------------------- #}
+  <div class="mt-5 grid gap-4 lg:grid-cols-3">
+    <section class="card lg:col-span-2">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Money in and out" %}</h2>
+        <span class="text-xs text-slate-500 dark:text-slate-400">
+          {% if chart.granularity == "day" %}{% translate "Daily" %}
+          {% elif chart.granularity == "week" %}{% translate "Weekly" %}
+          {% else %}{% translate "Monthly" %}{% endif %}
+        </span>
+      </div>
+      <div class="card-body">
+        {% if chart.labels %}
+          <div class="h-72">
+            <canvas id="cash-flow-chart" aria-label="{% translate 'Revenue and expenses over time' %}" role="img"></canvas>
+          </div>
+        {% else %}
+          {% include "partials/empty_state.html" with icon_name="chart-line" title=_("Nothing to plot yet") subtitle=_("No money has moved in this period.") %}
+        {% endif %}
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Revenue by category" %}</h2>
+      </div>
+      <div class="card-body">
+        {% if chart.category_labels %}
+          <div class="h-56">
+            <canvas id="category-chart" aria-label="{% translate 'Revenue split by category' %}" role="img"></canvas>
+          </div>
+          <ul class="mt-4 space-y-1.5">
+            {% for row in summary.revenue_by_category %}
+              <li class="flex items-center justify-between text-sm">
+                <span class="text-slate-600 dark:text-slate-300">{{ row.label }}</span>
+                <span class="font-medium tabular-nums text-slate-900 dark:text-slate-100">{{ row.amount|money }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          {% include "partials/empty_state.html" with icon_name="wallet" title=_("No revenue yet") subtitle=_("Take a payment and it will appear here.") %}
+        {% endif %}
+      </div>
+    </section>
+  </div>
+
+  {# --- working lists ---------------------------------------------------- #}
+  <div class="mt-5 grid gap-4 lg:grid-cols-2">
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Recent payments" %}</h2>
+        <a href="{% url 'finance:payment_list' %}" class="btn-ghost btn-sm">
+          {% translate "All payments" %} {% icon "chevron-right" "h-3.5 w-3.5" %}
+        </a>
+      </div>
+      <div class="card-body p-0">
+        {% if recent_payments %}
+          <ul class="divide-y divide-slate-100 dark:divide-slate-800">
+            {% for payment in recent_payments %}
+              <li class="flex items-center justify-between gap-3 px-5 py-3">
+                <div class="min-w-0">
+                  <a href="{% url 'finance:payment_detail' payment.pk %}"
+                     class="text-sm font-medium text-slate-900 hover:underline dark:text-slate-100">
+                    {{ payment.payment_code }}
+                  </a>
+                  <p class="truncate text-xs text-slate-500 dark:text-slate-400">
+                    {{ payment.customer }} · {{ payment.get_category_display }}
+                  </p>
+                </div>
+                <div class="text-end">
+                  <p class="text-sm font-semibold tabular-nums {% if payment.is_refund %}text-rose-600 dark:text-rose-400{% else %}text-emerald-600 dark:text-emerald-400{% endif %}">
+                    {{ payment.amount|money }}
+                  </p>
+                  <p class="text-xs text-slate-400">{{ payment.paid_at|date:"d.m.Y H:i" }}</p>
+                </div>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <div class="p-5">
+            {% include "partials/empty_state.html" with icon_name="wallet" title=_("No payments recorded") subtitle=_("Money taken at the counter shows up here.") %}
+          </div>
+        {% endif %}
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Overdue invoices" %}</h2>
+        <a href="{% url 'finance:invoice_list' %}?status=overdue" class="btn-ghost btn-sm">
+          {% translate "All invoices" %} {% icon "chevron-right" "h-3.5 w-3.5" %}
+        </a>
+      </div>
+      <div class="card-body p-0">
+        {% if overdue_invoices %}
+          <ul class="divide-y divide-slate-100 dark:divide-slate-800">
+            {% for invoice in overdue_invoices %}
+              <li class="flex items-center justify-between gap-3 px-5 py-3">
+                <div class="min-w-0">
+                  <a href="{% url 'finance:invoice_detail' invoice.pk %}"
+                     class="text-sm font-medium text-slate-900 hover:underline dark:text-slate-100">
+                    {{ invoice.invoice_number }}
+                  </a>
+                  <p class="truncate text-xs text-slate-500 dark:text-slate-400">{{ invoice.customer }}</p>
+                </div>
+                <div class="text-end">
+                  <p class="text-sm font-semibold tabular-nums text-rose-600 dark:text-rose-400">
+                    {{ invoice.balance_due|money }}
+                  </p>
+                  <p class="text-xs text-slate-400">
+                    {% blocktranslate with days=invoice.days_overdue %}{{ days }} days late{% endblocktranslate %}
+                  </p>
+                </div>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <div class="p-5">
+            {% include "partials/empty_state.html" with icon_name="circle-check" title=_("Nothing overdue") subtitle=_("Every issued invoice is inside its payment terms.") %}
+          </div>
+        {% endif %}
+      </div>
+    </section>
+  </div>
+
+  <div class="mt-5 grid gap-4 lg:grid-cols-2">
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Commission awaiting settlement" %}</h2>
+        <a href="{% url 'finance:commission_list' %}" class="btn-ghost btn-sm">
+          {% translate "Open" %} {% icon "chevron-right" "h-3.5 w-3.5" %}
+        </a>
+      </div>
+      <div class="card-body p-0">
+        {% if pending_commissions %}
+          <ul class="divide-y divide-slate-100 dark:divide-slate-800">
+            {% for record in pending_commissions %}
+              <li class="flex items-center justify-between gap-3 px-5 py-3">
+                <div class="min-w-0">
+                  <p class="truncate text-sm font-medium text-slate-900 dark:text-slate-100">
+                    {{ record.instructor }}
+                  </p>
+                  <p class="text-xs text-slate-500 dark:text-slate-400">
+                    {{ record.period_start|date:"d.m.Y" }} – {{ record.period_end|date:"d.m.Y" }}
+                  </p>
+                </div>
+                <div class="text-end">
+                  <p class="text-sm font-semibold tabular-nums">{{ record.commission_amount|money }}</p>
+                  {% status_badge record.status record.get_status_display %}
+                </div>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <div class="p-5">
+            {% include "partials/empty_state.html" with icon_name="percent" title=_("No commission outstanding") subtitle=_("Everything calculated has been settled.") %}
+          </div>
+        {% endif %}
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Packages expiring soonest" %}</h2>
+        <a href="{% url 'finance:customer_package_list' %}" class="btn-ghost btn-sm">
+          {% translate "Open" %} {% icon "chevron-right" "h-3.5 w-3.5" %}
+        </a>
+      </div>
+      <div class="card-body p-0">
+        {% if expiring_packages %}
+          <ul class="divide-y divide-slate-100 dark:divide-slate-800">
+            {% for card in expiring_packages %}
+              <li class="flex items-center justify-between gap-3 px-5 py-3">
+                <div class="min-w-0">
+                  <p class="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{{ card.customer }}</p>
+                  <p class="truncate text-xs text-slate-500 dark:text-slate-400">{{ card.package.name }}</p>
+                </div>
+                <div class="text-end">
+                  <p class="text-sm font-semibold tabular-nums">
+                    {% blocktranslate with left=card.lessons_remaining total=card.lessons_total %}{{ left }} / {{ total }} left{% endblocktranslate %}
+                  </p>
+                  <p class="text-xs {% if card.days_left is not None and card.days_left < 14 %}text-amber-600 dark:text-amber-400{% else %}text-slate-400{% endif %}">
+                    {{ card.expires_on|date:"d.m.Y" }}
+                  </p>
+                </div>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <div class="p-5">
+            {% include "partials/empty_state.html" with icon_name="package" title=_("No active packages") subtitle=_("Sell a package and it will be tracked here.") %}
+          </div>
+        {% endif %}
+      </div>
+    </section>
+  </div>
+{% endblock %}
+
+{% block extra_scripts %}
+  {% if chart.labels or chart.category_labels %}
+    <script src="{% static 'vendor/chartjs/chart.umd.js' %}" defer></script>
+    <script id="finance-chart-data" type="application/json">{{ chart|to_json }}</script>
+    {% comment %}
+      Inline scripts run during parsing, so the work waits for the deferred
+      vendor bundle and app.js to have executed.
+    {% endcomment %}
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        var node = document.getElementById('finance-chart-data');
+        if (!node || typeof Chart === 'undefined') { return; }
+        var data = JSON.parse(node.textContent);
+        var defaults = window.surfChartDefaults ? window.surfChartDefaults() : {};
+        var colors = window.surfChartColors || ['#0083ce', '#10b981', '#f59e0b', '#f43f5e'];
+
+        var flow = document.getElementById('cash-flow-chart');
+        if (flow && data.labels.length) {
+          new Chart(flow, {
+            type: 'line',
+            data: {
+              labels: data.labels,
+              datasets: [
+                {
+                  label: '{% translate "Revenue" %}',
+                  data: data.revenue,
+                  borderColor: colors[0],
+                  backgroundColor: 'rgba(0, 131, 206, 0.12)',
+                  fill: true,
+                  tension: 0.3,
+                  pointRadius: 0,
+                  borderWidth: 2,
+                },
+                {
+                  label: '{% translate "Expenses" %}',
+                  data: data.expenses,
+                  borderColor: colors[3],
+                  backgroundColor: 'transparent',
+                  tension: 0.3,
+                  pointRadius: 0,
+                  borderWidth: 2,
+                },
+              ],
+            },
+            options: defaults,
+          });
+        }
+
+        var doughnut = document.getElementById('category-chart');
+        if (doughnut && data.category_labels.length) {
+          var pieOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: (defaults.plugins || {}),
+            cutout: '62%',
+          };
+          new Chart(doughnut, {
+            type: 'doughnut',
+            data: {
+              labels: data.category_labels,
+              datasets: [{
+                data: data.category_values,
+                backgroundColor: colors,
+                borderWidth: 0,
+              }],
+            },
+            options: pieOptions,
+          });
+        }
+      });
+    </script>
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Users & Roles" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Users & Roles" %}{% endblock %}
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% blocktranslate count total=paginator.count %}{{ total }} account{% plural %}{{ total }} accounts{% endblocktranslate %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'accounts:role_matrix' %}" class="btn-secondary">
+    {% icon "shield-check" "h-4 w-4" %} {% translate "Role matrix" %}
+  </a>
+  {% can "accounts.add" as may_add %}
+  {% if may_add %}
+    <a href="{% url 'accounts:user_create' %}" class="btn-primary">
+      {% icon "user-plus" "h-4 w-4" %} {% translate "New user" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <div class="card mb-5">
+    <div class="card-body">
+      <form method="get" class="grid gap-3 sm:grid-cols-[1fr_auto_auto_auto]">
+        <div class="relative">
+          <span class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3 text-slate-400">
+            {% icon "search" "h-4 w-4" %}
+          </span>
+          <input type="search" name="q" value="{{ search }}" class="form-input ps-9"
+                 placeholder="{% translate 'Name, username, e-mail or employee ID' %}">
+        </div>
+        <select name="role" class="form-select">
+          <option value="">{% translate "All roles" %}</option>
+          {% for value, label in roles %}
+            <option value="{{ value }}" {% if value == current_role %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <select name="status" class="form-select">
+          <option value="">{% translate "All" %}</option>
+          <option value="active" {% if current_status == "active" %}selected{% endif %}>{% translate "Active" %}</option>
+          <option value="inactive" {% if current_status == "inactive" %}selected{% endif %}>{% translate "Disabled" %}</option>
+        </select>
+        <button type="submit" class="btn-secondary">{% translate "Filter" %}</button>
+      </form>
+    </div>
+  </div>
+
+  {% include "accounts/partials/user_table.html" %}
+{% endblock %}

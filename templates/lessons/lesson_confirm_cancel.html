@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Cancel lesson" %} · {{ lesson.lesson_code }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Cancel lesson" %}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {{ lesson.lesson_code }} · {{ lesson.date|date:"d.m.Y" }} {{ lesson.start_time|time:"H:i" }} · {{ lesson.spot }}
+  </p>
+{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-2xl space-y-5">
+  <div class="alert-warning">
+    <p class="font-semibold">{% translate "Cancelling is not reversible from this screen." %}</p>
+    <p class="mt-1 text-sm">
+      {% translate "Every seat is released, any issued board or wetsuit returns to the pool, and the affected bookings are flagged for follow-up." %}
+    </p>
+  </div>
+
+  {% if attendees %}
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">
+          {% blocktranslate count counter=attendees|length %}{{ counter }} student affected{% plural %}{{ counter }} students affected{% endblocktranslate %}
+        </h2>
+      </div>
+      <div class="card-body">
+        <ul class="divide-y divide-slate-100 text-sm dark:divide-slate-800">
+          {% for attendance in attendees %}
+            <li class="flex items-center justify-between py-2">
+              <span class="text-slate-800 dark:text-slate-200">{{ attendance.student }}</span>
+              {% include "lessons/partials/attendance_badge.html" with attendance=attendance %}
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  {% endif %}
+
+  <form method="post" class="card">
+    {% csrf_token %}
+    <div class="card-body space-y-4">
+      {% if form.non_field_errors %}
+        <div class="alert-error">
+          {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+        </div>
+      {% endif %}
+      <div>
+        <label class="form-label" for="{{ form.reason.id_for_label }}">{{ form.reason.label }}</label>
+        {{ form.reason }}
+        <p class="form-help">{{ form.reason.help_text }}</p>
+        {% for error in form.reason.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+      </div>
+      <div class="flex flex-wrap gap-3">
+        <button type="submit" class="btn-danger">
+          {% icon "circle-x" "h-4 w-4" %} {% translate "Cancel this lesson" %}
+        </button>
+        <a href="{% url 'lessons:detail' lesson.pk %}" class="btn-ghost">{% translate "Keep the lesson" %}</a>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}

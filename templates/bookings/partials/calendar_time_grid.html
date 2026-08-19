@@ -1,0 +1,80 @@
+{% load i18n surf_tags %}
+<div class="card overflow-hidden">
+
+  {# --------------------------------------------------------- day headers #}
+  <div class="grid border-b border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/60"
+       style="grid-template-columns: 4rem repeat({{ days|length }}, minmax(0, 1fr));">
+    <div class="px-2 py-2 text-center text-[11px] font-medium text-slate-400">
+      {% translate "Time" %}
+    </div>
+    {% for day in days %}
+      <div class="border-s border-slate-200 px-2 py-2 text-center dark:border-slate-700
+                  {% if day.is_today %}bg-brand-50/70 dark:bg-brand-500/10{% endif %}">
+        <p class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ day.date|date:"D" }}</p>
+        <button type="button"
+                hx-get="{{ calendar_url }}{% query_string view='day' date=day.date|date:'Y-m-d' %}"
+                class="mt-0.5 inline-flex h-7 min-w-7 items-center justify-center rounded-full px-2 text-sm tabular-nums
+                       {% if day.is_today %}bg-brand-600 font-semibold text-white{% else %}text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800{% endif %}">
+          {{ day.date|date:"j" }}
+        </button>
+      </div>
+    {% endfor %}
+  </div>
+
+  {# ------------------------------------------------------ all-day (camps) #}
+  <div class="grid border-b border-slate-200 dark:border-slate-700"
+       style="grid-template-columns: 4rem repeat({{ days|length }}, minmax(0, 1fr));">
+    <div class="px-2 py-1.5 text-end text-[11px] text-slate-400">{% translate "Camps" %}</div>
+    {% for day in days %}
+      <div class="space-y-1 border-s border-slate-100 p-1 dark:border-slate-800">
+        {% for event in day.all_day_events %}
+          {% include "bookings/partials/event_chip.html" with event=event %}
+        {% empty %}
+          <span class="sr-only">{% translate "No surf camp on this day" %}</span>
+        {% endfor %}
+      </div>
+    {% endfor %}
+  </div>
+
+  {# ----------------------------------------------------------- time grid #}
+  <div class="max-h-[68vh] overflow-y-auto">
+    <div class="grid" style="grid-template-columns: 4rem repeat({{ days|length }}, minmax(0, 1fr));">
+
+      <div class="relative" style="height: {{ grid_height }}px;">
+        {% for hour in hours %}
+          <div class="absolute end-1 -translate-y-1/2 text-[11px] tabular-nums text-slate-400"
+               style="top: calc({{ forloop.counter0 }} * {{ pixels_per_hour }}px);">
+            {{ hour }}:00
+          </div>
+        {% endfor %}
+      </div>
+
+      {% for day in days %}
+        <div class="relative border-s border-slate-100 dark:border-slate-800
+                    {% if day.is_today %}bg-brand-50/40 dark:bg-brand-500/5{% endif %}"
+             style="height: {{ grid_height }}px;">
+
+          {% for hour in hours %}
+            <div class="absolute inset-x-0 border-t border-slate-100 dark:border-slate-800"
+                 style="top: calc({{ forloop.counter0 }} * {{ pixels_per_hour }}px); height: {{ pixels_per_hour }}px;"></div>
+          {% endfor %}
+
+          {% for event in day.events %}
+            <div class="absolute inset-x-1"
+                 style="top: {{ event.top }}px; height: {{ event.height }}px;">
+              <div class="h-full overflow-hidden">
+                {% include "bookings/partials/event_chip.html" with event=event %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+{% if view == 'day' and schedule %}
+  <div class="mt-4">
+    {% include "bookings/partials/schedule_body.html" with schedule=schedule %}
+  </div>
+{% endif %}

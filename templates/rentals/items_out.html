@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Equipment out" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Equipment out" %}{% endblock %}
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "Every asset off the premises right now, soonest due first." %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'rentals:list' %}" class="btn-secondary">
+    {% icon "clipboard-list" "h-4 w-4" %} {% translate "All rentals" %}
+  </a>
+{% endblock %}
+
+{% block content %}
+  <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Items out" %}</p>
+      <p class="stat-value">{{ stats.out_count }}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Overdue" %}</p>
+      <p class="stat-value {% if stats.overdue_count %}text-rose-600 dark:text-rose-400{% endif %}">
+        {{ stats.overdue_count }}
+      </p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Due back today" %}</p>
+      <p class="stat-value">{{ stats.due_today_count }}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Outstanding balance" %}</p>
+      <p class="stat-value">{{ stats.outstanding|money }}</p>
+    </div>
+  </div>
+
+  {% if items %}
+    <div class="table-wrap mt-5">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">{% translate "Asset" %}</th>
+            <th scope="col">{% translate "Rental" %}</th>
+            <th scope="col">{% translate "Customer" %}</th>
+            <th scope="col">{% translate "Out since" %}</th>
+            <th scope="col">{% translate "Due back" %}</th>
+            <th scope="col">{% translate "Condition out" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in items %}
+            <tr class="{% if item.rental.is_overdue %}bg-rose-50/70 dark:bg-rose-500/10{% endif %}">
+              <td class="font-medium text-slate-900 dark:text-slate-100">{{ item.equipment }}</td>
+              <td>
+                <a href="{% url 'rentals:detail' item.rental.pk %}" class="hover:underline">
+                  {{ item.rental.rental_code }}
+                </a>
+              </td>
+              <td>{{ item.rental.customer }}</td>
+              <td class="whitespace-nowrap">{{ item.rental.start_at|date:"d.m.Y H:i" }}</td>
+              <td class="whitespace-nowrap {% if item.rental.is_overdue %}font-semibold text-rose-700 dark:text-rose-300{% endif %}">
+                {{ item.rental.expected_return_at|date:"d.m.Y H:i" }}
+              </td>
+              <td>{% status_badge item.condition_out item.get_condition_out_display %}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% include "partials/pagination.html" %}
+  {% else %}
+    {% include "partials/empty_state.html" with icon_name="circle-check" title=_("Nothing is out") subtitle=_("Every asset is back on the racks.") %}
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,57 @@
+{% load i18n surf_tags %}
+{# Rendered by ai_terminal:explain_command. Context: command, explanation, policy. #}
+{% if command %}
+  <div class="space-y-3">
+
+    {# --- what the policy decides — this is the authority ---------------- #}
+    {% if policy %}
+      <div class="rounded-lg border p-3
+                  {% if policy.is_blocked %}border-rose-200 bg-rose-50 dark:border-rose-500/30 dark:bg-rose-500/10
+                  {% elif policy.is_safe %}border-emerald-200 bg-emerald-50 dark:border-emerald-500/30 dark:bg-emerald-500/10
+                  {% else %}border-amber-200 bg-amber-50 dark:border-amber-500/30 dark:bg-amber-500/10{% endif %}">
+        <p class="flex flex-wrap items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
+          {% if policy.is_blocked %}
+            {% icon "shield-alert" "h-4 w-4 text-rose-600 dark:text-rose-400" %}
+            {% translate "The policy refuses this command" %}
+          {% elif policy.is_safe %}
+            {% icon "shield-check" "h-4 w-4 text-emerald-600 dark:text-emerald-400" %}
+            {% translate "The policy allows this command to run" %}
+          {% else %}
+            {% icon "lock" "h-4 w-4 text-amber-600 dark:text-amber-400" %}
+            {% translate "The policy requires a human approval" %}
+          {% endif %}
+          <span class="badge-slate font-mono">{{ policy.matched_rule|default:"—" }}</span>
+        </p>
+        {% if policy.reason %}
+          <p class="mt-1 text-xs text-slate-600 dark:text-slate-400">{{ policy.reason }}</p>
+        {% endif %}
+        {% if policy.argv %}
+          <p class="mt-1 break-all font-mono text-[0.7rem] text-slate-500 dark:text-slate-500">
+            {% translate "Argument vector:" %} {{ policy.argv|join:" · " }}
+          </p>
+        {% endif %}
+        <p class="mt-1 text-[0.7rem] text-slate-500 dark:text-slate-400">
+          {% translate "This decision comes from the security module, not from the model." %}
+        </p>
+      </div>
+    {% endif %}
+
+    {# --- what the model thinks the command does -------------------------- #}
+    {% if explanation %}
+      <div class="ai-surface p-3">
+        <div class="mb-2 flex flex-wrap items-center gap-2">
+          {% ai_chip %}
+          <span class="break-all font-mono text-xs text-slate-500 dark:text-slate-400">{{ command }}</span>
+        </div>
+        <p class="text-sm leading-relaxed text-slate-800 dark:text-slate-100">{{ explanation|linebreaksbr }}</p>
+        <p class="mt-2 text-[0.7rem] text-slate-500 dark:text-slate-400">
+          {% translate "An explanation only. It cannot grant permission and may be wrong — read the command yourself." %}
+        </p>
+      </div>
+    {% endif %}
+  </div>
+{% else %}
+  <p class="text-sm text-slate-500 dark:text-slate-400">
+    {% translate "Type a command first, then ask for an explanation." %}
+  </p>
+{% endif %}

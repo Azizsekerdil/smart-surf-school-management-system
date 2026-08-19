@@ -1,0 +1,29 @@
+{% load i18n surf_tags %}
+{# On-demand probe. Swapped in by HTMX, never part of the first page render. #}
+<div class="space-y-2">
+  {% for name, info in providers.items %}
+    <div class="flex flex-wrap items-start justify-between gap-3 rounded-lg border border-slate-200 p-3 dark:border-slate-700">
+      <div class="min-w-0">
+        <p class="flex flex-wrap items-center gap-2 text-sm font-medium text-slate-900 dark:text-slate-100">
+          {{ info.label }}
+          {% if info.is_active %}<span class="badge-sky">{% translate "In use" %}</span>{% endif %}
+          {% if not info.provides_marine_data %}
+            <span class="badge-amber">{% translate "No wave model" %}</span>
+          {% endif %}
+        </p>
+        <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{{ info.message }}</p>
+        <p class="mt-0.5 text-xs text-slate-400">{{ info.attribution }}</p>
+      </div>
+      {% if info.ok %}
+        <span class="badge-emerald">{% icon "circle-check" "h-3 w-3" %}{% translate "Reachable" %}</span>
+      {% else %}
+        <span class="badge-rose">{% icon "circle-x" "h-3 w-3" %}{% translate "Unreachable" %}</span>
+      {% endif %}
+    </div>
+  {% empty %}
+    <p class="text-sm text-slate-500 dark:text-slate-400">{% translate "No data provider is registered." %}</p>
+  {% endfor %}
+  <p class="text-xs text-slate-400">
+    {% blocktranslate with when=checked_at|date:"H:i:s" %}Checked at {{ when }}. The dashboard itself reads stored data and does not depend on this probe.{% endblocktranslate %}
+  </p>
+</div>

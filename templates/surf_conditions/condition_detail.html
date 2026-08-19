@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ condition.recorded_at|date:"d.m.Y H:i" }} · {{ spot.name }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ spot.name }}{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-3 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'surf_conditions:dashboard' %}" class="hover:underline">{% translate "Surf conditions" %}</a>
+    <span class="mx-1">/</span>
+    <a href="{% url 'surf_conditions:history' %}" class="hover:underline">{% translate "Reading history" %}</a>
+    <span class="mx-1">/</span>
+    <span class="text-slate-700 dark:text-slate-300">{{ condition.recorded_at|date:"d.m.Y H:i" }}</span>
+  </nav>
+{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+    <span class="tabular-nums">{{ condition.recorded_at|date:"d.m.Y H:i" }}</span>
+    <span>·</span>
+    {% if condition.is_forecast %}
+      <span class="badge-violet">{% translate "Forecast" %}</span>
+    {% else %}
+      <span class="badge-sky">{% translate "Observation" %}</span>
+    {% endif %}
+    {% if condition.source == "manual" %}
+      <span class="badge-violet">{% translate "Logged by staff" %}</span>
+    {% else %}
+      <span class="badge-slate">{{ condition.provider }}</span>
+    {% endif %}
+    {% if condition.is_stale %}<span class="badge-amber">{% translate "Out of date" %}</span>{% endif %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  {% can "surf_conditions.change" as may_change %}
+  {% if may_change and condition.source == "manual" %}
+    <a href="{% url 'surf_conditions:update' condition.pk %}" class="btn-primary">
+      {% icon "pencil" "h-4 w-4" %} {% translate "Edit reading" %}
+    </a>
+  {% endif %}
+  <a href="{% url 'surf_conditions:dashboard' %}?spot={{ spot.pk }}" class="btn-secondary">
+    {% icon "waves" "h-4 w-4" %} {% translate "Live dashboard" %}
+  </a>
+{% endblock %}
+
+{% block content %}
+  <div class="grid gap-5 lg:grid-cols-3">
+
+    {# ==================================================== measurements === #}
+    <div class="space-y-5 lg:col-span-2">
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">
+            {% icon "waves" "inline h-4 w-4 text-brand-500" %} {% translate "Measurements" %}
+          </h2>
+        </div>
+        <div class="card-body">
+          <dl class="grid gap-4 sm:grid-cols-3">
+            <div>
+              <dt class="text-xs text-slate-500 dark:text-slate-400">{% translate "Wave height" %}</dt>
+              <dd class="mt-0.5 text-sm font-semibold tabular-nums text-slate-900 dark:text-slate-100">
+                {% if condition.wave_height_m is not None %}
+                  {{ condition.wave_height_m|floatformat:1 }} m · {{ condition.wave_height_ft|floatformat:1 }} ft
+                {% else %}—{% endif %}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs text-slate-500 dark:text-slate-400">{% translate "Wave period" %}</dt>
+              <dd class="mt-0.5 text-sm font-semibold tabular-nums text-slate-900 dark:text-slate-100">
+                {% if condition.wave_period_s is not None %}{{ condition.wave_period_s|floatformat:1 }} s{% else %}—{% endif %}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs text-slate-500 dark:text-slate-400">{% translate "Wave direction" %}</dt>
+              <dd class="mt-0.5 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                {{ condition.wave_compass }}
+              </dd>
+            </div>
+
+            <div>
+              <dt class="text-xs text-slate-500 dark:text-slate-400">{% translate "Swell height" %}</dt>
+              <dd class="mt-0.5 text-sm font-semibold tabular-nums text-slate-900 dark:text-slate-100">
+                {% if condition.swell_height_m is not None %}{{ condition.swell_height_m|floatformat:1 }} m{% else %}—{% endif %}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs text-slate-500 dark:text-slate-400">{% translate "Swell period" %}</dt>
+              <dd class="mt-0.5 text-sm font-semibold tabular-nums text-slate-900 dark:text-slate-100">
+                {% if condition.swell_period_s is not None %}{{ condition.swell_period_s|floatformat:1 }} s{% else %}—{% endif %}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs text-slate-500 dark:text-slate-400">{% translate "Swell direction" %}</dt>
+              <dd class="mt-0.5 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                {{ condition.swell_compass }}
+              </dd>
+            </div>
+
+            <div>
+              <dt class="text-xs text-slate-500 dark:text-slate-400">{% translate "Wind" %}</dt>
+              <dd class="mt-0.5 text-sm font-semibold tabular-nums text-slate-900 dark:text-slate-100">
+                {% if condition.wind_speed_kmh is not None %}
+                  {{ condition.wind_speed_kmh|floatformat:0 }} km/h · {{ condition.wind_knots|floatformat:0 }} kt
+                {% else %}—{% endif %}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs text-slate-500 dark:text-slate-400">{% translate "Gusts" %}</dt>
+              <dd class="mt-0.5 text-sm font-semibold tabular-nums text-slate-900 dark:text-slate-100">
+                {% if condition.wind_gust_kmh is not None %}{{ condition.wind_gust_kmh|floatformat:0 }} km/h{% else %}—{% endif %}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs text-slate-500 dark:text-slate-400">{% translate "Wind direction" %}</dt>
+              <dd class="mt-0.5 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                {{ condition.wind_compass }}
+                {% if condition.wind_type %} · {{ condition.get_wind_type_display }}{% endif %}
+              </dd>
+            </div>
+
+            <div>
+              <dt class="text-xs text-slate-500 dark:text-slate-400">{% translate "Tide" %}</dt>
+              <dd class="mt-0.5 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                {{ condition.get_tide_state_display }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs text-slate-500 dark:text-slate-400">{% translate "Water temperature" %}</dt>
+              <dd class="mt-0.5 text-sm font-semibold tabular-nums text-slate-900 dark:text-slate-100">
+                {% if condition.water_temperature_c is not None %}{{ condition.water_temperature_c|floatformat:1 }} °C{% else %}—{% endif %}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs text-slate-500 dark:text-slate-400">{% translate "Air temperature" %}</dt>
+              <dd class="mt-0.5 text-sm font-semibold tabular-nums text-slate-900 dark:text-slate-100">
+                {% if condition.air_temperature_c is not None %}{{ condition.air_temperature_c|floatformat:1 }} °C{% else %}—{% endif %}
+              </dd>
+            </div>
+
+            <div>
+              <dt class="text-xs text-slate-500 dark:text-slate-400">{% translate "Weather" %}</dt>
+              <dd class="mt-0.5 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                {{ condition.weather_description|default:"—" }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs text-slate-500 dark:text-slate-400">{% translate "Precipitation" %}</dt>
+              <dd class="mt-0.5 text-sm font-semibold tabular-nums text-slate-900 dark:text-slate-100">
+                {% if condition.precipitation_mm is not None %}{{ condition.precipitation_mm|floatformat:1 }} mm{% else %}—{% endif %}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs text-slate-500 dark:text-slate-400">{% translate "Visibility" %}</dt>
+              <dd class="mt-0.5 text-sm font-semibold tabular-nums text-slate-900 dark:text-slate-100">
+                {% if condition.visibility_km is not None %}{{ condition.visibility_km|floatformat:1 }} km{% else %}—{% endif %}
+              </dd>
+            </div>
+          </dl>
+
+          <p class="mt-4 text-xs text-slate-500 dark:text-slate-400">
+            {% blocktranslate with suit=condition.recommended_wetsuit %}Recommended wetsuit: {{ suit }}{% endblocktranslate %}
+          </p>
+        </div>
+      </section>
+
+      {# --- the score breakdown ---------------------------------------- #}
+      <section class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">
+              {% icon "gauge" "inline h-4 w-4 text-brand-500" %} {% translate "Computed score by level" %}
+            </h2>
+            <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+              {% translate "Arithmetic over the measured values — not generated by AI." %}
+            </p>
+          </div>
+        </div>
+        <div class="card-body space-y-4">
+          {% for item in scores %}
+            <div class="rounded-xl border border-slate-200 p-4 dark:border-slate-700" x-data="{ open: false }">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ item.label }}</p>
+                  <p class="mt-0.5 text-xs text-slate-600 dark:text-slate-400">{{ item.recommendation }}</p>
+                </div>
+                <div class="flex items-center gap-2">
+                  {% if not item.is_safe %}
+                    <span class="badge-rose">{% icon "shield-alert" "h-3 w-3" %}{% translate "Unsafe" %}</span>
+                  {% endif %}
+                  <span class="badge-{{ item.color }}">{{ item.score }}/100</span>
+                </div>
+              </div>
+
+              <button type="button" class="btn-ghost btn-sm mt-2 w-full justify-between" @click="open = !open"
+                      :aria-expanded="open ? 'true' : 'false'">
+                <span>{% translate "Why this number" %}</span>
+                <span x-show="!open">{% icon "chevron-down" "h-4 w-4" %}</span>
+                <span x-show="open" x-cloak>{% icon "chevron-up" "h-4 w-4" %}</span>
+              </button>
+
+              <div x-show="open" x-cloak x-transition class="mt-2 table-wrap">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th scope="col">{% translate "Factor" %}</th>
+                      <th scope="col">{% translate "Reading" %}</th>
+                      <th scope="col" class="text-end">{% translate "Weight" %}</th>
+                      <th scope="col" class="text-end">{% translate "Score" %}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for factor in item.factors %}
+                      <tr>
+                        <td class="align-top">
+                          <span class="font-medium text-slate-800 dark:text-slate-200">{{ factor.name }}</span>
+                          <span class="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">{{ factor.note }}</span>
+                        </td>
+                        <td class="align-top tabular-nums">{{ factor.value }}</td>
+                        <td class="align-top text-end tabular-nums">{{ factor.weight }}%</td>
+                        <td class="align-top text-end tabular-nums">
+                          {% if factor.measured %}{{ factor.score }}{% else %}<span class="text-slate-400">—</span>{% endif %}
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          {% empty %}
+            <div class="alert-warning">
+              {% icon "circle-alert" "h-5 w-5 shrink-0" %}
+              <p>{% translate "This reading has no wave height, so no surf score can be computed from it." %}</p>
+            </div>
+          {% endfor %}
+        </div>
+      </section>
+    </div>
+
+    {# ========================================================= context === #}
+    <div class="space-y-5">
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">
+            {% icon "map-pin" "inline h-4 w-4 text-brand-500" %} {% translate "The spot" %}
+          </h2>
+          <a href="{% url 'locations:detail' spot.pk %}" class="btn-ghost btn-sm">
+            {% translate "Open" %} {% icon "chevron-right" "h-4 w-4" %}
+          </a>
+        </div>
+        <div class="card-body">
+          <dl class="space-y-2 text-sm">
+            <div class="flex items-center justify-between gap-2">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Beach faces" %}</dt>
+              <dd class="font-medium">{{ spot.facing_compass }} ({{ spot.beach_facing_deg|floatformat:0 }}°)</dd>
+            </div>
+            <div class="flex items-center justify-between gap-2">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Offshore from" %}</dt>
+              <dd class="font-medium">{{ spot.offshore_compass }}</dd>
+            </div>
+            <div class="flex items-center justify-between gap-2">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Ideal tide" %}</dt>
+              <dd class="font-medium">{{ spot.get_ideal_tide_display }}</dd>
+            </div>
+            <div class="flex items-center justify-between gap-2">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Levels" %}</dt>
+              <dd class="font-medium">{{ spot.level_range_display }}</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">
+            {% icon "info" "inline h-4 w-4 text-slate-400" %} {% translate "How the score works" %}
+          </h2>
+        </div>
+        <div class="card-body">
+          <ul class="space-y-1.5 text-sm text-slate-600 dark:text-slate-400">
+            <li>{% blocktranslate with n=weights.wave_height %}Wave height fit — {{ n }}%{% endblocktranslate %}</li>
+            <li>{% blocktranslate with n=weights.wind %}Wind quality — {{ n }}%{% endblocktranslate %}</li>
+            <li>{% blocktranslate with n=weights.period %}Swell period — {{ n }}%{% endblocktranslate %}</li>
+            <li>{% blocktranslate with n=weights.tide %}Tide match — {{ n }}%{% endblocktranslate %}</li>
+            <li>{% blocktranslate with n=weights.water_temperature %}Water temperature — {{ n }}%{% endblocktranslate %}</li>
+            <li>{% blocktranslate with n=weights.weather %}Weather — {{ n }}%{% endblocktranslate %}</li>
+          </ul>
+          <p class="mt-3 text-xs text-slate-500 dark:text-slate-400">
+            {% translate "A wave over the level's limit, wind over its limit, or lightning caps the score at 25 and marks the level unsafe, whatever the other factors say." %}
+          </p>
+        </div>
+      </section>
+    </div>
+  </div>
+{% endblock %}

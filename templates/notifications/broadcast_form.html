@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Send announcement" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Send announcement" %}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "Every active user in the selected roles receives this message. You are not included." %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'notifications:list' %}" class="btn-secondary">
+    {% icon "chevron-left" "h-4 w-4" %} {% translate "Back to notifications" %}
+  </a>
+{% endblock %}
+
+{% block content %}
+<form method="post" class="max-w-2xl space-y-4" novalidate>
+  {% csrf_token %}
+
+  {% if form.non_field_errors %}
+    <div class="alert-error" role="alert">
+      <span class="mt-0.5 shrink-0">{% icon "circle-x" "h-5 w-5" %}</span>
+      <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+    </div>
+  {% endif %}
+
+  <section class="card">
+    <div class="card-header"><h2 class="card-title">{{ form.roles.label }}</h2></div>
+    <div class="card-body">
+      <p class="mb-3 text-sm text-slate-500 dark:text-slate-400">{{ form.roles.help_text }}</p>
+      <div class="grid gap-2 sm:grid-cols-2">
+        {% for choice in form.roles %}
+          <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
+            {{ choice.tag }} {{ choice.choice_label }}
+          </label>
+        {% endfor %}
+      </div>
+      {% for error in form.roles.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-header"><h2 class="card-title">{% translate "Message" %}</h2></div>
+    <div class="card-body space-y-4">
+      <div class="flex flex-wrap gap-4">
+        <div class="min-w-48 flex-1">
+          <label for="{{ form.category.id_for_label }}" class="form-label">{{ form.category.label }}</label>
+          {{ form.category }}
+          {% for error in form.category.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="min-w-48 flex-1">
+          <label for="{{ form.level.id_for_label }}" class="form-label">{{ form.level.label }}</label>
+          {{ form.level }}
+          <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ form.level.help_text }}</p>
+          {% for error in form.level.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        </div>
+      </div>
+
+      <div>
+        <label for="{{ form.title.id_for_label }}" class="form-label">{{ form.title.label }}</label>
+        {{ form.title }}
+        {% for error in form.title.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+      </div>
+
+      <div>
+        <label for="{{ form.body.id_for_label }}" class="form-label">{{ form.body.label }}</label>
+        {{ form.body }}
+        {% for error in form.body.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+      </div>
+
+      <div>
+        <label for="{{ form.link_url.id_for_label }}" class="form-label">{{ form.link_url.label }}</label>
+        {{ form.link_url }}
+        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ form.link_url.help_text }}</p>
+        {% for error in form.link_url.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <div class="alert-info" role="note">
+    <span class="mt-0.5 shrink-0">{% icon "info" "h-5 w-5" %}</span>
+    <div>
+      {% translate "Recipients who muted this category, or who are inside their quiet hours, will not be e-mailed. The in-app entry is still created unless they turned in-app notifications off." %}
+    </div>
+  </div>
+
+  <div class="flex items-center gap-2">
+    <button type="submit" class="btn-primary">
+      {% icon "send" "h-4 w-4" %} {% translate "Send" %}
+    </button>
+    <a href="{% url 'notifications:list' %}" class="btn-secondary">{% translate "Cancel" %}</a>
+  </div>
+</form>
+{% endblock %}

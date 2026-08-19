@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Delete rental" %} {{ rental.rental_code }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Delete rental" %} — {{ rental.rental_code }}{% endblock %}
+
+{% block content %}
+  <div class="max-w-xl">
+    <div class="alert-warning mb-5">
+      {% icon "triangle-alert" "h-5 w-5 shrink-0" %}
+      <div>
+        <p class="font-semibold">
+          {% blocktranslate with code=rental.rental_code %}Remove {{ code }} from the rental list?{% endblocktranslate %}
+        </p>
+        <p>
+          {% translate "The record is archived rather than destroyed: it stays in the audit trail and in financial history." %}
+        </p>
+      </div>
+    </div>
+
+    <form method="post" class="card">
+      {% csrf_token %}
+      <div class="card-body flex justify-end gap-2">
+        <a href="{% url 'rentals:detail' rental.pk %}" class="btn-ghost">{% translate "Keep it" %}</a>
+        <button type="submit" class="btn-danger">
+          {% icon "trash-2" "h-4 w-4" %} {% translate "Delete" %}
+        </button>
+      </div>
+    </form>
+  </div>
+{% endblock %}

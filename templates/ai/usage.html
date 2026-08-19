@@ -1,0 +1,466 @@
+{% extends "base.html" %}
+{% load i18n static surf_tags %}
+
+{% block title %}{% translate "AI usage & costs" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "AI usage & costs" %}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% blocktranslate with period=range_label %}Every AI request is recorded. Period: {{ period }}.{% endblocktranslate %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  {% can "ai.manage" as may_manage_ai %}
+  {% if may_manage_ai %}
+    <a href="{% url 'ai:control_center' %}" class="btn-secondary">
+      {% icon "cpu" "h-4 w-4" %} {% translate "Control Center" %}
+    </a>
+  {% endif %}
+  <a href="{% url 'ai:chat' %}" class="btn-primary">
+    {% icon "sparkles" "h-4 w-4" %} {% translate "Assistant" %}
+  </a>
+{% endblock %}
+
+{% block extra_head %}
+  <script src="{% static 'vendor/chartjs/chart.umd.js' %}" defer></script>
+{% endblock %}
+
+{% block content %}
+
+  {# ============================================================== filter #}
+  <form method="get" class="card mb-5 p-4">
+    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div>
+        <label class="form-label" for="id_range">{% translate "Period" %}</label>
+        <select name="range" id="id_range" class="form-select"
+                x-data @change="if ($el.value !== 'custom') { $el.form.submit(); }">
+          {% with selected=request.GET.range|default:"30" %}
+            <option value="today" {% if selected == "today" %}selected{% endif %}>{% translate "Today" %}</option>
+            <option value="7" {% if selected == "7" %}selected{% endif %}>{% translate "Last 7 days" %}</option>
+            <option value="30" {% if selected == "30" %}selected{% endif %}>{% translate "Last 30 days" %}</option>
+            <option value="90" {% if selected == "90" %}selected{% endif %}>{% translate "Last 3 months" %}</option>
+            <option value="180" {% if selected == "180" %}selected{% endif %}>{% translate "Last 6 months" %}</option>
+            <option value="365" {% if selected == "365" %}selected{% endif %}>{% translate "Last year" %}</option>
+            <option value="all" {% if selected == "all" %}selected{% endif %}>{% translate "All time" %}</option>
+            <option value="custom" {% if selected == "custom" %}selected{% endif %}>{% translate "Custom range" %}</option>
+          {% endwith %}
+        </select>
+      </div>
+      <div>
+        <label class="form-label" for="id_start">{% translate "From" %}</label>
+        <input type="date" name="start" id="id_start" value="{{ request.GET.start }}" class="form-input">
+      </div>
+      <div>
+        <label class="form-label" for="id_end">{% translate "To" %}</label>
+        <input type="date" name="end" id="id_end" value="{{ request.GET.end }}" class="form-input">
+      </div>
+      <div class="flex items-end gap-2">
+        <button type="submit" class="btn-primary">
+          {% icon "filter" "h-4 w-4" %} {% translate "Apply" %}
+        </button>
+        <a href="{% url 'ai:usage' %}" class="btn-secondary">
+          {% icon "rotate-ccw" "h-4 w-4" %} {% translate "Reset" %}
+        </a>
+      </div>
+    </div>
+    <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
+      {% translate "The From/To dates apply when the period is set to “Custom range”." %}
+    </p>
+  </form>
+
+  {# ================================================================= KPIs #}
+  <div class="mb-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Requests" %}</p>
+      <p class="stat-value">{{ total_requests }}</p>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {% blocktranslate with local=local_share cloud=cloud_share %}{{ local }} local · {{ cloud }} cloud{% endblocktranslate %}
+      </p>
+    </div>
+
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Tokens" %}</p>
+      <p class="stat-value">{{ total_tokens }}</p>
+      <p class="mt-1">{% include "ai/partials/delta.html" with value=tokens_change %}</p>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {% blocktranslate with prompt=prompt_tokens completion=completion_tokens %}{{ prompt }} in / {{ completion }} out{% endblocktranslate %}
+      </p>
+    </div>
+
+    <div class="stat-card">
+      <p class="stat-label">
+        {% translate "Estimated cost" %}
+        <span class="badge-amber ms-1">{% translate "Estimate" %}</span>
+      </p>
+      <p class="stat-value">${{ total_cost|floatformat:4 }}</p>
+      <p class="mt-1">{% include "ai/partials/delta.html" with value=cost_change invert=True %}</p>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {% translate "Calculated from published per-token prices in USD. It is an estimate, not an invoice — providers bill in credits and prices change." %}
+      </p>
+    </div>
+
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Average latency" %}</p>
+      <p class="stat-value">{% blocktranslate with ms=avg_latency %}{{ ms }} ms{% endblocktranslate %}</p>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {% translate "Mean round-trip across every recorded request in the period." %}
+      </p>
+    </div>
+
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Failed requests" %}</p>
+      <p class="stat-value {% if failures %}text-rose-600 dark:text-rose-400{% endif %}">{{ failures }}</p>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {% if total_requests %}
+          {% widthratio failures total_requests 100 as failure_rate %}
+          <span class="font-medium">{{ failure_rate }}%</span>
+          {% translate "of all requests in the period" %}
+        {% else %}
+          {% translate "No requests in the period" %}
+        {% endif %}
+      </p>
+    </div>
+
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Fallback answers" %}</p>
+      <p class="stat-value {% if fallbacks %}text-amber-600 dark:text-amber-400{% endif %}">{{ fallbacks }}</p>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {% if total_requests %}
+          {% widthratio fallbacks total_requests 100 as fallback_rate %}
+          <span class="font-medium">{{ fallback_rate }}%</span>
+          {% translate "answered by a backup model after the primary failed" %}
+        {% else %}
+          {% translate "No requests in the period" %}
+        {% endif %}
+      </p>
+    </div>
+  </div>
+
+  {# =============================================================== charts #}
+  <div class="mb-5 grid gap-4 lg:grid-cols-3">
+    <section class="card lg:col-span-2">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Tokens and estimated cost per day" %}</h2>
+      </div>
+      <div class="card-body">
+        {% if daily_series %}
+          <div class="h-72">
+            <canvas id="ai-usage-daily-chart"
+                    data-label-tokens="{% translate 'Tokens' %}"
+                    data-label-cost="{% translate 'Estimated cost (USD)' %}"
+                    aria-label="{% translate 'Daily tokens and estimated cost' %}" role="img"></canvas>
+          </div>
+        {% else %}
+          <p class="py-10 text-center text-sm text-slate-500 dark:text-slate-400">
+            {% translate "No AI requests were recorded in this period." %}
+          </p>
+        {% endif %}
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Local vs cloud" %}</h2>
+      </div>
+      <div class="card-body">
+        {% if local_share or cloud_share %}
+          <div class="h-72">
+            <canvas id="ai-usage-split-chart"
+                    data-label-local="{% translate 'Local (free, private)' %}"
+                    data-label-cloud="{% translate 'Cloud (billed)' %}"
+                    data-value-local="{{ local_share }}"
+                    data-value-cloud="{{ cloud_share }}"
+                    aria-label="{% translate 'Share of requests answered locally versus in the cloud' %}" role="img"></canvas>
+          </div>
+        {% else %}
+          <p class="py-10 text-center text-sm text-slate-500 dark:text-slate-400">
+            {% translate "No AI requests were recorded in this period." %}
+          </p>
+        {% endif %}
+      </div>
+    </section>
+  </div>
+
+  {% if daily_series %}
+    <script type="application/json" id="ai-usage-daily-data">{{ daily_series|to_json }}</script>
+  {% endif %}
+
+  {# =============================================================== tables #}
+  <div class="grid gap-5 xl:grid-cols-2">
+
+    {# --- by provider ---------------------------------------------------- #}
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "By provider" %}</h2>
+      </div>
+      <div class="table-wrap rounded-none border-0">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">{% translate "Provider" %}</th>
+              <th scope="col" class="text-end">{% translate "Requests" %}</th>
+              <th scope="col" class="text-end">{% translate "Tokens" %}</th>
+              <th scope="col" class="text-end">{% translate "Cost (est.)" %}</th>
+              <th scope="col" class="text-end">{% translate "Avg latency" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in by_provider %}
+              <tr>
+                <td class="font-medium text-slate-900 dark:text-slate-100">{{ row.provider }}</td>
+                <td class="text-end tabular-nums">{{ row.requests }}</td>
+                <td class="text-end tabular-nums">{{ row.tokens|default:0 }}</td>
+                <td class="text-end tabular-nums">${{ row.cost|default:0|floatformat:4 }}</td>
+                <td class="text-end tabular-nums">{% blocktranslate with ms=row.latency|floatformat:0 %}{{ ms }} ms{% endblocktranslate %}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="5" class="text-center text-slate-500 dark:text-slate-400">{% translate "No data for this period." %}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    {# --- by model -------------------------------------------------------- #}
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "By model" %}</h2>
+        <p class="text-xs text-slate-500 dark:text-slate-400">{% translate "Top 15 by tokens" %}</p>
+      </div>
+      <div class="table-wrap rounded-none border-0">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">{% translate "Model" %}</th>
+              <th scope="col" class="text-end">{% translate "Requests" %}</th>
+              <th scope="col" class="text-end">{% translate "Tokens" %}</th>
+              <th scope="col" class="text-end">{% translate "Cost (est.)" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in by_model %}
+              <tr>
+                <td>
+                  <span class="font-mono text-xs text-slate-900 dark:text-slate-100">{{ row.model }}</span>
+                  <span class="ms-1 text-xs text-slate-400 dark:text-slate-500">{{ row.provider }}</span>
+                </td>
+                <td class="text-end tabular-nums">{{ row.requests }}</td>
+                <td class="text-end tabular-nums">{{ row.tokens|default:0 }}</td>
+                <td class="text-end tabular-nums">${{ row.cost|default:0|floatformat:4 }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="4" class="text-center text-slate-500 dark:text-slate-400">{% translate "No data for this period." %}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    {# --- by operation ---------------------------------------------------- #}
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "By operation" %}</h2>
+      </div>
+      <div class="table-wrap rounded-none border-0">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">{% translate "Operation" %}</th>
+              <th scope="col" class="text-end">{% translate "Requests" %}</th>
+              <th scope="col" class="text-end">{% translate "Tokens" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in by_operation %}
+              <tr>
+                <td class="font-mono text-xs font-medium text-slate-900 dark:text-slate-100">{{ row.operation }}</td>
+                <td class="text-end tabular-nums">{{ row.requests }}</td>
+                <td class="text-end tabular-nums">{{ row.tokens|default:0 }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="3" class="text-center text-slate-500 dark:text-slate-400">{% translate "No data for this period." %}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    {# --- by user --------------------------------------------------------- #}
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "By user" %}</h2>
+        <p class="text-xs text-slate-500 dark:text-slate-400">{% translate "Top 10 by tokens" %}</p>
+      </div>
+      <div class="table-wrap rounded-none border-0">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">{% translate "User" %}</th>
+              <th scope="col" class="text-end">{% translate "Requests" %}</th>
+              <th scope="col" class="text-end">{% translate "Tokens" %}</th>
+              <th scope="col" class="text-end">{% translate "Cost (est.)" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in by_user %}
+              <tr>
+                <td>
+                  <span class="font-medium text-slate-900 dark:text-slate-100">
+                    {{ row.user__first_name }} {{ row.user__last_name }}
+                  </span>
+                  <span class="ms-1 text-xs text-slate-400 dark:text-slate-500">{{ row.user__username }}</span>
+                </td>
+                <td class="text-end tabular-nums">{{ row.requests }}</td>
+                <td class="text-end tabular-nums">{{ row.tokens|default:0 }}</td>
+                <td class="text-end tabular-nums">${{ row.cost|default:0|floatformat:4 }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="4" class="text-center text-slate-500 dark:text-slate-400">{% translate "No data for this period." %}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  {# ============================================================== recent #}
+  <section class="card mt-5">
+    <div class="card-header">
+      <h2 class="card-title">{% translate "Most recent requests" %}</h2>
+      <p class="text-xs text-slate-500 dark:text-slate-400">{% translate "Last 25 in the period" %}</p>
+    </div>
+    <div class="table-wrap rounded-none border-0">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">{% translate "When" %}</th>
+            <th scope="col">{% translate "User" %}</th>
+            <th scope="col">{% translate "Model" %}</th>
+            <th scope="col">{% translate "Operation" %}</th>
+            <th scope="col">{% translate "Result" %}</th>
+            <th scope="col" class="text-end">{% translate "Tokens" %}</th>
+            <th scope="col" class="text-end">{% translate "Cost (est.)" %}</th>
+            <th scope="col" class="text-end">{% translate "Latency" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for record in recent %}
+            <tr class="{% if not record.was_successful %}bg-rose-50/60 dark:bg-rose-500/5{% endif %}">
+              <td class="whitespace-nowrap">
+                <time datetime="{{ record.created_at|date:'c' }}">{{ record.created_at|date:"d.m.Y H:i" }}</time>
+              </td>
+              <td>
+                {% if record.user %}
+                  {{ record.user.get_full_name|default:record.user.username }}
+                {% else %}
+                  <span class="text-slate-400 dark:text-slate-500">{% translate "System" %}</span>
+                {% endif %}
+              </td>
+              <td>
+                <span class="font-mono text-xs">{{ record.model }}</span>
+                <span class="ms-1 text-xs text-slate-400 dark:text-slate-500">{{ record.provider }}</span>
+                {% if record.is_cloud %}
+                  <span class="badge-sky ms-1">{% translate "Cloud" %}</span>
+                {% else %}
+                  <span class="badge-emerald ms-1">{% translate "Local" %}</span>
+                {% endif %}
+              </td>
+              <td>{{ record.get_operation_display }}</td>
+              <td>
+                {% if record.was_successful %}
+                  <span class="badge-emerald">{% translate "OK" %}</span>
+                {% else %}
+                  <span class="badge-rose" title="{{ record.error }}">{% translate "Failed" %}</span>
+                {% endif %}
+                {% if record.used_fallback %}
+                  <span class="badge-amber ms-1">{% translate "Fallback" %}</span>
+                {% endif %}
+              </td>
+              <td class="text-end tabular-nums">{{ record.total_tokens }}</td>
+              <td class="text-end tabular-nums">${{ record.estimated_cost|floatformat:6 }}</td>
+              <td class="text-end tabular-nums">{% blocktranslate with ms=record.latency_ms %}{{ ms }} ms{% endblocktranslate %}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="8" class="text-center text-slate-500 dark:text-slate-400">{% translate "No AI requests were recorded in this period." %}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    if (typeof Chart === 'undefined' || typeof window.surfChartDefaults !== 'function') { return; }
+    var palette = window.surfChartColors || ['#0083ce', '#10b981'];
+
+    /* --- daily tokens & estimated cost --------------------------------- */
+    var dailyCanvas = document.getElementById('ai-usage-daily-chart');
+    var dailyData = document.getElementById('ai-usage-daily-data');
+    if (dailyCanvas && dailyData) {
+      var rows = [];
+      try { rows = JSON.parse(dailyData.textContent) || []; } catch (e) { rows = []; }
+
+      var options = window.surfChartDefaults();
+      options.scales.y.title = { display: true, text: dailyCanvas.dataset.labelTokens };
+      options.scales.y1 = {
+        position: 'right',
+        beginAtZero: true,
+        grid: { drawOnChartArea: false },
+        ticks: options.scales.y.ticks,
+        title: { display: true, text: dailyCanvas.dataset.labelCost }
+      };
+
+      new Chart(dailyCanvas, {
+        type: 'line',
+        data: {
+          labels: rows.map(function (row) { return row.date; }),
+          datasets: [
+            {
+              label: dailyCanvas.dataset.labelTokens,
+              data: rows.map(function (row) { return row.tokens; }),
+              borderColor: palette[0],
+              backgroundColor: palette[0],
+              tension: 0.3,
+              yAxisID: 'y'
+            },
+            {
+              label: dailyCanvas.dataset.labelCost,
+              data: rows.map(function (row) { return row.cost; }),
+              borderColor: palette[1],
+              backgroundColor: palette[1],
+              tension: 0.3,
+              yAxisID: 'y1'
+            }
+          ]
+        },
+        options: options
+      });
+    }
+
+    /* --- local vs cloud ------------------------------------------------- */
+    var splitCanvas = document.getElementById('ai-usage-split-chart');
+    if (splitCanvas) {
+      var splitOptions = window.surfChartDefaults();
+      delete splitOptions.scales;
+      new Chart(splitCanvas, {
+        type: 'doughnut',
+        data: {
+          labels: [splitCanvas.dataset.labelLocal, splitCanvas.dataset.labelCloud],
+          datasets: [{
+            data: [
+              Number(splitCanvas.dataset.valueLocal || 0),
+              Number(splitCanvas.dataset.valueCloud || 0)
+            ],
+            backgroundColor: [palette[1], palette[0]],
+            borderWidth: 0
+          }]
+        },
+        options: splitOptions
+      });
+    }
+  });
+</script>
+{% endblock %}

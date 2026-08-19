@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ form_title }} · {{ spot.name }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ form_title }}{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-3 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'locations:list' %}" class="hover:underline">{% translate "Surf spots" %}</a>
+    <span class="mx-1">/</span>
+    <a href="{% url 'locations:detail' spot.pk %}" class="hover:underline">{{ spot.name }}</a>
+    <span class="mx-1">/</span>
+    <span class="text-slate-700 dark:text-slate-300">{% translate "Hazard" %}</span>
+  </nav>
+{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% blocktranslate with name=spot.name %}Recorded against {{ name }}. A critical hazard closes the spot to every group until it is cleared.{% endblocktranslate %}
+  </p>
+{% endblock %}
+
+{% block content %}
+  <form method="post" novalidate class="mx-auto max-w-2xl space-y-5">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="alert-error">
+        {% icon "circle-alert" "h-5 w-5 shrink-0" %}
+        <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+      </div>
+    {% endif %}
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">
+          {% icon "triangle-alert" "inline h-4 w-4 text-amber-500" %} {% translate "Hazard" %}
+        </h2>
+      </div>
+      <div class="card-body grid gap-4 sm:grid-cols-2">
+        {% include "locations/partials/field.html" with field=form.name wrapper_class="sm:col-span-2" %}
+        {% include "locations/partials/field.html" with field=form.severity %}
+        {% include "locations/partials/field.html" with field=form.is_active %}
+        {% include "locations/partials/field.html" with field=form.description wrapper_class="sm:col-span-2" %}
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">
+          {% icon "droplets" "inline h-4 w-4 text-sky-500" %} {% translate "Tide window" %}
+        </h2>
+      </div>
+      <div class="card-body">
+        <div class="grid gap-4 sm:grid-cols-2">
+          {% include "locations/partials/field.html" with field=form.applies_from_tide %}
+          {% include "locations/partials/field.html" with field=form.applies_to_tide %}
+        </div>
+        <p class="mt-3 text-xs text-slate-500 dark:text-slate-400">
+          {% translate "Leave both on “Any tide” for a hazard that is always present. The window follows the cycle low → mid rising → high → mid falling and may wrap around it." %}
+        </p>
+      </div>
+    </section>
+
+    <div class="flex flex-wrap items-center justify-end gap-2">
+      <a href="{{ cancel_url }}" class="btn-secondary">{% translate "Cancel" %}</a>
+      <button type="submit" class="btn-primary">
+        {% icon "save" "h-4 w-4" %} {% translate "Save hazard" %}
+      </button>
+    </div>
+  </form>
+{% endblock %}

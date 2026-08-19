@@ -1,0 +1,38 @@
+{% load i18n surf_tags %}
+{# The last few audited events. Read-only: the audit log is append-only. #}
+<div class="card">
+  <div class="card-header">
+    <h2 class="card-title flex items-center gap-2">{% icon "history" "h-4 w-4 text-slate-400" %} {% translate "Recent activity" %}</h2>
+    {% if links.audit_list %}
+      <a href="{{ links.audit_list }}" class="btn-ghost btn-sm">{% translate "Audit log" %} {% icon "chevron-right" "h-4 w-4" %}</a>
+    {% endif %}
+  </div>
+
+  {% if recent_activity is None %}
+    <div class="card-body">
+      <p class="text-sm text-slate-500 dark:text-slate-400">{% translate "The audit module is not available." %}</p>
+    </div>
+  {% elif recent_activity %}
+    <ul class="divide-y divide-slate-100 dark:divide-slate-800">
+      {% for entry in recent_activity %}
+        <li class="flex items-start gap-3 px-5 py-3">
+          <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+            {% icon "activity" "h-3 w-3" %}
+          </span>
+          <div class="min-w-0 flex-1">
+            <p class="truncate text-sm text-slate-800 dark:text-slate-200">
+              {{ entry.description|default:entry.get_action_display }}
+            </p>
+            <p class="truncate text-xs text-slate-500 dark:text-slate-400">
+              {{ entry.username|default:_("System") }} · {{ entry.created_at|date:"d.m.Y H:i" }}
+            </p>
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <div class="card-body">
+      <p class="text-sm text-slate-500 dark:text-slate-400">{% translate "Nothing has been recorded yet." %}</p>
+    </div>
+  {% endif %}
+</div>

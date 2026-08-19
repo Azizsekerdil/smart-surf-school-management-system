@@ -1,0 +1,80 @@
+{% load i18n surf_tags %}
+<div id="lesson-table">
+  {% if lessons %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">{% translate "Lesson" %}</th>
+            <th scope="col">{% translate "When" %}</th>
+            <th scope="col">{% translate "Spot" %}</th>
+            <th scope="col">{% translate "Instructor" %}</th>
+            <th scope="col">{% translate "Seats" %}</th>
+            <th scope="col">{% translate "Status" %}</th>
+            <th scope="col" class="text-end">{% translate "Price" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for lesson in lessons %}
+            <tr>
+              <td>
+                <div class="flex items-center gap-3">
+                  <span class="inline-block h-8 w-1.5 shrink-0 rounded-full"
+                        style="background-color: {{ lesson.lesson_type.colour }}"
+                        aria-hidden="true"></span>
+                  <div class="min-w-0">
+                    <a href="{% url 'lessons:detail' lesson.pk %}"
+                       class="font-medium text-brand-700 hover:underline dark:text-brand-300">
+                      {{ lesson.lesson_code }}
+                    </a>
+                    <p class="truncate text-xs text-slate-500 dark:text-slate-400">{{ lesson.lesson_type.name }}</p>
+                  </div>
+                </div>
+              </td>
+              <td class="whitespace-nowrap">
+                <div>{{ lesson.date|date:"d.m.Y" }}</div>
+                <p class="text-xs text-slate-500 dark:text-slate-400">
+                  {{ lesson.start_time|time:"H:i" }}–{{ lesson.end_time|time:"H:i" }}
+                  · {{ lesson.duration_minutes|duration_hm }}
+                </p>
+              </td>
+              <td>{{ lesson.spot }}</td>
+              <td>
+                {{ lesson.instructor }}
+                {% if lesson.assistant_instructors.all %}
+                  <p class="text-xs text-slate-500 dark:text-slate-400">
+                    {% blocktranslate count counter=lesson.assistant_instructors.all|length %}+{{ counter }} assistant{% plural %}+{{ counter }} assistants{% endblocktranslate %}
+                  </p>
+                {% endif %}
+              </td>
+              <td class="whitespace-nowrap tabular-nums">
+                {{ lesson.booked }} / {{ lesson.capacity }}
+                {% if lesson.booked >= lesson.capacity %}
+                  <span class="badge-amber ms-1">{% translate "Full" %}</span>
+                {% endif %}
+              </td>
+              <td>
+                {% status_badge lesson.status lesson.get_status_display %}
+                {% if not lesson.safety_briefing_done and lesson.is_editable %}
+                  <span class="badge-amber ms-1" title="{% translate 'Safety briefing not recorded' %}">
+                    {% icon "shield-alert" "h-3 w-3" %}
+                  </span>
+                {% endif %}
+              </td>
+              <td class="text-end tabular-nums">{{ lesson.price|money }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% include "partials/pagination.html" %}
+  {% else %}
+    {% can "lessons.add" as may_add %}
+    {% url 'lessons:create' as create_url %}
+    {% if may_add %}
+      {% include "partials/empty_state.html" with icon_name="calendar-days" title=_("No lessons in this period") subtitle=_("Adjust the filters, or schedule the first lesson of the season.") action_url=create_url action_label=_("Schedule a lesson") %}
+    {% else %}
+      {% include "partials/empty_state.html" with icon_name="calendar-days" title=_("No lessons in this period") subtitle=_("Try widening the date range or clearing the filters.") %}
+    {% endif %}
+  {% endif %}
+</div>

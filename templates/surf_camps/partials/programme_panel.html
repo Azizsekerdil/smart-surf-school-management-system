@@ -1,0 +1,139 @@
+{% load i18n surf_tags %}
+{% can "surf_camps.change" as may_change %}
+
+<div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+  <p class="text-sm text-slate-500 dark:text-slate-400">
+    {% blocktranslate count days=camp.duration_days %}{{ days }} day programme{% plural %}{{ days }} day programme{% endblocktranslate %}
+    {% if camp.nights %}
+      · {% blocktranslate count nights=camp.nights %}{{ nights }} night{% plural %}{{ nights }} nights{% endblocktranslate %}
+    {% endif %}
+  </p>
+  {% if may_change %}
+    <div class="flex flex-wrap gap-2">
+      <form method="post" action="{% url 'surf_camps:generate_programme' camp.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="btn-secondary btn-sm">
+          {% icon "sparkles" "h-4 w-4" %} {% translate "Fill empty days" %}
+        </button>
+      </form>
+      <a href="{% url 'surf_camps:day_create' camp.pk %}" class="btn-secondary btn-sm">
+        {% icon "plus" "h-4 w-4" %} {% translate "Add day" %}
+      </a>
+    </div>
+  {% endif %}
+</div>
+
+{% if camp.days.all %}
+  <div class="space-y-4">
+    {% for day in camp.days.all %}
+      <article class="card">
+        <div class="card-header flex-wrap">
+          <div class="min-w-0">
+            <h3 class="card-title flex flex-wrap items-center gap-2">
+              <span class="badge-sky">{% blocktranslate with number=day.day_number %}Day {{ number }}{% endblocktranslate %}</span>
+              <span>{{ day.display_title }}</span>
+              {% if day.is_today %}<span class="badge-emerald">{% translate "Today" %}</span>{% endif %}
+            </h3>
+            <p class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
+              <span>{{ day.date|date:"l, d.m.Y" }}</span>
+              {% if day.effective_spot %}
+                <span class="inline-flex items-center gap-1">
+                  {% icon "map-pin" "h-3.5 w-3.5" %}{{ day.effective_spot }}
+                </span>
+              {% endif %}
+              {% if day.weather_note %}
+                <span class="inline-flex items-center gap-1">
+                  {% icon "cloud" "h-3.5 w-3.5" %}{{ day.weather_note }}
+                </span>
+              {% endif %}
+            </p>
+          </div>
+          <div class="flex shrink-0 flex-wrap gap-1">
+            <a href="{% url 'surf_camps:roster' camp.pk %}?date={{ day.date|date:'Y-m-d' }}"
+               class="btn-ghost btn-sm" title="{% translate 'Print this day' %}">
+              {% icon "printer" "h-4 w-4" %}
+            </a>
+            {% if may_change %}
+              <a href="{% url 'surf_camps:activity_create' day.pk %}" class="btn-secondary btn-sm">
+                {% icon "plus" "h-4 w-4" %} {% translate "Activity" %}
+              </a>
+              <a href="{% url 'surf_camps:day_update' day.pk %}" class="btn-ghost btn-sm" title="{% translate 'Edit day' %}">
+                {% icon "pencil" "h-4 w-4" %}
+              </a>
+              <a href="{% url 'surf_camps:day_delete' day.pk %}" class="btn-ghost btn-sm text-rose-600 dark:text-rose-400" title="{% translate 'Delete day' %}">
+                {% icon "trash-2" "h-4 w-4" %}
+              </a>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="card-body">
+          {% if day.description %}
+            <p class="mb-4 text-sm text-slate-600 dark:text-slate-300">{{ day.description }}</p>
+          {% endif %}
+
+          {% if day.activities.all %}
+            <ol class="relative space-y-3 border-s border-slate-200 ps-5 dark:border-slate-700">
+              {% for activity in day.activities.all %}
+                <li class="relative">
+                  <span class="absolute -start-[1.6rem] flex h-6 w-6 items-center justify-center rounded-full
+                               {% if activity.is_water_activity %}bg-sky-100 text-sky-700 dark:bg-sky-500/20 dark:text-sky-300{% else %}bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400{% endif %}">
+                    {% icon activity_type_icons|get_item:activity.activity_type|default:"circle-check" "h-3.5 w-3.5" %}
+                  </span>
+                  <div class="flex flex-wrap items-start justify-between gap-3 rounded-lg border border-slate-100 px-3 py-2 dark:border-slate-800">
+                    <div class="min-w-0">
+                      <p class="text-sm font-medium text-slate-900 dark:text-slate-100">
+                        <span class="font-mono text-xs text-slate-500 dark:text-slate-400">{{ activity.time_label }}</span>
+                        {{ activity.title }}
+                      </p>
+                      <p class="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-slate-500 dark:text-slate-400">
+                        <span>{{ activity.get_activity_type_display }}</span>
+                        {% if activity.instructor %}
+                          <span class="inline-flex items-center gap-1">
+                            {% icon "user-round" "h-3.5 w-3.5" %}{{ activity.instructor }}
+                          </span>
+                        {% endif %}
+                        {% if activity.location %}
+                          <span class="inline-flex items-center gap-1">
+                            {% icon "map-pin" "h-3.5 w-3.5" %}{{ activity.location }}
+                          </span>
+                        {% endif %}
+                        {% if activity.lesson %}
+                          <span class="badge-violet">{% translate "Linked lesson" %}</span>
+                        {% endif %}
+                      </p>
+                      {% if activity.notes %}
+                        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ activity.notes }}</p>
+                      {% endif %}
+                    </div>
+                    {% if may_change %}
+                      <div class="flex shrink-0 gap-1">
+                        <a href="{% url 'surf_camps:activity_update' activity.pk %}" class="btn-ghost btn-sm" title="{% translate 'Edit activity' %}">
+                          {% icon "pencil" "h-4 w-4" %}
+                        </a>
+                        <a href="{% url 'surf_camps:activity_delete' activity.pk %}" class="btn-ghost btn-sm text-rose-600 dark:text-rose-400" title="{% translate 'Delete activity' %}">
+                          {% icon "trash-2" "h-4 w-4" %}
+                        </a>
+                      </div>
+                    {% endif %}
+                  </div>
+                </li>
+              {% endfor %}
+            </ol>
+          {% else %}
+            <p class="text-sm text-slate-500 dark:text-slate-400">
+              {% translate "No activities planned for this day yet." %}
+            </p>
+          {% endif %}
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+{% else %}
+  {% if may_change %}
+    {% url 'surf_camps:day_create' camp.pk as add_day_url %}
+    {% include "partials/empty_state.html" with icon_name="calendar-days" title=_("The programme is empty") subtitle=_("Add the camp days, then let the system fill them with a default schedule.") action_url=add_day_url action_label=_("Add day") %}
+  {% else %}
+    {% include "partials/empty_state.html" with icon_name="calendar-days" title=_("The programme is empty") %}
+  {% endif %}
+{% endif %}

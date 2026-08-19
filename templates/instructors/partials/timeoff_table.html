@@ -1,0 +1,81 @@
+{% load i18n surf_tags %}
+{# Declared here so the partial works standalone over HTMX too. #}
+{% can "instructors.approve" as may_approve %}
+{% can "instructors.delete" as may_delete %}
+<div id="timeoff-results">
+  {% if time_off_periods %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>{% translate "Instructor" %}</th>
+            <th>{% translate "Period" %}</th>
+            <th>{% translate "Days" %}</th>
+            <th>{% translate "Reason" %}</th>
+            <th>{% translate "Status" %}</th>
+            <th class="text-end">{% translate "Actions" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for period in time_off_periods %}
+            <tr>
+              <td>
+                <a href="{% url 'instructors:detail' period.instructor_id %}"
+                   class="font-medium text-slate-900 hover:text-brand-700 dark:text-slate-100">
+                  {{ period.instructor.full_name }}
+                </a>
+                <p class="text-xs text-slate-500">{{ period.instructor.instructor_code }}</p>
+              </td>
+              <td class="whitespace-nowrap tabular-nums">
+                {{ period.start_date|date:"d.m.Y" }} – {{ period.end_date|date:"d.m.Y" }}
+                {% if period.is_current %}<span class="badge-sky ms-1">{% translate "Now" %}</span>{% endif %}
+              </td>
+              <td class="tabular-nums">{{ period.total_days }}</td>
+              <td>
+                {{ period.get_reason_display }}
+                {% if period.note %}<p class="text-xs text-slate-500">{{ period.note|truncatechars:60 }}</p>{% endif %}
+              </td>
+              <td>
+                {% if period.is_approved %}
+                  <span class="badge-emerald">{% translate "Approved" %}</span>
+                  {% if period.approved_by %}
+                    <p class="mt-0.5 text-xs text-slate-500">{{ period.approved_by.get_display_name }}</p>
+                  {% endif %}
+                {% else %}
+                  <span class="badge-amber">{% translate "Pending" %}</span>
+                {% endif %}
+              </td>
+              <td class="text-end">
+                <div class="flex justify-end gap-1">
+                  {% if may_approve and not period.is_approved %}
+                    <form method="post" action="{% url 'instructors:timeoff_approve' period.pk %}">
+                      {% csrf_token %}
+                      <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                      <button type="submit" class="btn-ghost btn-sm text-emerald-600 dark:text-emerald-400">
+                        {% icon "check" "h-4 w-4" %} {% translate "Approve" %}
+                      </button>
+                    </form>
+                  {% endif %}
+                  {% if may_delete and not period.is_past %}
+                    <form method="post" action="{% url 'instructors:timeoff_cancel' period.pk %}"
+                          onsubmit="return confirm('{% translate "Withdraw this absence?" %}');">
+                      {% csrf_token %}
+                      <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                      <button type="submit" class="btn-ghost btn-sm text-rose-600 dark:text-rose-400">
+                        {% icon "x" "h-4 w-4" %}<span class="sr-only">{% translate "Withdraw" %}</span>
+                      </button>
+                    </form>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% include "partials/pagination.html" %}
+  {% else %}
+    {% include "partials/empty_state.html" with icon_name="calendar-days" title=_("No absence records") subtitle=_("Nothing matches this filter.") %}
+  {% endif %}
+</div>

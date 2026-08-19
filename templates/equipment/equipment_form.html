@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ title }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block page_subtitle %}
+  {% if object %}
+    <p class="mt-1 font-mono text-sm text-slate-500 dark:text-slate-400">{{ object.asset_code }}</p>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  {% if not has_categories %}
+    <div class="alert-warning mb-4" role="alert">
+      {% icon "triangle-alert" "h-4 w-4 shrink-0" %}
+      <span>
+        {% translate "There are no active categories yet." %}
+        <a href="{% url 'equipment:category_list' %}" class="font-semibold underline">
+          {% translate "Set up the categories first." %}
+        </a>
+      </span>
+    </div>
+  {% endif %}
+
+  <form method="post" class="space-y-5" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="alert-error" role="alert">
+        {% icon "circle-alert" "h-4 w-4 shrink-0" %}
+        <div>
+          {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+    {% for legend, fields in form.fieldsets %}
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">{{ legend }}</h2>
+        </div>
+        <div class="card-body grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {% for field in fields %}
+            <div class="{% if field.field.widget.input_type == 'checkbox' %}flex items-center gap-2 pt-6{% elif field.name == 'notes' %}sm:col-span-2 lg:col-span-3{% endif %}">
+              {% if field.field.widget.input_type == "checkbox" %}
+                {{ field }}
+                <label class="text-sm text-slate-700 dark:text-slate-300" for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {% else %}
+                <label class="form-label" for="{{ field.id_for_label }}">
+                  {{ field.label }}{% if field.field.required %} <span class="text-rose-500">*</span>{% endif %}
+                </label>
+                {{ field }}
+              {% endif %}
+              {% if field.help_text %}<p class="form-help">{{ field.help_text }}</p>{% endif %}
+              {% for error in field.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+            </div>
+          {% endfor %}
+        </div>
+      </section>
+    {% endfor %}
+
+    <div class="flex flex-wrap items-center gap-2">
+      <button type="submit" class="btn-primary">
+        {% icon "save" "h-4 w-4" %} {% translate "Save" %}
+      </button>
+      {% if object %}
+        <a href="{% url 'equipment:detail' object.pk %}" class="btn-secondary">{% translate "Cancel" %}</a>
+      {% else %}
+        <a href="{% url 'equipment:list' %}" class="btn-secondary">{% translate "Cancel" %}</a>
+      {% endif %}
+      <p class="ms-auto text-xs text-slate-500 dark:text-slate-400">
+        {% translate "Status changes are made from the item page so they are recorded in the audit log." %}
+      </p>
+    </div>
+  </form>
+{% endblock %}

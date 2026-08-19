@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ form_title }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ form_title }}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "A warning you enter here is authoritative from the moment you save it — you are the person signing for it." %}
+  </p>
+{% endblock %}
+
+{% block content %}
+  <form method="post" novalidate class="mx-auto max-w-3xl space-y-5">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="alert-error">
+        {% icon "circle-alert" "h-5 w-5 shrink-0" %}
+        <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+      </div>
+    {% endif %}
+
+    {% if form.instance.ai_suggested %}
+      <div class="ai-surface p-4">
+        <div class="mb-2 flex flex-wrap items-center gap-2">
+          {% ai_chip %}
+          <span class="text-xs font-medium uppercase tracking-wide text-violet-700 dark:text-violet-300">
+            {% if form.instance.acknowledged_by %}
+              {% translate "Confirmed by staff" %}
+            {% else %}
+              {% translate "Awaiting staff confirmation" %}
+            {% endif %}
+          </span>
+        </div>
+        {% if form.instance.ai_rationale %}
+          <p class="whitespace-pre-line text-sm text-slate-700 dark:text-slate-300">{{ form.instance.ai_rationale }}</p>
+        {% endif %}
+        <p class="mt-2 text-xs text-slate-600 dark:text-slate-400">
+          {% translate "Editing the text here does not confirm the suggestion. Confirmation happens on the warnings list and is recorded against a named person." %}
+        </p>
+      </div>
+    {% endif %}
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">
+          {% icon "cloud" "inline h-4 w-4 text-brand-500" %} {% translate "Warning" %}
+        </h2>
+      </div>
+      <div class="card-body grid gap-4 sm:grid-cols-2">
+        {% include "safety/partials/field.html" with field=form.title wrapper_class="sm:col-span-2" %}
+        {% include "safety/partials/field.html" with field=form.spot %}
+        {% include "safety/partials/field.html" with field=form.severity %}
+        {% include "safety/partials/field.html" with field=form.source %}
+        {% include "safety/partials/field.html" with field=form.is_active %}
+        {% include "safety/partials/field.html" with field=form.description wrapper_class="sm:col-span-2" %}
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">
+          {% icon "clock" "inline h-4 w-4 text-brand-500" %} {% translate "Window" %}
+        </h2>
+      </div>
+      <div class="card-body grid gap-4 sm:grid-cols-2">
+        {% include "safety/partials/field.html" with field=form.starts_at %}
+        {% include "safety/partials/field.html" with field=form.ends_at %}
+      </div>
+    </section>
+
+    <div class="flex flex-wrap items-center justify-end gap-2">
+      <a href="{{ cancel_url }}" class="btn-secondary">{% translate "Cancel" %}</a>
+      <button type="submit" class="btn-primary">
+        {% icon "save" "h-4 w-4" %} {% translate "Save warning" %}
+      </button>
+    </div>
+  </form>
+{% endblock %}

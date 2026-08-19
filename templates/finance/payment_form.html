@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ form_title }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ form_title }}{% endblock %}
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "Attach the money to whatever it settles — the balance on that booking, rental or invoice updates immediately." %}
+  </p>
+{% endblock %}
+
+{% block content %}
+  <form method="post" novalidate class="space-y-5">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="alert-error">
+        {% icon "circle-alert" "h-5 w-5 shrink-0" %}
+        <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+      </div>
+    {% endif %}
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">
+          {% icon "banknote" "inline h-4 w-4 text-brand-500" %} {% translate "The money" %}
+        </h2>
+      </div>
+      <div class="card-body grid gap-4 sm:grid-cols-2">
+        {% include "finance/partials/field.html" with field=form.customer wrapper_class="sm:col-span-2" %}
+        {% include "finance/partials/field.html" with field=form.amount %}
+        {% include "finance/partials/field.html" with field=form.method %}
+        {% include "finance/partials/field.html" with field=form.category %}
+        {% include "finance/partials/field.html" with field=form.paid_at %}
+        {% include "finance/partials/field.html" with field=form.reference wrapper_class="sm:col-span-2" %}
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">
+          {% icon "arrow-left-right" "inline h-4 w-4 text-brand-500" %} {% translate "What it settles" %}
+        </h2>
+      </div>
+      <div class="card-body grid gap-4 sm:grid-cols-3">
+        {% include "finance/partials/field.html" with field=form.invoice %}
+        {% include "finance/partials/field.html" with field=form.booking %}
+        {% include "finance/partials/field.html" with field=form.rental %}
+        <p class="text-xs text-slate-500 sm:col-span-3 dark:text-slate-400">
+          {% translate "Leave these empty for a payment that stands on its own, such as a walk-in shop sale." %}
+        </p>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-body">
+        {% include "finance/partials/field.html" with field=form.notes %}
+      </div>
+    </section>
+
+    <div class="flex flex-wrap items-center gap-2">
+      <button type="submit" class="btn-primary">
+        {% icon "check" "h-4 w-4" %} {% translate "Record payment" %}
+      </button>
+      <a href="{{ cancel_url }}" class="btn-secondary">{% translate "Cancel" %}</a>
+    </div>
+  </form>
+{% endblock %}

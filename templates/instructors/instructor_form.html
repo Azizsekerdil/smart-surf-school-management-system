@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ title }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-3 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'instructors:list' %}" class="hover:text-brand-700 dark:hover:text-brand-300">{% translate "Instructors" %}</a>
+    <span class="mx-1">/</span>
+    <span class="text-slate-700 dark:text-slate-300">{{ title }}</span>
+  </nav>
+{% endblock %}
+
+{% block content %}
+  <form method="post" enctype="multipart/form-data" novalidate class="space-y-5">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="alert-error">
+        <span class="mt-0.5 shrink-0">{% icon "circle-x" "h-5 w-5" %}</span>
+        <div class="flex-1">
+          {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+    <section class="card">
+      <div class="card-header"><h2 class="card-title">{% translate "Identity" %}</h2></div>
+      <div class="card-body grid gap-4 sm:grid-cols-2">
+        {% include "instructors/partials/field.html" with field=form.user %}
+        {% include "instructors/partials/field.html" with field=form.photo %}
+        {% include "instructors/partials/field.html" with field=form.bio wrapper_class="sm:col-span-2" %}
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header"><h2 class="card-title">{% translate "Teaching" %}</h2></div>
+      <div class="card-body grid gap-4 sm:grid-cols-2">
+        {% include "instructors/partials/field.html" with field=form.max_level_taught %}
+        {% include "instructors/partials/field.html" with field=form.max_students_per_lesson %}
+        {% include "instructors/partials/field.html" with field=form.specialties wrapper_class="sm:col-span-2" %}
+        <div class="sm:col-span-2">
+          <p class="form-label">{{ form.languages.label }}</p>
+          <div class="flex flex-wrap gap-x-5 gap-y-2">
+            {% for choice in form.languages %}
+              <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+                {{ choice.tag }} <span>{{ choice.choice_label }}</span>
+              </label>
+            {% endfor %}
+          </div>
+          {% for error in form.languages.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header"><h2 class="card-title">{% translate "Employment" %}</h2></div>
+      <div class="card-body grid gap-4 sm:grid-cols-2">
+        {% include "instructors/partials/field.html" with field=form.hire_date %}
+        {% include "instructors/partials/field.html" with field=form.hourly_rate %}
+        {% include "instructors/partials/field.html" with field=form.commission_percent %}
+        <div class="flex flex-col justify-end gap-3">
+          <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+            {{ form.is_active }} <span>{{ form.is_active.label }}</span>
+          </label>
+          <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+            {{ form.is_available_for_booking }} <span>{{ form.is_available_for_booking.label }}</span>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header"><h2 class="card-title">{% translate "Emergency contact" %}</h2></div>
+      <div class="card-body grid gap-4 sm:grid-cols-2">
+        {% include "instructors/partials/field.html" with field=form.emergency_contact_name %}
+        {% include "instructors/partials/field.html" with field=form.emergency_contact_phone %}
+      </div>
+    </section>
+
+    <div class="flex flex-wrap items-center gap-3">
+      <button type="submit" class="btn-primary">
+        {% icon "save" "h-4 w-4" %} {% translate "Save" %}
+      </button>
+      <a href="{{ cancel_url }}" class="btn-secondary">{% translate "Cancel" %}</a>
+    </div>
+  </form>
+{% endblock %}

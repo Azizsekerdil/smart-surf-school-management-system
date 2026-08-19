@@ -1,0 +1,38 @@
+{% load i18n surf_tags %}
+{% if lessons %}
+  <ul class="max-h-72 space-y-2 overflow-y-auto pe-1">
+    {% for option in lessons %}
+      <li>
+        <button type="button"
+                class="flex w-full items-center gap-3 rounded-lg border border-s-4 px-3 py-2 text-start transition"
+                style="border-inline-start-color: {{ option.colour }}"
+                :class="lessonId === '{{ option.id }}'
+                        ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10'
+                        : 'border-slate-200 hover:border-brand-300 dark:border-slate-700'"
+                @click="pickLesson('{{ option.id }}', '{{ option.price|escapejs }}')">
+          <span class="min-w-0 flex-1">
+            <span class="block truncate text-sm font-medium text-slate-800 dark:text-slate-100">{{ option.label }}</span>
+            <span class="block text-xs text-slate-500 dark:text-slate-400">
+              {{ option.when }}{% if option.instructor %} · {{ option.instructor }}{% endif %}
+            </span>
+          </span>
+          <span class="shrink-0 text-end">
+            <span class="block text-xs tabular-nums font-medium
+              {% if option.free <= 2 %}text-amber-600 dark:text-amber-400{% else %}text-emerald-600 dark:text-emerald-400{% endif %}">
+              {{ option.capacity_label }}
+            </span>
+            <span class="block text-xs tabular-nums text-slate-500 dark:text-slate-400">{{ option.price|money }}</span>
+          </span>
+        </button>
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p class="rounded-lg border border-dashed border-slate-300 px-3 py-3 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+    {% if term or day %}
+      {% translate "No session with a free seat matches that search. Try another date, or add the customer to the waiting list." %}
+    {% else %}
+      {% translate "No upcoming session has a free seat. Schedule one in the Lessons module." %}
+    {% endif %}
+  </p>
+{% endif %}

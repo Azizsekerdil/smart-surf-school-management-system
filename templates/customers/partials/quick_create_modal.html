@@ -1,0 +1,74 @@
+{% load i18n surf_tags %}
+{% comment %} Quick-create modal. Open with:
+   hx-get="{% url 'customers:quick_create' %}?target=<field-id>" hx-target="#modal-region"
+   On success the response sends an HX-Trigger "customerCreated" event carrying
+   {id, code, name, phone, email, url, target}. {% endcomment %}
+<div id="customer-quick-create"
+     class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"
+     x-data="{ open: true }"
+     x-show="open"
+     @keydown.escape.window="document.getElementById('modal-region').innerHTML = ''"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="quick-create-title">
+  <div class="card w-full max-w-lg" @click.outside="document.getElementById('modal-region').innerHTML = ''">
+    <div class="card-header">
+      <h2 class="card-title" id="quick-create-title">{% translate "New customer" %}</h2>
+      <button type="button"
+              class="btn-icon text-slate-500"
+              aria-label="{% translate 'Close' %}"
+              onclick="document.getElementById('modal-region').innerHTML = '';">
+        {% icon "x" "h-5 w-5" %}
+      </button>
+    </div>
+
+    <form hx-post="{% url 'customers:quick_create' %}"
+          hx-target="#customer-quick-create"
+          hx-swap="outerHTML"
+          method="post"
+          action="{% url 'customers:quick_create' %}">
+      {% csrf_token %}
+      <input type="hidden" name="target" value="{{ target }}">
+      <div class="card-body grid gap-4 sm:grid-cols-2">
+        {% if form.non_field_errors %}
+          <div class="alert-error sm:col-span-2">
+            {% icon "circle-alert" "h-5 w-5 shrink-0" %}
+            <div>
+              {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+              {% if existing %}
+                <p class="mt-2">
+                  <a href="{% url 'customers:detail' existing.pk %}" class="underline">
+                    {% translate "Open the existing record" %}
+                  </a>
+                </p>
+              {% endif %}
+            </div>
+          </div>
+        {% endif %}
+
+        {% for field in form %}
+          <div {% if field.name == "email" or field.name == "source" %}class="sm:col-span-2"{% endif %}>
+            <label class="form-label" for="{{ field.id_for_label }}">
+              {{ field.label }}{% if field.field.required %} <span class="text-rose-500">*</span>{% endif %}
+            </label>
+            {{ field }}
+            {% for error in field.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+          </div>
+        {% endfor %}
+
+        <p class="form-help sm:col-span-2">
+          {% translate "Only the essentials — the full profile, waiver and medical details can be completed later." %}
+        </p>
+      </div>
+      <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-5 py-4 dark:border-slate-700">
+        <button type="button" class="btn-secondary"
+                onclick="document.getElementById('modal-region').innerHTML = '';">
+          {% translate "Cancel" %}
+        </button>
+        <button type="submit" class="btn-primary">
+          {% icon "user-plus" "h-4 w-4" %} {% translate "Create customer" %}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,75 @@
+{% load i18n surf_tags %}
+<div id="booking-table">
+  {% if bookings %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">{% translate "Code" %}</th>
+            <th scope="col">{% translate "Customer" %}</th>
+            <th scope="col">{% translate "Activity" %}</th>
+            <th scope="col">{% translate "When" %}</th>
+            <th scope="col" class="text-center">{% translate "Seats" %}</th>
+            <th scope="col">{% translate "Status" %}</th>
+            <th scope="col">{% translate "Payment" %}</th>
+            <th scope="col" class="text-end">{% translate "Total" %}</th>
+            <th scope="col" class="text-end">{% translate "Balance" %}</th>
+            <th scope="col"><span class="sr-only">{% translate "Actions" %}</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for booking in bookings %}
+            <tr>
+              <td>
+                <a href="{% url 'bookings:detail' booking.pk %}"
+                   class="font-medium text-brand-700 hover:underline dark:text-brand-300">
+                  {{ booking.booking_code }}
+                </a>
+                <p class="text-xs text-slate-400">{{ booking.get_booking_type_display }}</p>
+              </td>
+              <td>
+                <p class="font-medium text-slate-800 dark:text-slate-100">{{ booking.customer }}</p>
+                {% if booking.student %}
+                  <p class="text-xs text-slate-500 dark:text-slate-400">
+                    {% blocktranslate with name=booking.student %}Student: {{ name }}{% endblocktranslate %}
+                  </p>
+                {% endif %}
+              </td>
+              <td class="max-w-56 truncate">{{ booking.activity_label }}</td>
+              <td class="whitespace-nowrap tabular-nums">
+                {% if booking.scheduled_start %}
+                  {{ booking.scheduled_start|date:"d.m.Y H:i" }}
+                {% else %}
+                  <span class="text-slate-400">—</span>
+                {% endif %}
+              </td>
+              <td class="text-center tabular-nums">{{ booking.participants }}</td>
+              <td>{% status_badge booking.status booking.get_status_display %}</td>
+              <td>{% status_badge booking.payment_status booking.get_payment_status_display %}</td>
+              <td class="text-end tabular-nums">{{ booking.total_amount|money }}</td>
+              <td class="text-end tabular-nums {% if booking.balance_due > 0 %}text-rose-600 dark:text-rose-400{% endif %}">
+                {{ booking.balance_due|money }}
+              </td>
+              <td class="text-end">
+                <a href="{% url 'bookings:detail' booking.pk %}" class="btn-ghost btn-sm"
+                   aria-label="{% translate 'Open booking' %}">
+                  {% icon "chevron-right" "h-4 w-4" %}
+                </a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% include "partials/pagination.html" %}
+  {% else %}
+    {% can "bookings.add" as may_add %}
+    {% if may_add %}
+      {% url 'bookings:create' as create_url %}
+      {% include "partials/empty_state.html" with icon_name="calendar-days" title=_("No bookings found") subtitle=_("Nothing matches these filters. Clear them, or take the first booking.") action_url=create_url action_label=_("New booking") %}
+    {% else %}
+      {% include "partials/empty_state.html" with icon_name="calendar-days" title=_("No bookings found") subtitle=_("Nothing matches these filters.") %}
+    {% endif %}
+  {% endif %}
+</div>

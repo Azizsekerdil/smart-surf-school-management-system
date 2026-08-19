@@ -1,0 +1,35 @@
+{% load i18n surf_tags %}
+{% comment %} AI output is always visually distinct and always labelled. Nothing here is a
+   decision — each row links back to the record so a named person acts on it. {% endcomment %}
+{% if ai_alerts %}
+  <div class="ai-surface">
+    <div class="flex items-center justify-between gap-3 border-b border-violet-200 px-5 py-4 dark:border-violet-500/25">
+      <h2 class="card-title flex items-center gap-2">
+        {% icon "sparkles" "h-4 w-4 text-violet-500" %} {% translate "AI alerts" %}
+      </h2>
+      {% ai_chip %}
+    </div>
+
+    <ul class="divide-y divide-violet-200/60 dark:divide-violet-500/20">
+      {% for alert in ai_alerts %}
+        <li class="px-5 py-3">
+          {% if alert.link_url %}
+            <a href="{{ alert.link_url }}" class="text-sm font-medium text-slate-900 hover:underline dark:text-slate-100">
+              {{ alert.title }}
+            </a>
+          {% else %}
+            <p class="text-sm font-medium text-slate-900 dark:text-slate-100">{{ alert.title }}</p>
+          {% endif %}
+          {% if alert.body %}
+            <p class="mt-1 text-xs text-slate-600 dark:text-slate-400">{{ alert.body|truncatechars:160 }}</p>
+          {% endif %}
+          <p class="mt-1 text-xs text-slate-400">{{ alert.created_at|date:"d.m.Y H:i" }}</p>
+        </li>
+      {% endfor %}
+    </ul>
+
+    <p class="px-5 pb-4 text-xs italic text-violet-700 dark:text-violet-300">
+      {% translate "A recommendation, not a decision. A staff member must confirm anything that affects safety or money." %}
+    </p>
+  </div>
+{% endif %}

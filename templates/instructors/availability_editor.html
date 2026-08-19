@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Availability" %} · {{ instructor.full_name }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Availability" %}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ instructor.full_name }} · {{ instructor.instructor_code }}</p>
+{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-3 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'instructors:list' %}" class="hover:text-brand-700 dark:hover:text-brand-300">{% translate "Instructors" %}</a>
+    <span class="mx-1">/</span>
+    <a href="{% url 'instructors:detail' instructor.pk %}" class="hover:text-brand-700 dark:hover:text-brand-300">{{ instructor.full_name }}</a>
+    <span class="mx-1">/</span>
+    <span class="text-slate-700 dark:text-slate-300">{% translate "Availability" %}</span>
+  </nav>
+{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'instructors:detail' instructor.pk %}" class="btn-secondary">
+    {% icon "chevron-left" "h-4 w-4" %} {% translate "Back to profile" %}
+  </a>
+{% endblock %}
+
+{% block content %}
+  <div class="alert-info mb-5">
+    <span class="mt-0.5 shrink-0">{% icon "info" "h-5 w-5" %}</span>
+    <div class="flex-1">
+      {% translate "A booking is only offered when a slot fully covers the requested window. Slots may not overlap, so the same hour can never be published twice." %}
+    </div>
+  </div>
+
+  {% include "instructors/partials/availability_grid.html" %}
+{% endblock %}

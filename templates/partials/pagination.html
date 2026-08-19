@@ -1,0 +1,33 @@
+{% load i18n surf_tags %}
+{% if is_paginated %}
+  <nav class="mt-4 flex flex-wrap items-center justify-between gap-3" aria-label="{% translate 'Pagination' %}">
+    <p class="text-sm text-slate-500 dark:text-slate-400">
+      {% blocktranslate with start=page_obj.start_index end=page_obj.end_index total=paginator.count %}
+        Showing {{ start }}–{{ end }} of {{ total }}
+      {% endblocktranslate %}
+    </p>
+    <div class="flex items-center gap-1">
+      {% if page_obj.has_previous %}
+        <a href="{% query_string page=1 %}" class="btn-secondary btn-sm" aria-label="{% translate 'First page' %}">
+          {% icon "chevrons-left" "h-4 w-4" %}
+        </a>
+        <a href="{% query_string page=page_obj.previous_page_number %}" class="btn-secondary btn-sm">
+          {% icon "chevron-left" "h-4 w-4" %}
+        </a>
+      {% endif %}
+
+      <span class="px-3 text-sm text-slate-600 dark:text-slate-300">
+        {% blocktranslate with current=page_obj.number total=paginator.num_pages %}Page {{ current }} of {{ total }}{% endblocktranslate %}
+      </span>
+
+      {% if page_obj.has_next %}
+        <a href="{% query_string page=page_obj.next_page_number %}" class="btn-secondary btn-sm">
+          {% icon "chevron-right" "h-4 w-4" %}
+        </a>
+        <a href="{% query_string page=paginator.num_pages %}" class="btn-secondary btn-sm" aria-label="{% translate 'Last page' %}">
+          {% icon "chevrons-right" "h-4 w-4" %}
+        </a>
+      {% endif %}
+    </div>
+  </nav>
+{% endif %}

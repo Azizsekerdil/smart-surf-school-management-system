@@ -1,0 +1,153 @@
+{% load i18n surf_tags %}
+<div class="card-header">
+  <div>
+    <h2 class="card-title">{% translate "Statistical summary" %}</h2>
+    <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+      {% blocktranslate with name=summary.metric_label %}Descriptive statistics for the “{{ name }}” series over the selected period.{% endblocktranslate %}
+    </p>
+  </div>
+
+  <form hx-get="{% url 'analytics:summary' %}"
+        hx-target="#statistical-summary"
+        hx-swap="innerHTML"
+        hx-trigger="change from:select"
+        class="shrink-0">
+    <input type="hidden" name="range" value="{{ range_key }}">
+    <input type="hidden" name="start" value="{{ range_start_raw }}">
+    <input type="hidden" name="end" value="{{ range_end_raw }}">
+    <label for="{{ metric_form.metric.id_for_label }}" class="sr-only">{{ metric_form.metric.label }}</label>
+    {{ metric_form.metric }}
+  </form>
+</div>
+
+<div class="card-body">
+  {% if summary.n == 0 %}
+    {% include "partials/empty_state.html" with icon_name="chart-line" title=_("Nothing to analyse") subtitle=_("This series has no data points in the selected period. Widen the period or pick another series.") %}
+  {% else %}
+    <dl class="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-6">
+      <div>
+        <dt class="stat-label">{% translate "Data points" %}</dt>
+        <dd class="mt-0.5 text-lg font-semibold tabular-nums text-slate-900 dark:text-slate-50">{{ summary.n }}</dd>
+      </div>
+      <div>
+        <dt class="stat-label">{% translate "Mean" %}</dt>
+        <dd class="mt-0.5 text-lg font-semibold tabular-nums text-slate-900 dark:text-slate-50">
+          {% if summary.unit == 'money' %}{{ summary.mean|money }}{% else %}{{ summary.mean|floatformat:2 }}{% endif %}
+        </dd>
+      </div>
+      <div>
+        <dt class="stat-label">{% translate "Median" %}</dt>
+        <dd class="mt-0.5 text-lg font-semibold tabular-nums text-slate-900 dark:text-slate-50">
+          {% if summary.unit == 'money' %}{{ summary.median|money }}{% else %}{{ summary.median|floatformat:2 }}{% endif %}
+        </dd>
+      </div>
+      <div>
+        <dt class="stat-label">{% translate "Std. deviation" %}</dt>
+        <dd class="mt-0.5 text-lg font-semibold tabular-nums text-slate-900 dark:text-slate-50">
+          {% if summary.std_dev is None %}—
+          {% elif summary.unit == 'money' %}{{ summary.std_dev|money }}
+          {% else %}{{ summary.std_dev|floatformat:2 }}{% endif %}
+        </dd>
+      </div>
+      <div>
+        <dt class="stat-label">{% translate "Lowest" %}</dt>
+        <dd class="mt-0.5 text-lg font-semibold tabular-nums text-slate-900 dark:text-slate-50">
+          {% if summary.unit == 'money' %}{{ summary.minimum|money }}{% else %}{{ summary.minimum|floatformat:2 }}{% endif %}
+        </dd>
+      </div>
+      <div>
+        <dt class="stat-label">{% translate "Highest" %}</dt>
+        <dd class="mt-0.5 text-lg font-semibold tabular-nums text-slate-900 dark:text-slate-50">
+          {% if summary.unit == 'money' %}{{ summary.maximum|money }}{% else %}{{ summary.maximum|floatformat:2 }}{% endif %}
+        </dd>
+      </div>
+    </dl>
+
+    <div class="mt-5 grid gap-4 lg:grid-cols-3">
+      {# --- trend ---------------------------------------------------------- #}
+      <div class="rounded-lg border border-slate-200 p-4 dark:border-slate-700">
+        <p class="stat-label">{% translate "Trend" %}</p>
+        <p class="mt-1 flex items-center gap-2 text-sm font-medium text-slate-900 dark:text-slate-100">
+          {% if summary.trend.direction == 'up' %}
+            {% icon "trending-up" "h-4 w-4 text-emerald-500" %} {% translate "Rising" %}
+          {% elif summary.trend.direction == 'down' %}
+            {% icon "trending-down" "h-4 w-4 text-rose-500" %} {% translate "Falling" %}
+          {% else %}
+            {% icon "minus" "h-4 w-4 text-slate-400" %} {% translate "Flat" %}
+          {% endif %}
+        </p>
+        <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
+          {% if summary.trend.slope is None %}
+            {% translate "Too few points to fit a trend." %}
+          {% else %}
+            {% blocktranslate with slope=summary.trend.slope|floatformat:2 %}Change of {{ slope }} per step.{% endblocktranslate %}
+            {% blocktranslate with r2=summary.trend.r_squared|floatformat:2 %}The line explains r² = {{ r2 }} of the variation.{% endblocktranslate %}
+          {% endif %}
+        </p>
+        <p class="mt-2">
+          {% if summary.trend.confidence == 'high' %}
+            <span class="badge-emerald">{% translate "High confidence" %}</span>
+          {% elif summary.trend.confidence == 'medium' %}
+            <span class="badge-amber">{% translate "Medium confidence" %}</span>
+          {% else %}
+            <span class="badge-slate">{% translate "Low confidence" %}</span>
+          {% endif %}
+        </p>
+      </div>
+
+      {# --- correlation ---------------------------------------------------- #}
+      <div class="rounded-lg border border-slate-200 p-4 dark:border-slate-700">
+        <p class="stat-label">{% translate "Relationship with revenue" %}</p>
+        {% if summary.revenue_correlation %}
+          <p class="mt-1 text-sm font-medium text-slate-900 dark:text-slate-100">
+            {{ summary.revenue_correlation.label }}
+          </p>
+          <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
+            {% if summary.revenue_correlation.r is None %}
+              {% blocktranslate with n=summary.revenue_correlation.n %}Based on {{ n }} paired points.{% endblocktranslate %}
+            {% else %}
+              {% blocktranslate with r=summary.revenue_correlation.r|floatformat:2 n=summary.revenue_correlation.n %}Pearson r = {{ r }} across {{ n }} paired points.{% endblocktranslate %}
+            {% endif %}
+          </p>
+          <p class="mt-2 text-xs text-slate-400 dark:text-slate-500">
+            {% translate "A relationship is not a cause. Treat this as a question to investigate." %}
+          </p>
+        {% else %}
+          <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            {% translate "Not applicable — this is the revenue series itself, or the two series are not comparable point for point." %}
+          </p>
+        {% endif %}
+      </div>
+
+      {# --- spread & outliers ---------------------------------------------- #}
+      <div class="rounded-lg border border-slate-200 p-4 dark:border-slate-700">
+        <p class="stat-label">{% translate "Spread" %}</p>
+        <dl class="mt-1 space-y-1 text-xs text-slate-600 dark:text-slate-300">
+          <div class="flex justify-between gap-3">
+            <dt>{% translate "Lower quartile (Q1)" %}</dt>
+            <dd class="tabular-nums">{{ summary.q1|floatformat:2 }}</dd>
+          </div>
+          <div class="flex justify-between gap-3">
+            <dt>{% translate "Upper quartile (Q3)" %}</dt>
+            <dd class="tabular-nums">{{ summary.q3|floatformat:2 }}</dd>
+          </div>
+          <div class="flex justify-between gap-3">
+            <dt>{% translate "Interquartile range" %}</dt>
+            <dd class="tabular-nums">{{ summary.iqr|floatformat:2 }}</dd>
+          </div>
+          <div class="flex justify-between gap-3">
+            <dt>{% translate "90th percentile" %}</dt>
+            <dd class="tabular-nums">{{ summary.p90|floatformat:2 }}</dd>
+          </div>
+        </dl>
+        <p class="mt-3 text-xs {% if summary.outliers %}text-amber-600 dark:text-amber-400{% else %}text-slate-500 dark:text-slate-400{% endif %}">
+          {% if summary.outliers %}
+            {% blocktranslate count counter=summary.outliers|length %}{{ counter }} unusual point worth a look.{% plural %}{{ counter }} unusual points worth a look.{% endblocktranslate %}
+          {% else %}
+            {% translate "No unusual points — the series is consistent." %}
+          {% endif %}
+        </p>
+      </div>
+    </div>
+  {% endif %}
+</div>

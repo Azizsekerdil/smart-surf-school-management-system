@@ -1,0 +1,54 @@
+{% load i18n static surf_tags %}
+{% comment %} Sidebar: fixed on large screens, slide-over on mobile. Items are already
+   filtered by capability in apps.core.context_processors.navigation. {% endcomment %}
+
+<div x-show="sidebarOpen"
+     x-transition.opacity
+     @click="sidebarOpen = false"
+     class="fixed inset-0 z-30 bg-slate-900/50 lg:hidden"
+     style="display: none"></div>
+
+<aside class="fixed inset-y-0 start-0 z-40 w-64 -translate-x-full overflow-y-auto border-e border-slate-200 bg-white transition-transform duration-200 lg:translate-x-0 dark:border-slate-800 dark:bg-slate-900 rtl:translate-x-full rtl:lg:translate-x-0"
+       :class="sidebarOpen ? 'translate-x-0 rtl:translate-x-0' : ''">
+
+  {# --- brand ------------------------------------------------------------ #}
+  <div class="flex h-16 items-center gap-2.5 border-b border-slate-200 px-4 dark:border-slate-800">
+    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-600 text-white">
+      {% icon "waves" "h-5 w-5" %}
+    </span>
+    <div class="min-w-0">
+      <p class="truncate text-sm font-semibold text-slate-900 dark:text-slate-50">{{ SCHOOL_NAME }}</p>
+      <p class="truncate text-xs text-slate-500 dark:text-slate-400">{% translate "Management System" %}</p>
+    </div>
+    <button type="button" @click="sidebarOpen = false"
+            class="btn-icon ms-auto text-slate-500 lg:hidden"
+            aria-label="{% translate 'Close menu' %}">
+      {% icon "x" "h-5 w-5" %}
+    </button>
+  </div>
+
+  {# --- navigation ------------------------------------------------------- #}
+  <nav class="px-3 pb-6" aria-label="{% translate 'Main navigation' %}">
+    {% for section in nav_sections %}
+      {% if section.label %}
+        <p class="nav-section-title">{{ section.label }}</p>
+      {% else %}
+        <div class="pt-3"></div>
+      {% endif %}
+      <ul class="space-y-0.5">
+        {% for item in section.items %}
+          <li>
+            <a href="{% url item.url_name %}"
+               class="nav-link {% nav_active item.url_name %}">
+              {% icon item.icon "h-[18px] w-[18px] shrink-0" %}
+              <span class="truncate">{{ item.label }}</span>
+              {% if item.badge_key %}
+                <span id="nav-badge-{{ item.badge_key }}" class="ms-auto"></span>
+              {% endif %}
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endfor %}
+  </nav>
+</aside>

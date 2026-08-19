@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Delete instructor" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Delete instructor" %}{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-3 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'instructors:list' %}" class="hover:text-brand-700 dark:hover:text-brand-300">{% translate "Instructors" %}</a>
+    <span class="mx-1">/</span>
+    <a href="{% url 'instructors:detail' instructor.pk %}" class="hover:text-brand-700 dark:hover:text-brand-300">{{ instructor.full_name }}</a>
+    <span class="mx-1">/</span>
+    <span class="text-slate-700 dark:text-slate-300">{% translate "Delete" %}</span>
+  </nav>
+{% endblock %}
+
+{% block content %}
+  <div class="mx-auto max-w-2xl space-y-5">
+    {% if deletion_allowed %}
+      <div class="alert-warning">
+        <span class="mt-0.5 shrink-0">{% icon "triangle-alert" "h-5 w-5" %}</span>
+        <div class="flex-1">
+          <p class="font-semibold">
+            {% blocktranslate with name=instructor.full_name %}Remove {{ name }} from the team?{% endblocktranslate %}
+          </p>
+          <p class="mt-1">
+            {% translate "The profile is archived rather than erased: past lessons, certifications and reviews stay in the record. Deactivating the profile is usually the better choice." %}
+          </p>
+        </div>
+      </div>
+    {% else %}
+      <div class="alert-error">
+        <span class="mt-0.5 shrink-0">{% icon "circle-x" "h-5 w-5" %}</span>
+        <div class="flex-1">{{ deletion_reason }}</div>
+      </div>
+    {% endif %}
+
+    <div class="card">
+      <div class="card-body">
+        <dl class="grid gap-3 sm:grid-cols-2">
+          <div>
+            <dt class="text-xs uppercase tracking-wide text-slate-400">{% translate "Instructor" %}</dt>
+            <dd class="text-sm text-slate-700 dark:text-slate-300">{{ instructor.full_name }} ({{ instructor.instructor_code }})</dd>
+          </div>
+          <div>
+            <dt class="text-xs uppercase tracking-wide text-slate-400">{% translate "Lessons taught" %}</dt>
+            <dd class="text-sm text-slate-700 dark:text-slate-300">{{ instructor.total_lessons_taught }}</dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+
+    <form method="post" class="flex flex-wrap items-center gap-3">
+      {% csrf_token %}
+      {% if deletion_allowed %}
+        <button type="submit" class="btn-danger">
+          {% icon "trash-2" "h-4 w-4" %} {% translate "Delete instructor" %}
+        </button>
+      {% endif %}
+      <a href="{% url 'instructors:detail' instructor.pk %}" class="btn-secondary">{% translate "Cancel" %}</a>
+    </form>
+  </div>
+{% endblock %}

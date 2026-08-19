@@ -1,0 +1,48 @@
+{% load i18n surf_tags %}
+{# Rendered into #retrieval-results by ai:knowledge_search. Context: hits, query. #}
+{% if not query %}
+  <p class="text-sm text-slate-500 dark:text-slate-400">
+    {% translate "Type a question to see which passages the assistant would retrieve." %}
+  </p>
+{% elif hits %}
+  <p class="mb-2 text-xs text-slate-500 dark:text-slate-400">
+    {% blocktranslate count counter=hits|length %}{{ counter }} passage would be given to the model, ranked by similarity.{% plural %}{{ counter }} passages would be given to the model, ranked by similarity.{% endblocktranslate %}
+  </p>
+  <ul class="space-y-3">
+    {% for hit in hits %}
+      <li class="rounded-lg border border-slate-200 p-3 dark:border-slate-700">
+        <div class="mb-1.5 flex flex-wrap items-center justify-between gap-2">
+          <div class="flex flex-wrap items-center gap-2">
+            {% can "ai.change" as may_edit_hit %}
+            {% if may_edit_hit %}
+              <a href="{% url 'ai:knowledge_update' hit.document_id %}"
+                 class="text-sm font-medium text-brand-700 hover:underline dark:text-brand-300">
+                {{ hit.document_title }}
+              </a>
+            {% else %}
+              <span class="text-sm font-medium text-slate-900 dark:text-slate-100">{{ hit.document_title }}</span>
+            {% endif %}
+            <span class="badge-slate font-mono">{{ hit.source_type }}</span>
+            <span class="text-xs text-slate-400 dark:text-slate-500">
+              {% blocktranslate with index=hit.chunk_index %}passage #{{ index }}{% endblocktranslate %}
+            </span>
+          </div>
+          <span class="badge-violet" title="{% translate 'Cosine similarity between the question and this passage' %}">
+            {% translate "score" %} {{ hit.score|floatformat:3 }}
+          </span>
+        </div>
+        <p class="whitespace-pre-line text-xs leading-relaxed text-slate-600 dark:text-slate-400">{{ hit.content|truncatechars:600 }}</p>
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <div class="alert-warning" role="status">
+    {% icon "triangle-alert" "h-5 w-5 shrink-0" %}
+    <div>
+      <p class="font-medium">{% translate "Nothing was retrieved." %}</p>
+      <p class="mt-1">
+        {% translate "Either no passage was similar enough, the documents are not indexed yet, or no embedding provider is reachable. The assistant would answer without any source for this question." %}
+      </p>
+    </div>
+  </div>
+{% endif %}

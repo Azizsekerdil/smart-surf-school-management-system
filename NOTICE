@@ -1,0 +1,31 @@
+NOTICE — Smart Surf School Management System
+===========================================
+
+This file carries the statements that used to be appended to LICENSE.
+They were moved here so that LICENSE contains the unmodified MIT text and
+licence detection (GitHub, SPDX scanners, SBOM tooling) reports MIT rather
+than NOASSERTION. Nothing below changes the MIT grant; these are notices
+about components this project *uses*, not about this project's own code.
+
+Component-level detail lives in THIRD_PARTY_NOTICES.md.
+
+THIRD-PARTY COMPONENTS
+
+This project bundles and depends on third-party open-source software. Their
+licences are recorded in docs/OPEN_SOURCE_LICENSES.md and, where the component
+ships a licence file, under static/vendor/.
+
+EXTERNAL DATA SERVICES
+
+Weather and marine data are retrieved from Open-Meteo.com. The data is licensed
+CC BY 4.0 and attribution is displayed in the application footer. Open-Meteo's
+free hosted API tier is offered for non-commercial use; commercial deployments
+must either subscribe to a paid Open-Meteo plan, self-host Open-Meteo (AGPLv3),
+or switch the provider to met.no by setting SURF_COMMERCIAL_MODE=True.
+
+AI MODELS
+
+Model weights and hosted inference services accessed through this application
+(LM Studio local models, NVIDIA NIM, Anthropic) are governed by their own
+licences and terms of service. This project only calls their APIs; it does not
+redistribute any model.

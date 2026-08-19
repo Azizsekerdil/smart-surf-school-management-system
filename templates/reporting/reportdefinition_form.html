@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ form_title }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ form_title }}{% endblock %}
+
+{% block content %}
+  <form method="post" class="grid gap-5 lg:grid-cols-3">
+    {% csrf_token %}
+
+    <div class="space-y-5 lg:col-span-2">
+      {% if form.non_field_errors %}
+        <div class="alert-error">
+          {% icon "circle-x" "h-5 w-5 shrink-0" %}
+          <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+        </div>
+      {% endif %}
+
+      <section class="card">
+        <div class="card-header"><h2 class="card-title">{% translate "What to run" %}</h2></div>
+        <div class="card-body grid gap-4 sm:grid-cols-2">
+          {% include "reporting/partials/field.html" with field=form.name %}
+          {% include "reporting/partials/field.html" with field=form.code %}
+          {% include "reporting/partials/field.html" with field=form.report_key wrapper_class="sm:col-span-2" %}
+          {% include "reporting/partials/field.html" with field=form.description wrapper_class="sm:col-span-2" %}
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-header"><h2 class="card-title">{% translate "Output" %}</h2></div>
+        <div class="card-body grid gap-4 sm:grid-cols-2">
+          {% include "reporting/partials/field.html" with field=form.default_format %}
+          {% include "reporting/partials/field.html" with field=form.required_capability %}
+          {% include "reporting/partials/field.html" with field=form.default_filters wrapper_class="sm:col-span-2" %}
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-header"><h2 class="card-title">{% translate "Automatic delivery" %}</h2></div>
+        <div class="card-body space-y-4">
+          {% include "reporting/partials/field.html" with field=form.is_scheduled %}
+          <div class="grid gap-4 sm:grid-cols-2">
+            {% include "reporting/partials/field.html" with field=form.schedule_cron %}
+            {% include "reporting/partials/field.html" with field=form.recipients %}
+          </div>
+          <div class="alert-info">
+            {% icon "info" "h-5 w-5 shrink-0" %}
+            <div>
+              <p>{% translate "The schedule has five fields: minute, hour, day of month, month, weekday (Sunday = 0)." %}</p>
+              <ul class="mt-1.5 space-y-0.5 font-mono text-xs">
+                <li>0 7 * * 1 &mdash; {% translate "every Monday at 07:00" %}</li>
+                <li>30 6 * * * &mdash; {% translate "every day at 06:30" %}</li>
+                <li>0 8 1 * * &mdash; {% translate "the 1st of every month at 08:00" %}</li>
+              </ul>
+            </div>
+          </div>
+          {% include "reporting/partials/field.html" with field=form.is_active %}
+        </div>
+      </section>
+    </div>
+
+    <aside class="space-y-4">
+      <div class="card p-5">
+        <h2 class="card-title mb-3">{% translate "How this is used" %}</h2>
+        <ul class="space-y-2 text-sm text-slate-600 dark:text-slate-300">
+          <li class="flex gap-2">{% icon "play" "h-4 w-4 shrink-0 text-slate-400" %}
+            <span>{% translate "Run it on demand from the saved reports list." %}</span></li>
+          <li class="flex gap-2">{% icon "clock" "h-4 w-4 shrink-0 text-slate-400" %}
+            <span>{% translate "Or let the scheduler generate it and e-mail the file to the recipients." %}</span></li>
+          <li class="flex gap-2">{% icon "shield-check" "h-4 w-4 shrink-0 text-slate-400" %}
+            <span>{% translate "The report's own permission always applies. An extra capability here only narrows access." %}</span></li>
+        </ul>
+      </div>
+
+      {% if recent_runs %}
+        <div class="card p-5">
+          <h2 class="card-title mb-3">{% translate "Recent runs" %}</h2>
+          <ul class="space-y-2 text-sm">
+            {% for run in recent_runs %}
+              <li class="flex items-center justify-between gap-2">
+                <span class="text-slate-600 dark:text-slate-300">{{ run.created_at|date:"SHORT_DATETIME_FORMAT" }}</span>
+                {% status_badge run.status run.get_status_display %}
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+
+      <div class="flex flex-wrap gap-2">
+        <button type="submit" class="btn-primary flex-1">
+          {% icon "save" "h-4 w-4" %} {% translate "Save" %}
+        </button>
+        <a href="{{ cancel_url }}" class="btn-secondary">{% translate "Cancel" %}</a>
+      </div>
+    </aside>
+  </form>
+{% endblock %}

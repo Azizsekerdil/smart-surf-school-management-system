@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ title }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-3 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'maintenance:list' %}" class="hover:underline">{% translate "Maintenance" %}</a>
+    <span class="mx-1" aria-hidden="true">/</span>
+    {% if record %}
+      <a href="{% url 'maintenance:detail' record.pk %}" class="hover:underline">{{ record.record_code }}</a>
+      <span class="mx-1" aria-hidden="true">/</span>
+      <span>{% translate "Edit" %}</span>
+    {% else %}
+      <span>{% translate "Report a problem" %}</span>
+    {% endif %}
+  </nav>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl">
+  {% if form.non_field_errors %}
+    <div class="alert-error mb-5" role="alert">
+      <span class="mt-0.5 shrink-0">{% icon "circle-x" "h-5 w-5" %}</span>
+      <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+    </div>
+  {% endif %}
+
+  <form method="post" enctype="multipart/form-data" class="card" novalidate>
+    {% csrf_token %}
+    <div class="card-body space-y-5">
+
+      {% if form.equipment %}
+        <div class="grid gap-5 sm:grid-cols-2">
+          {% include "maintenance/partials/form_field.html" with field=form.equipment %}
+          {% include "maintenance/partials/form_field.html" with field=form.rental_item %}
+        </div>
+      {% endif %}
+
+      <div class="grid gap-5 sm:grid-cols-2">
+        {% include "maintenance/partials/form_field.html" with field=form.damage_type %}
+        {% include "maintenance/partials/form_field.html" with field=form.severity %}
+      </div>
+
+      {% include "maintenance/partials/form_field.html" with field=form.description %}
+
+      {% if form.diagnosis %}
+        {% include "maintenance/partials/form_field.html" with field=form.diagnosis %}
+      {% endif %}
+
+      <div class="grid gap-5 sm:grid-cols-2">
+        {% include "maintenance/partials/form_field.html" with field=form.assigned_to %}
+        {% include "maintenance/partials/form_field.html" with field=form.photo_before %}
+      </div>
+
+      <div class="rounded-lg border border-slate-200 p-4 dark:border-slate-700">
+        {% include "maintenance/partials/form_field.html" with field=form.made_unusable %}
+        {% if form.force %}
+          <div class="mt-3 border-t border-slate-200 pt-3 dark:border-slate-700">
+            {% include "maintenance/partials/form_field.html" with field=form.force %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="flex items-center justify-end gap-2 border-t border-slate-200 p-4 dark:border-slate-700">
+      <a href="{% if record %}{% url 'maintenance:detail' record.pk %}{% else %}{% url 'maintenance:list' %}{% endif %}"
+         class="btn-secondary">{% translate "Cancel" %}</a>
+      <button type="submit" class="btn-primary">
+        {% icon "save" "h-4 w-4" %} {{ submit_label }}
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

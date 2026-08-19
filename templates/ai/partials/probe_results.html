@@ -1,0 +1,75 @@
+{% load i18n surf_tags %}
+{# Rendered into #ai-probe-results after ai:probe_models. Context: provider, probed. #}
+<section class="card" aria-label="{% translate 'Model probe results' %}">
+  <div class="card-header flex-wrap">
+    <h2 class="card-title">
+      {% icon "zap" "inline h-4 w-4 text-brand-500" %}
+      {% blocktranslate with name=provider %}Model probe · {{ name }}{% endblocktranslate %}
+    </h2>
+    <p class="text-xs text-slate-500 dark:text-slate-400">
+      {% blocktranslate count counter=probed|length %}{{ counter }} model actually called{% plural %}{{ counter }} models actually called{% endblocktranslate %}
+    </p>
+  </div>
+
+  <div class="border-b border-slate-200 px-5 py-3 dark:border-slate-700">
+    <p class="text-xs text-slate-500 dark:text-slate-400">
+      {% translate "A provider's model list over-reports: a model can be listed and still refuse the call for this account. Every model below was invoked for real. Models that could not be called are listed first — remove them from the catalogue or fix the account entitlement." %}
+    </p>
+  </div>
+
+  {% if probed %}
+    <div class="table-wrap rounded-none border-0">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">{% translate "Model" %}</th>
+            <th scope="col">{% translate "Role" %}</th>
+            <th scope="col">{% translate "Result" %}</th>
+            <th scope="col" class="text-end">{% translate "Latency" %}</th>
+            <th scope="col">{% translate "Message" %}</th>
+          </tr>
+        </thead>
+
+        {# --- could not be called ---------------------------------------- #}
+        <tbody>
+          {% for model_id, info in probed.items %}
+            {% if not info.ok %}
+              <tr class="bg-rose-50/60 dark:bg-rose-500/5">
+                <td class="font-mono text-xs text-slate-900 dark:text-slate-100">{{ model_id }}</td>
+                <td class="text-xs">{{ info.role|default:"—" }}</td>
+                <td><span class="badge-rose">{% icon "circle-x" "h-3 w-3" %} {% translate "Failed" %}</span></td>
+                <td class="text-end tabular-nums">
+                  {% if info.ms %}{% blocktranslate with ms=info.ms %}{{ ms }} ms{% endblocktranslate %}{% else %}—{% endif %}
+                </td>
+                <td class="max-w-md break-words text-xs text-rose-700 dark:text-rose-300">{{ info.message|default:"—" }}</td>
+              </tr>
+            {% endif %}
+          {% endfor %}
+        </tbody>
+
+        {# --- callable ---------------------------------------------------- #}
+        <tbody>
+          {% for model_id, info in probed.items %}
+            {% if info.ok %}
+              <tr>
+                <td class="font-mono text-xs text-slate-900 dark:text-slate-100">{{ model_id }}</td>
+                <td class="text-xs">{{ info.role|default:"—" }}</td>
+                <td><span class="badge-emerald">{% icon "circle-check" "h-3 w-3" %} {% translate "Callable" %}</span></td>
+                <td class="text-end tabular-nums">
+                  {% if info.ms %}{% blocktranslate with ms=info.ms %}{{ ms }} ms{% endblocktranslate %}{% else %}—{% endif %}
+                </td>
+                <td class="max-w-md break-words text-xs text-slate-500 dark:text-slate-400">{{ info.message|default:"—" }}</td>
+              </tr>
+            {% endif %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="card-body">
+      <p class="text-sm text-slate-500 dark:text-slate-400">
+        {% translate "No models are catalogued for this provider, so there was nothing to probe." %}
+      </p>
+    </div>
+  {% endif %}
+</section>

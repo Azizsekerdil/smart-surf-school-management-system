@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ form_title }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ form_title }}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "Untick anything that failed. A single failed item means the whole check is a fail." %}
+  </p>
+{% endblock %}
+
+{% block content %}
+  <form method="post" novalidate class="mx-auto max-w-3xl space-y-5">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="alert-error">
+        {% icon "circle-alert" "h-5 w-5 shrink-0" %}
+        <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+      </div>
+    {% endif %}
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">
+          {% icon "package" "inline h-4 w-4 text-brand-500" %} {% translate "Item" %}
+        </h2>
+      </div>
+      <div class="card-body grid gap-4 sm:grid-cols-2">
+        {% include "safety/partials/field.html" with field=form.equipment %}
+        {% include "safety/partials/field.html" with field=form.checked_at %}
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">
+          {% icon "list-checks" "inline h-4 w-4 text-brand-500" %} {% translate "Checklist" %}
+        </h2>
+      </div>
+      <div class="card-body space-y-3">
+        {% for field in form.checklist_fields %}
+          <label class="flex items-start gap-2.5 text-sm text-slate-700 dark:text-slate-300" for="{{ field.id_for_label }}">
+            {{ field }}
+            <span class="font-medium">{{ field.label }}</span>
+          </label>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">
+          {% icon "clipboard-check" "inline h-4 w-4 text-brand-500" %} {% translate "Outcome" %}
+        </h2>
+      </div>
+      <div class="card-body space-y-4">
+        {% include "safety/partials/field.html" with field=form.passed %}
+        {% include "safety/partials/field.html" with field=form.issues_found %}
+        {% include "safety/partials/field.html" with field=form.action_taken %}
+        <div class="sm:max-w-xs">
+          {% include "safety/partials/field.html" with field=form.next_check_due %}
+        </div>
+      </div>
+    </section>
+
+    <div class="flex flex-wrap items-center justify-end gap-2">
+      <a href="{{ cancel_url }}" class="btn-secondary">{% translate "Cancel" %}</a>
+      <button type="submit" class="btn-primary">
+        {% icon "save" "h-4 w-4" %} {% translate "Save check" %}
+      </button>
+    </div>
+  </form>
+{% endblock %}

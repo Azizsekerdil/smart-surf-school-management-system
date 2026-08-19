@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ form_title }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ form_title }}{% endblock %}
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "Naming a lesson type lets the school show the customer exactly how much the bundle saves them." %}
+  </p>
+{% endblock %}
+
+{% block content %}
+  <form method="post" novalidate class="space-y-5">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="alert-error">
+        {% icon "circle-alert" "h-5 w-5 shrink-0" %}
+        <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+      </div>
+    {% endif %}
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">
+          {% icon "package" "inline h-4 w-4 text-brand-500" %} {% translate "The offer" %}
+        </h2>
+      </div>
+      <div class="card-body grid gap-4 sm:grid-cols-2">
+        {% include "finance/partials/field.html" with field=form.name %}
+        {% include "finance/partials/field.html" with field=form.code %}
+        {% include "finance/partials/field.html" with field=form.description wrapper_class="sm:col-span-2" %}
+        {% include "finance/partials/field.html" with field=form.lesson_type wrapper_class="sm:col-span-2" %}
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">
+          {% icon "banknote" "inline h-4 w-4 text-brand-500" %} {% translate "Price and validity" %}
+        </h2>
+      </div>
+      <div class="card-body grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {% include "finance/partials/field.html" with field=form.lesson_count %}
+        {% include "finance/partials/field.html" with field=form.price %}
+        {% include "finance/partials/field.html" with field=form.validity_days %}
+        {% include "finance/partials/field.html" with field=form.sort_order %}
+        {% include "finance/partials/field.html" with field=form.is_active wrapper_class="sm:col-span-2" %}
+      </div>
+    </section>
+
+    <div class="flex flex-wrap items-center gap-2">
+      <button type="submit" class="btn-primary">
+        {% icon "check" "h-4 w-4" %} {% translate "Save package" %}
+      </button>
+      <a href="{{ cancel_url }}" class="btn-secondary">{% translate "Cancel" %}</a>
+    </div>
+  </form>
+{% endblock %}

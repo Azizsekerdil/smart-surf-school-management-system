@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Evacuation plans" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Evacuation plans" %}{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-3 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'safety:dashboard' %}" class="hover:underline">{% translate "Safety" %}</a>
+    <span class="mx-1">/</span>
+    <span class="text-slate-700 dark:text-slate-300">{% translate "Evacuation plans" %}</span>
+  </nav>
+{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "One plan per trigger per spot. A plan that has never been drilled is a document, not a plan." %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  {% can "safety.add" as may_add %}
+  {% if may_add %}
+    <a href="{% url 'safety:plan_create' %}" class="btn-primary">
+      {% icon "plus" "h-4 w-4" %} {% translate "New plan" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+
+  {% if overdue_drills %}
+    <div class="alert-error mb-5">
+      {% icon "triangle-alert" "h-5 w-5 shrink-0" %}
+      <div>
+        <p class="font-semibold">{% translate "Drills overdue" %}</p>
+        <ul class="mt-1 list-disc space-y-0.5 ps-5">
+          {% for plan in overdue_drills %}
+            <li>
+              <a href="{% url 'safety:plan_detail' plan.pk %}" class="underline">{{ plan.title }}</a>
+              — {% blocktranslate with due=plan.next_drill_due|date:"d.m.Y" %}due {{ due }}{% endblocktranslate %}
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  {% endif %}
+
+  <form method="get" action="{% url 'safety:plan_list' %}" class="card mb-5 flex flex-wrap items-end gap-3 p-4">
+    <div class="min-w-0 flex-1">
+      <label class="form-label" for="id_q">{% translate "Search" %}</label>
+      <div class="relative">
+        <span class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3 text-slate-400">
+          {% icon "search" "h-4 w-4" %}
+        </span>
+        <input type="search" name="q" id="id_q" value="{{ search_term }}"
+               class="form-input ps-9" placeholder="{% translate 'Title, trigger or assembly point…' %}">
+      </div>
+    </div>
+    <button type="submit" class="btn-primary">{% icon "filter" "h-4 w-4" %} {% translate "Search" %}</button>
+  </form>
+
+  {% if plans %}
+    <div class="grid gap-4 lg:grid-cols-2">
+      {% for plan in plans %}
+        <article class="card">
+          <div class="card-header">
+            <h2 class="card-title">
+              <a href="{% url 'safety:plan_detail' plan.pk %}" class="hover:underline">{{ plan.title }}</a>
+            </h2>
+            {% if not plan.is_active %}
+              <span class="badge-slate">{% translate "Inactive" %}</span>
+            {% elif plan.is_drill_overdue %}
+              <span class="badge-rose">{% translate "Drill overdue" %}</span>
+            {% elif plan.has_never_been_drilled %}
+              <span class="badge-amber">{% translate "Never drilled" %}</span>
+            {% else %}
+              <span class="badge-emerald">{% translate "Drilled" %}</span>
+            {% endif %}
+          </div>
+          <div class="card-body space-y-3">
+            <p class="text-sm text-slate-500 dark:text-slate-400">
+              {% icon "map-pin" "inline h-3.5 w-3.5" %} {{ plan.spot.name }}
+              · {{ plan.get_responsible_role_display }}
+            </p>
+            <p class="text-sm text-slate-700 dark:text-slate-300">{{ plan.trigger_conditions|truncatewords:28 }}</p>
+            <dl class="grid grid-cols-3 gap-3 border-t border-slate-200 pt-3 text-sm dark:border-slate-700">
+              <div>
+                <dt class="text-xs text-slate-500 dark:text-slate-400">{% translate "Steps" %}</dt>
+                <dd class="font-semibold tabular-nums text-slate-900 dark:text-slate-100">{{ plan.step_count }}</dd>
+              </div>
+              <div>
+                <dt class="text-xs text-slate-500 dark:text-slate-400">{% translate "Last drill" %}</dt>
+                <dd class="font-semibold text-slate-900 dark:text-slate-100">{{ plan.last_drill_date|date:"d.m.Y"|default:"—" }}</dd>
+              </div>
+              <div>
+                <dt class="text-xs text-slate-500 dark:text-slate-400">{% translate "Next due" %}</dt>
+                <dd class="font-semibold text-slate-900 dark:text-slate-100">{{ plan.next_drill_due|date:"d.m.Y"|default:"—" }}</dd>
+              </div>
+            </dl>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+    {% include "partials/pagination.html" %}
+  {% else %}
+    {% can "safety.add" as may_add %}
+    {% if may_add %}
+      {% url 'safety:plan_create' as create_url %}
+      {% include "partials/empty_state.html" with icon_name="list-checks" title=_("No evacuation plans yet") subtitle=_("Write one per spot for the triggers you can actually face: red flag, lightning, missing person.") action_url=create_url action_label=_("New plan") %}
+    {% else %}
+      {% include "partials/empty_state.html" with icon_name="list-checks" title=_("No evacuation plans yet") subtitle=_("Ask a manager to write the plan for each spot.") %}
+    {% endif %}
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ camp.name }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ camp.name }}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-500 dark:text-slate-400">
+    <span class="font-mono">{{ camp.code }}</span>
+    <span>{{ camp.start_date|date:"d.m.Y" }} – {{ camp.end_date|date:"d.m.Y" }}</span>
+    <span>{{ camp.spot }}</span>
+    <span>{{ camp.level_label }}</span>
+    {% status_badge camp.status camp.get_status_display camp_status_colors %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  {% can "surf_camps.change" as may_change %}
+  {% can "surf_camps.approve" as may_approve %}
+  {% can "surf_camps.export" as may_export %}
+  {% can "surf_camps.delete" as may_delete %}
+
+  <a href="{% url 'surf_camps:roster' camp.pk %}" class="btn-secondary">
+    {% icon "printer" "h-4 w-4" %} {% translate "Day roster" %}
+  </a>
+  {% if may_export %}
+    <a href="{% url 'surf_camps:export' camp.pk %}" class="btn-secondary">
+      {% icon "download" "h-4 w-4" %} {% translate "Export list" %}
+    </a>
+  {% endif %}
+  {% if may_approve and camp.status == "draft" %}
+    <form method="post" action="{% url 'surf_camps:publish' camp.pk %}">
+      {% csrf_token %}
+      <button type="submit" class="btn-success">
+        {% icon "check" "h-4 w-4" %} {% translate "Publish" %}
+      </button>
+    </form>
+  {% endif %}
+  {% if may_change %}
+    <a href="{% url 'surf_camps:update' camp.pk %}" class="btn-primary">
+      {% icon "pencil" "h-4 w-4" %} {% translate "Edit" %}
+    </a>
+  {% endif %}
+  {% if may_delete and not participants %}
+    <a href="{% url 'surf_camps:delete' camp.pk %}" class="btn-ghost text-rose-600 dark:text-rose-400">
+      {% icon "trash-2" "h-4 w-4" %} {% translate "Delete" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  {% if alerts %}
+    <div class="mb-5 space-y-2">
+      {% for alert in alerts %}
+        <div class="{% if alert.level == 'error' %}alert-error{% elif alert.level == 'warning' %}alert-warning{% else %}alert-info{% endif %}">
+          {% if alert.level == "error" %}
+            {% icon "circle-alert" "h-5 w-5 shrink-0" %}
+          {% elif alert.level == "warning" %}
+            {% icon "triangle-alert" "h-5 w-5 shrink-0" %}
+          {% else %}
+            {% icon "info" "h-5 w-5 shrink-0" %}
+          {% endif %}
+          <span>{{ alert.message }}</span>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <div class="mb-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Participants" %}</p>
+      <p class="stat-value">{{ finance.participants }} / {{ finance.capacity }}</p>
+      <div class="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+        {% widthratio finance.participants finance.capacity 100 as fill %}
+        <div class="h-full rounded-full {% if finance.available_places == 0 %}bg-rose-500{% else %}bg-emerald-500{% endif %}"
+             style="width: {{ fill }}%"></div>
+      </div>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {% blocktranslate count left=finance.available_places %}{{ left }} place still free{% plural %}{{ left }} places still free{% endblocktranslate %}
+      </p>
+    </div>
+
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Sold value" %}</p>
+      <p class="stat-value">{{ finance.expected_revenue|money }}</p>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {% blocktranslate with potential=finance.potential_revenue|money %}Full house: {{ potential }}{% endblocktranslate %}
+      </p>
+    </div>
+
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Outstanding" %}</p>
+      <p class="stat-value {% if finance.outstanding %}text-amber-600 dark:text-amber-400{% endif %}">
+        {{ finance.outstanding|money }}
+      </p>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {% blocktranslate with collected=finance.collected|money %}Collected: {{ collected }}{% endblocktranslate %}
+      </p>
+    </div>
+
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Instructor cover" %}</p>
+      <p class="stat-value {% if staffing.is_understaffed %}text-rose-600 dark:text-rose-400{% endif %}">
+        {{ staffing.assigned_instructors }} / {{ staffing.required_instructors }}
+      </p>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {% blocktranslate with ratio=staffing.ratio %}Ratio {{ ratio }}:1{% endblocktranslate %}
+        {% if staffing.minors %}
+          · {% blocktranslate count minors=staffing.minors %}{{ minors }} minor{% plural %}{{ minors }} minors{% endblocktranslate %}
+        {% endif %}
+      </p>
+    </div>
+  </div>
+
+  <div x-data="{ tab: '{{ tab }}' }">
+    <div class="mb-4 flex flex-wrap gap-1 border-b border-slate-200 dark:border-slate-700" role="tablist">
+      <button type="button" role="tab" @click="tab = 'programme'"
+              :class="tab === 'programme' ? 'border-brand-600 text-brand-700 dark:text-brand-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'"
+              class="flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium">
+        {% icon "calendar-days" "h-4 w-4" %} {% translate "Programme" %}
+      </button>
+      <button type="button" role="tab" @click="tab = 'participants'"
+              :class="tab === 'participants' ? 'border-brand-600 text-brand-700 dark:text-brand-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'"
+              class="flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium">
+        {% icon "users" "h-4 w-4" %} {% translate "Participants" %}
+        <span class="badge-slate">{{ finance.participants }}</span>
+      </button>
+      <button type="button" role="tab" @click="tab = 'logistics'"
+              :class="tab === 'logistics' ? 'border-brand-600 text-brand-700 dark:text-brand-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'"
+              class="flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium">
+        {% icon "building-2" "h-4 w-4" %} {% translate "Logistics" %}
+      </button>
+      <button type="button" role="tab" @click="tab = 'finance'"
+              :class="tab === 'finance' ? 'border-brand-600 text-brand-700 dark:text-brand-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'"
+              class="flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium">
+        {% icon "wallet" "h-4 w-4" %} {% translate "Finance" %}
+      </button>
+    </div>
+
+    <section x-show="tab === 'programme'" x-cloak>
+      {% include "surf_camps/partials/programme_panel.html" %}
+    </section>
+
+    <section x-show="tab === 'participants'" x-cloak>
+      {% include "surf_camps/partials/participant_panel.html" %}
+    </section>
+
+    <section x-show="tab === 'logistics'" x-cloak>
+      {% include "surf_camps/partials/logistics_panel.html" %}
+    </section>
+
+    <section x-show="tab === 'finance'" x-cloak>
+      {% include "surf_camps/partials/finance_panel.html" %}
+    </section>
+  </div>
+
+  {% can "surf_camps.approve" as may_approve %}
+  {% if may_approve and camp.status != "cancelled" and camp.status != "completed" %}
+    <div class="card mt-6 border-rose-200 dark:border-rose-500/30">
+      <div class="card-header">
+        <h2 class="card-title text-rose-700 dark:text-rose-400">{% translate "Cancel this camp" %}</h2>
+      </div>
+      <form method="post" action="{% url 'surf_camps:cancel' camp.pk %}" class="card-body space-y-3">
+        {% csrf_token %}
+        <p class="text-sm text-slate-600 dark:text-slate-300">
+          {% translate "Every place is released and each participant is marked as cancelled. Refunds are handled in Finance." %}
+        </p>
+        <div class="flex flex-wrap items-end gap-3">
+          <div class="min-w-64 flex-1">
+            {% include "surf_camps/partials/field.html" with field=cancellation_form.reason %}
+          </div>
+          <button type="submit" class="btn-danger"
+                  onclick="return confirm('{% translate "Cancel this camp and release every place?" %}')">
+            {% icon "circle-x" "h-4 w-4" %} {% translate "Cancel camp" %}
+          </button>
+        </div>
+      </form>
+    </div>
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,60 @@
+{% load i18n surf_tags %}
+<div class="card overflow-hidden">
+  <div class="grid grid-cols-7 border-b border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/60">
+    {% for label in weekday_labels %}
+      <div class="px-2 py-2 text-center text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+        {{ label }}
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="grid grid-cols-7">
+    {% for week in weeks %}
+      {% for day in week %}
+        <div class="min-h-28 border-b border-e border-slate-100 p-1.5 dark:border-slate-800
+                    {% if not day.in_period %}bg-slate-50/70 dark:bg-slate-900/40{% endif %}
+                    {% if day.is_today %}bg-brand-50/60 dark:bg-brand-500/10{% endif %}">
+          <div class="mb-1 flex items-center justify-between">
+            <button type="button"
+                    hx-get="{{ calendar_url }}{% query_string view='day' date=day.date|date:'Y-m-d' %}"
+                    class="inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-xs tabular-nums
+                           {% if day.is_today %}bg-brand-600 font-semibold text-white{% elif day.in_period %}text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800{% else %}text-slate-400{% endif %}"
+                    title="{% translate 'Open the day view' %}">
+              {{ day.date|date:"j" }}
+            </button>
+            {% if day.total_booked %}
+              <span class="text-[10px] tabular-nums text-slate-400">
+                {% blocktranslate with n=day.total_booked %}{{ n }} booked{% endblocktranslate %}
+              </span>
+            {% endif %}
+          </div>
+
+          <div class="space-y-1">
+            {% for event in day.events %}
+              {% include "bookings/partials/event_chip.html" with event=event %}
+            {% endfor %}
+            {% if day.extra %}
+              <button type="button"
+                      hx-get="{{ calendar_url }}{% query_string view='day' date=day.date|date:'Y-m-d' %}"
+                      class="w-full rounded-md px-1.5 py-0.5 text-start text-[11px] text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800">
+                {% blocktranslate with n=day.extra %}+{{ n }} more{% endblocktranslate %}
+              </button>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    {% endfor %}
+  </div>
+</div>
+
+{% if not events %}
+  <div class="mt-4">
+    {% can "bookings.add" as may_add %}
+    {% if may_add %}
+      {% url 'bookings:create' as create_url %}
+      {% include "partials/empty_state.html" with icon_name="calendar-days" title=_("No sessions this month") subtitle=_("Nothing is scheduled in this period. Add a lesson in the Lessons module, then take bookings here.") action_url=create_url action_label=_("New booking") %}
+    {% else %}
+      {% include "partials/empty_state.html" with icon_name="calendar-days" title=_("No sessions this month") subtitle=_("Nothing is scheduled in this period.") %}
+    {% endif %}
+  </div>
+{% endif %}

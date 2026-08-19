@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Equipment categories" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Equipment categories" %}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "The taxonomy every item is filed under. Sub-categories are included whenever their parent is filtered." %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  {% can "equipment.add" as may_add %}
+  {% can "equipment.manage" as may_manage %}
+  <a href="{% url 'equipment:list' %}" class="btn-secondary">
+    {% icon "package" "h-4 w-4" %} {% translate "Inventory" %}
+  </a>
+  {% if may_manage %}
+    <form method="post" action="{% url 'equipment:category_seed' %}">
+      {% csrf_token %}
+      <button type="submit" class="btn-secondary">
+        {% icon "sparkles" "h-4 w-4" %} {% translate "Load standard categories" %}
+      </button>
+    </form>
+  {% endif %}
+  {% if may_add %}
+    <a href="{% url 'equipment:category_create' %}" class="btn-primary">
+      {% icon "plus" "h-4 w-4" %} {% translate "New category" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  {% if categories %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">{% translate "Category" %}</th>
+            <th scope="col">{% translate "Code" %}</th>
+            <th scope="col" class="text-end">{% translate "Items" %}</th>
+            <th scope="col" class="text-end">{% translate "Sort order" %}</th>
+            <th scope="col">{% translate "Active" %}</th>
+            <th scope="col"><span class="sr-only">{% translate "Actions" %}</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% can "equipment.change" as may_change %}
+          {% for category in categories %}
+            <tr>
+              <td>
+                <span class="inline-flex items-center gap-2" style="padding-inline-start: {{ category.depth }}rem;">
+                  <span class="text-slate-400">{% icon category.icon "h-4 w-4" %}</span>
+                  <span class="font-medium text-slate-900 dark:text-slate-100">{{ category.name }}</span>
+                </span>
+              </td>
+              <td class="font-mono text-xs">{{ category.code }}</td>
+              <td class="text-end tabular-nums">
+                {% with count=item_counts|get_item:category.pk %}
+                  {% if count %}
+                    <a href="{% url 'equipment:list' %}?category={{ category.pk }}" class="text-brand-600 hover:underline">{{ count }}</a>
+                  {% else %}0{% endif %}
+                {% endwith %}
+              </td>
+              <td class="text-end tabular-nums">{{ category.sort_order }}</td>
+              <td>
+                {% if category.is_active %}
+                  <span class="badge-emerald">{% translate "Active" %}</span>
+                {% else %}
+                  <span class="badge-slate">{% translate "Hidden" %}</span>
+                {% endif %}
+              </td>
+              <td class="text-end">
+                {% if may_change %}
+                  <a href="{% url 'equipment:category_update' category.pk %}" class="btn-ghost btn-sm">
+                    {% icon "pencil" "h-4 w-4" %}
+                    <span class="sr-only">{% translate "Edit" %}</span>
+                  </a>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    {% include "partials/empty_state.html" with icon_name="tag" title=_("No categories yet") subtitle=_("Load the standard surf-school taxonomy — surfboards, wetsuits, leashes, safety gear — and adjust it afterwards.") %}
+  {% endif %}
+{% endblock %}

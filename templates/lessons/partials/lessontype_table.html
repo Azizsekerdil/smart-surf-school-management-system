@@ -1,0 +1,83 @@
+{% load i18n surf_tags %}
+{% can "lessons.manage" as may_manage %}
+<div id="lessontype-table">
+  {% if lesson_types %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">{% translate "Type" %}</th>
+            <th scope="col">{% translate "Levels" %}</th>
+            <th scope="col">{% translate "Ages" %}</th>
+            <th scope="col">{% translate "Format" %}</th>
+            <th scope="col">{% translate "Ratio" %}</th>
+            <th scope="col" class="text-end">{% translate "Price" %}</th>
+            <th scope="col" class="text-end">{% translate "Actions" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for lesson_type in lesson_types %}
+            <tr>
+              <td>
+                <div class="flex items-center gap-3">
+                  <span class="inline-block h-8 w-1.5 shrink-0 rounded-full"
+                        style="background-color: {{ lesson_type.colour }}" aria-hidden="true"></span>
+                  <div>
+                    <p class="font-medium text-slate-900 dark:text-slate-100">{{ lesson_type.name }}</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">
+                      {{ lesson_type.code }} · {{ lesson_type.get_category_display }}
+                      {% if not lesson_type.is_active %}
+                        <span class="badge-slate ms-1">{% translate "Archived" %}</span>
+                      {% endif %}
+                      {% if lesson_type.is_private %}
+                        <span class="badge-violet ms-1">{% translate "Private" %}</span>
+                      {% endif %}
+                    </p>
+                  </div>
+                </div>
+              </td>
+              <td class="text-sm">{{ lesson_type.get_min_level_display }} → {{ lesson_type.get_max_level_display }}</td>
+              <td class="text-sm whitespace-nowrap">
+                {% if lesson_type.min_age or lesson_type.max_age %}
+                  {{ lesson_type.min_age|default:"—" }} – {{ lesson_type.max_age|default:"—" }}
+                {% else %}
+                  {% translate "Any" %}
+                {% endif %}
+              </td>
+              <td class="text-sm whitespace-nowrap">
+                {{ lesson_type.duration_minutes|duration_hm }} ·
+                {{ lesson_type.min_students }}–{{ lesson_type.max_students }} {% translate "students" %}
+              </td>
+              <td class="text-sm whitespace-nowrap tabular-nums">
+                {% blocktranslate with ratio=lesson_type.ratio_per_instructor %}1 : {{ ratio }}{% endblocktranslate %}
+              </td>
+              <td class="text-end tabular-nums">
+                {{ lesson_type.base_price|money }}
+                {% if lesson_type.price_per_extra_student %}
+                  <p class="text-xs text-slate-500 dark:text-slate-400">
+                    +{{ lesson_type.price_per_extra_student|money }} {% translate "per extra student" %}
+                  </p>
+                {% endif %}
+              </td>
+              <td class="text-end">
+                {% if may_manage %}
+                  <a href="{% url 'lessons:type_update' lesson_type.pk %}" class="btn-secondary btn-sm">
+                    {% icon "pencil" "h-4 w-4" %} {% translate "Edit" %}
+                  </a>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% include "partials/pagination.html" %}
+  {% else %}
+    {% url 'lessons:type_create' as create_url %}
+    {% if may_manage %}
+      {% include "partials/empty_state.html" with icon_name="list-checks" title=_("No lesson types yet") subtitle=_("Define what the school teaches before scheduling the first lesson.") action_url=create_url action_label=_("New lesson type") %}
+    {% else %}
+      {% include "partials/empty_state.html" with icon_name="list-checks" title=_("No lesson types match") subtitle=_("Try clearing the filters.") %}
+    {% endif %}
+  {% endif %}
+</div>

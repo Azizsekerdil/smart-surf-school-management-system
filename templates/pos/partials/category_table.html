@@ -1,0 +1,75 @@
+{% load i18n surf_tags %}
+{% if categories %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">{% translate "Category" %}</th>
+          <th scope="col">{% translate "Code" %}</th>
+          <th scope="col" class="text-end">{% translate "Order" %}</th>
+          <th scope="col" class="text-end">{% translate "Products" %}</th>
+          <th scope="col">{% translate "Status" %}</th>
+          <th scope="col"><span class="sr-only">{% translate "Actions" %}</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for category in categories %}
+          <tr>
+            <td>
+              <span class="flex items-center gap-2">
+                <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                  {% icon category.icon|default:"package" "h-4 w-4" %}
+                </span>
+                <span>
+                  <span class="block font-medium text-slate-900 dark:text-slate-100">{{ category.name }}</span>
+                  {% if category.parent %}
+                    <span class="block text-xs text-slate-400">{{ category.full_path }}</span>
+                  {% endif %}
+                </span>
+              </span>
+            </td>
+            <td class="font-mono text-xs">{{ category.code }}</td>
+            <td class="text-end tabular-nums">{{ category.sort_order }}</td>
+            <td class="text-end tabular-nums">
+              {{ category.active_product_count }}
+              {% if category.product_count != category.active_product_count %}
+                <span class="block text-xs text-slate-400">
+                  {% blocktranslate with total=category.product_count %}{{ total }} incl. withdrawn{% endblocktranslate %}
+                </span>
+              {% endif %}
+            </td>
+            <td>
+              {% if category.is_active %}
+                <span class="badge-emerald">{% translate "Active" %}</span>
+              {% else %}
+                <span class="badge-slate">{% translate "Hidden" %}</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {% can "pos.change" as may_change %}
+              {% if may_change %}
+                <a href="{% url 'pos:category_update' category.pk %}" class="btn-ghost btn-sm"
+                   aria-label="{% translate 'Edit category' %}">
+                  {% icon "pencil" "h-4 w-4" %}
+                </a>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% include "partials/pagination.html" %}
+{% else %}
+  {% translate "No categories yet" as empty_title %}
+  {% translate "Create at least one — every product needs a category, and the till uses them as tabs." as empty_subtitle %}
+  {% can "pos.change" as may_change %}
+  {% if may_change %}
+    {% url 'pos:category_create' as action_url %}
+    {% translate "New category" as action_label %}
+    {% include "partials/empty_state.html" with icon_name="folder" title=empty_title subtitle=empty_subtitle action_url=action_url action_label=action_label %}
+  {% else %}
+    {% include "partials/empty_state.html" with icon_name="folder" title=empty_title subtitle=empty_subtitle %}
+  {% endif %}
+{% endif %}

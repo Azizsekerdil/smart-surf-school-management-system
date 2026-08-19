@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Lifeguard roster" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Lifeguard roster" %}{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-3 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'safety:dashboard' %}" class="hover:underline">{% translate "Safety" %}</a>
+    <span class="mx-1">/</span>
+    <span class="text-slate-700 dark:text-slate-300">{% translate "Roster" %}</span>
+  </nav>
+{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% blocktranslate with start=week.start|date:"d.m.Y" end=week.end|date:"d.m.Y" %}Week of {{ start }} – {{ end }}{% endblocktranslate %}
+    · {% blocktranslate with confirmed=week.confirmed total=week.total %}{{ confirmed }} of {{ total }} shifts confirmed{% endblocktranslate %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  {% can "safety.add" as may_add %}
+  {% if may_add %}
+    <a href="{% url 'safety:roster_assign' %}" class="btn-primary">
+      {% icon "plus" "h-4 w-4" %} {% translate "Add shift" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+
+  {% if uncovered_today %}
+    <div class="alert-warning mb-5">
+      {% icon "triangle-alert" "h-5 w-5 shrink-0" %}
+      <div>
+        <p class="font-semibold">{% translate "No confirmed cover today at:" %}</p>
+        <p class="mt-1">
+          {% for spot in uncovered_today %}{{ spot.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+        </p>
+      </div>
+    </div>
+  {% endif %}
+
+  {# --- week navigation and spot filter ---------------------------------- #}
+  <form method="get" action="{% url 'safety:roster' %}" class="card mb-5 flex flex-wrap items-end gap-3 p-4">
+    <div class="flex items-center gap-1">
+      <a href="?week={{ previous_week }}{% if selected_spot %}&spot={{ selected_spot.pk }}{% endif %}"
+         class="btn-secondary btn-sm" aria-label="{% translate 'Previous week' %}">
+        {% icon "chevron-left" "h-4 w-4" %}
+      </a>
+      <a href="?week={{ this_week }}{% if selected_spot %}&spot={{ selected_spot.pk }}{% endif %}"
+         class="btn-secondary btn-sm">{% translate "This week" %}</a>
+      <a href="?week={{ next_week }}{% if selected_spot %}&spot={{ selected_spot.pk }}{% endif %}"
+         class="btn-secondary btn-sm" aria-label="{% translate 'Next week' %}">
+        {% icon "chevron-right" "h-4 w-4" %}
+      </a>
+    </div>
+
+    <div class="w-full sm:w-64">
+      <label class="form-label" for="id_spot">{% translate "Surf spot" %}</label>
+      <select name="spot" id="id_spot" class="form-select">
+        <option value="">{% translate "All spots" %}</option>
+        {% for spot in spots %}
+          <option value="{{ spot.pk }}" {% if selected_spot and selected_spot.pk == spot.pk %}selected{% endif %}>
+            {{ spot.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <input type="hidden" name="week" value="{{ week.start|date:'Y-m-d' }}">
+    <button type="submit" class="btn-primary">{% icon "filter" "h-4 w-4" %} {% translate "Apply" %}</button>
+  </form>
+
+  {# --- the week grid ----------------------------------------------------- #}
+  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+    {% for day in week.days %}
+      <section class="card {% if day.is_today %}ring-2 ring-brand-500{% endif %}">
+        <div class="card-header px-4 py-3">
+          <div>
+            <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ day.date|date:"D" }}</h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400">{{ day.date|date:"d.m" }}</p>
+          </div>
+          {% if day.confirmed_count %}
+            <span class="badge-emerald">{{ day.confirmed_count }}</span>
+          {% elif day.assignments %}
+            <span class="badge-amber">{{ day.assignments|length }}</span>
+          {% endif %}
+        </div>
+        <div class="space-y-2 p-4">
+          {% for shift in day.assignments %}
+            <div class="rounded-lg border p-2.5
+                        {% if shift.is_confirmed %}border-emerald-200 bg-emerald-50 dark:border-emerald-500/25 dark:bg-emerald-500/10
+                        {% else %}border-amber-200 bg-amber-50 dark:border-amber-500/25 dark:bg-amber-500/10{% endif %}">
+              <p class="truncate text-xs font-semibold text-slate-900 dark:text-slate-100">
+                {{ shift.lifeguard.get_display_name }}
+              </p>
+              <p class="mt-0.5 text-xs text-slate-600 dark:text-slate-400">
+                {{ shift.start_time|time:"H:i" }}–{{ shift.end_time|time:"H:i" }}
+              </p>
+              <p class="truncate text-xs text-slate-500 dark:text-slate-400">{{ shift.spot.name }}</p>
+
+              <div class="mt-2 flex flex-wrap gap-1">
+                {% can "safety.change" as may_change %}
+                {% if may_change %}
+                  {% if not shift.is_confirmed %}
+                    <form method="post" action="{% url 'safety:assignment_confirm' shift.pk %}">
+                      {% csrf_token %}
+                      <button type="submit" class="btn-success btn-sm">
+                        {% icon "check" "h-3 w-3" %} {% translate "Confirm" %}
+                      </button>
+                    </form>
+                  {% endif %}
+                  <a href="{% url 'safety:assignment_update' shift.pk %}" class="btn-ghost btn-sm">
+                    {% icon "pencil" "h-3 w-3" %}
+                  </a>
+                {% endif %}
+              </div>
+            </div>
+          {% empty %}
+            <p class="text-xs text-slate-400 dark:text-slate-500">{% translate "No cover" %}</p>
+          {% endfor %}
+
+          {% can "safety.add" as may_add %}
+          {% if may_add %}
+            <a href="{% url 'safety:roster_assign' %}?date={{ day.date|date:'Y-m-d' }}"
+               class="flex w-full items-center justify-center gap-1 rounded-lg border border-dashed border-slate-300 py-2 text-xs text-slate-500 hover:border-brand-400 hover:text-brand-600 dark:border-slate-600 dark:text-slate-400">
+              {% icon "plus" "h-3 w-3" %} {% translate "Add" %}
+            </a>
+          {% endif %}
+        </div>
+      </section>
+    {% endfor %}
+  </div>
+{% endblock %}

@@ -1,0 +1,140 @@
+{% load i18n surf_tags %}
+<div id="schedule-body" class="space-y-5">
+
+  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Sessions" %}</p>
+      <p class="stat-value">{{ schedule.totals.sessions }}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "In the water" %}</p>
+      <p class="stat-value">{{ schedule.totals.participants }}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Checked in" %}</p>
+      <p class="stat-value">{{ schedule.totals.checked_in }}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Expected revenue" %}</p>
+      <p class="stat-value">{{ schedule.totals.expected_revenue|money }}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "To collect" %}</p>
+      <p class="stat-value">{{ schedule.totals.outstanding|money }}</p>
+    </div>
+  </div>
+
+  {% if schedule.alerts %}
+    <div class="alert-warning">
+      <p class="flex items-center gap-1.5 font-semibold">
+        {% icon "triangle-alert" "h-4 w-4" %} {% translate "Needs attention" %}
+      </p>
+      <ul class="mt-1 list-disc space-y-0.5 ps-5 text-sm">
+        {% for alert in schedule.alerts %}<li>{{ alert }}</li>{% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+
+  {% for event in schedule.events %}
+    <section class="card overflow-hidden">
+      <div class="flex flex-wrap items-center gap-3 border-s-4 border-b border-slate-200 p-4 dark:border-slate-700"
+           style="border-inline-start-color: {{ event.colour }}">
+        <div class="min-w-0">
+          <h2 class="truncate text-base font-semibold text-slate-900 dark:text-slate-50">{{ event.title }}</h2>
+          <p class="text-sm text-slate-500 dark:text-slate-400">
+            {{ event.start_label }}–{{ event.end_label }}
+            {% if event.instructor %}
+              · {{ event.instructor }}
+            {% else %}
+              · <span class="text-rose-600 dark:text-rose-400">{% translate "no instructor" %}</span>
+            {% endif %}
+          </p>
+        </div>
+        <div class="ms-auto flex flex-wrap items-center gap-2">
+          <span class="badge-{% if event.is_overbooked %}rose{% elif event.is_full %}amber{% else %}emerald{% endif %} tabular-nums">
+            {{ event.capacity_label }}
+          </span>
+          {% if event.unpaid_count %}
+            <span class="badge-amber">
+              {% blocktranslate with n=event.unpaid_count %}{{ n }} unpaid{% endblocktranslate %}
+            </span>
+          {% endif %}
+          {% if event.waitlist_count %}
+            <span class="badge-slate">
+              {% blocktranslate with n=event.waitlist_count %}{{ n }} waiting{% endblocktranslate %}
+            </span>
+          {% endif %}
+          {% can "bookings.add" as may_add %}
+          {% if may_add and not event.is_full and event.kind == 'lesson' %}
+            <a href="{% url 'bookings:create' %}?lesson={{ event.object_id }}" class="btn-secondary btn-sm">
+              {% icon "plus" "h-3.5 w-3.5" %} {% translate "Add" %}
+            </a>
+          {% endif %}
+        </div>
+      </div>
+
+      {% if event.bookings %}
+        <div class="table-wrap rounded-none border-0">
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col">{% translate "Code" %}</th>
+                <th scope="col">{% translate "Customer" %}</th>
+                <th scope="col">{% translate "Student" %}</th>
+                <th scope="col" class="text-center">{% translate "Seats" %}</th>
+                <th scope="col">{% translate "Status" %}</th>
+                <th scope="col">{% translate "Payment" %}</th>
+                <th scope="col">{% translate "Requests" %}</th>
+                <th scope="col"><span class="sr-only">{% translate "Actions" %}</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for booking in event.bookings %}
+                <tr>
+                  <td>
+                    <a href="{% url 'bookings:detail' booking.pk %}"
+                       class="font-medium text-brand-700 hover:underline dark:text-brand-300">
+                      {{ booking.booking_code }}
+                    </a>
+                  </td>
+                  <td>{{ booking.customer }}</td>
+                  <td>{{ booking.student|default:"—" }}</td>
+                  <td class="text-center tabular-nums">{{ booking.participants }}</td>
+                  <td>{% status_badge booking.status booking.get_status_display %}</td>
+                  <td>{% status_badge booking.payment_status booking.get_payment_status_display %}</td>
+                  <td class="max-w-48 truncate text-xs text-slate-500 dark:text-slate-400">
+                    {{ booking.special_requests|default:"" }}
+                  </td>
+                  <td class="text-end">
+                    {% can "bookings.change" as may_change %}
+                    {% if may_change and booking.can_check_in %}
+                      <form method="post" action="{% url 'bookings:check_in' booking.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-primary btn-sm">
+                          {% icon "user-check" "h-3.5 w-3.5" %} {% translate "Check in" %}
+                        </button>
+                      </form>
+                    {% elif may_change and booking.can_confirm %}
+                      <form method="post" action="{% url 'bookings:confirm' booking.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-secondary btn-sm">
+                          {% icon "circle-check" "h-3.5 w-3.5" %} {% translate "Confirm" %}
+                        </button>
+                      </form>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="p-4 text-sm text-slate-500 dark:text-slate-400">
+          {% translate "No bookings on this session yet." %}
+        </p>
+      {% endif %}
+    </section>
+  {% empty %}
+    {% include "partials/empty_state.html" with icon_name="waves" title=_("Nothing scheduled") subtitle=_("There are no sessions on this day.") %}
+  {% endfor %}
+</div>

@@ -1,0 +1,79 @@
+{% load i18n surf_tags %}
+<div id="waitlist-table">
+  {% if entries %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col" class="w-12">#</th>
+            <th scope="col">{% translate "Customer" %}</th>
+            <th scope="col">{% translate "Waiting for" %}</th>
+            <th scope="col" class="text-center">{% translate "Seats" %}</th>
+            <th scope="col">{% translate "Requested" %}</th>
+            <th scope="col">{% translate "State" %}</th>
+            <th scope="col"><span class="sr-only">{% translate "Actions" %}</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for entry in entries %}
+            <tr>
+              <td class="tabular-nums text-slate-400">{{ entry.position }}</td>
+              <td>
+                <p class="font-medium text-slate-800 dark:text-slate-100">{{ entry.customer }}</p>
+                {% if entry.student %}
+                  <p class="text-xs text-slate-500 dark:text-slate-400">{{ entry.student }}</p>
+                {% endif %}
+              </td>
+              <td class="max-w-56 truncate">{{ entry.lesson|default:entry.surf_camp }}</td>
+              <td class="text-center tabular-nums">{{ entry.participants }}</td>
+              <td class="whitespace-nowrap tabular-nums">{{ entry.requested_at|date:"d.m.Y H:i" }}</td>
+              <td>
+                {% if entry.is_converted %}
+                  <span class="badge-emerald">{% translate "Booked" %}</span>
+                  {% if entry.converted_booking %}
+                    <a href="{% url 'bookings:detail' entry.converted_booking.pk %}"
+                       class="ms-1 text-xs text-brand-700 hover:underline dark:text-brand-300">
+                      {{ entry.converted_booking.booking_code }}
+                    </a>
+                  {% endif %}
+                {% elif entry.is_notified %}
+                  <span class="badge-amber">{% translate "Notified" %}</span>
+                {% else %}
+                  <span class="badge-slate">{% translate "Waiting" %}</span>
+                {% endif %}
+              </td>
+              <td class="text-end">
+                <div class="flex justify-end gap-1">
+                  {% can "bookings.change" as may_change %}
+                  {% if may_change and not entry.is_converted %}
+                    <form method="post" action="{% url 'bookings:waitlist_promote' entry.pk %}">
+                      {% csrf_token %}
+                      <button type="submit" class="btn-secondary btn-sm">
+                        {% icon "user-plus" "h-3.5 w-3.5" %} {% translate "Give a seat" %}
+                      </button>
+                    </form>
+                  {% endif %}
+                  {% can "bookings.delete" as may_delete %}
+                  {% if may_delete and not entry.is_converted %}
+                    <form method="post" action="{% url 'bookings:waitlist_remove' entry.pk %}"
+                          onsubmit="return confirm('{% translate "Remove this person from the waiting list?" %}');">
+                      {% csrf_token %}
+                      <button type="submit" class="btn-ghost btn-sm text-rose-600 dark:text-rose-400"
+                              aria-label="{% translate 'Remove from the waiting list' %}">
+                        {% icon "trash-2" "h-3.5 w-3.5" %}
+                      </button>
+                    </form>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% include "partials/pagination.html" %}
+  {% else %}
+    {% include "partials/empty_state.html" with icon_name="clock" title=_("Nobody is waiting") subtitle=_("When a session sells out, add the next customer here so a cancellation is never wasted.") %}
+  {% endif %}
+</div>

@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Packages" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Lesson packages" %}{% endblock %}
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "Bundles sold up front. The money is taken on the day of sale; the lessons are delivered later." %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'finance:customer_package_list' %}" class="btn-secondary">
+    {% icon "users" "h-4 w-4" %} {% translate "Sold packages" %}
+  </a>
+  {% can "finance.add" as may_add %}
+  {% if may_add %}
+    <a href="{% url 'finance:package_sell' %}" class="btn-secondary">
+      {% icon "banknote" "h-4 w-4" %} {% translate "Sell a package" %}
+    </a>
+    <a href="{% url 'finance:package_create' %}" class="btn-primary">
+      {% icon "plus" "h-4 w-4" %} {% translate "New package" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <nav class="flex flex-wrap gap-1" aria-label="{% translate 'Package status' %}">
+      {% for key, label in status_tabs %}
+        <a href="{% query_string status=key page=None %}"
+           class="rounded-lg px-3 py-1.5 text-sm font-medium
+                  {% if status == key %}bg-brand-600 text-white{% else %}text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800{% endif %}">
+          {{ label }}
+        </a>
+      {% endfor %}
+    </nav>
+
+    <form method="get" class="flex items-center gap-2">
+      <input type="hidden" name="status" value="{{ status }}">
+      <div class="relative">
+        <span class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3 text-slate-400">
+          {% icon "search" "h-4 w-4" %}
+        </span>
+        <input type="search" name="q" value="{{ search_term }}" class="form-input ps-9"
+               placeholder="{% translate 'Name or code' %}"
+               aria-label="{% translate 'Search packages' %}">
+      </div>
+      <button type="submit" class="btn-secondary">{% translate "Search" %}</button>
+    </form>
+  </div>
+
+  <div class="stat-card mt-4">
+    <p class="stat-label">{% translate "Value of lessons not yet delivered" %}</p>
+    <p class="stat-value">{{ package_liability|money }}</p>
+    <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+      {% translate "Money already banked that the school still owes surfing for." %}
+    </p>
+  </div>
+
+  {% if packages %}
+    <div class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      {% for package in packages %}
+        <article class="card flex flex-col">
+          <div class="card-header">
+            <div class="min-w-0">
+              <h2 class="card-title truncate">{{ package.name }}</h2>
+              <p class="text-xs text-slate-500 dark:text-slate-400">{{ package.code }}</p>
+            </div>
+            {% if package.is_active %}
+              <span class="badge-emerald">{% translate "On sale" %}</span>
+            {% else %}
+              <span class="badge-slate">{% translate "Withdrawn" %}</span>
+            {% endif %}
+          </div>
+          <div class="card-body flex-1 space-y-3">
+            {% if package.description %}
+              <p class="text-sm text-slate-600 dark:text-slate-300">{{ package.description }}</p>
+            {% endif %}
+            <dl class="grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <dt class="stat-label">{% translate "Price" %}</dt>
+                <dd class="text-lg font-semibold tabular-nums text-slate-900 dark:text-slate-100">
+                  {{ package.price|money }}
+                </dd>
+              </div>
+              <div>
+                <dt class="stat-label">{% translate "Lessons" %}</dt>
+                <dd class="text-lg font-semibold tabular-nums text-slate-900 dark:text-slate-100">
+                  {{ package.lesson_count }}
+                </dd>
+              </div>
+              <div>
+                <dt class="stat-label">{% translate "Per lesson" %}</dt>
+                <dd class="tabular-nums">{{ package.price_per_lesson|money }}</dd>
+              </div>
+              <div>
+                <dt class="stat-label">{% translate "Valid for" %}</dt>
+                <dd class="tabular-nums">
+                  {% blocktranslate with days=package.validity_days %}{{ days }} days{% endblocktranslate %}
+                </dd>
+              </div>
+            </dl>
+
+            {% if package.saving_vs_single > 0 %}
+              <p class="alert-success text-xs">
+                {% icon "trending-down" "h-4 w-4 shrink-0" %}
+                <span>
+                  {% blocktranslate with saving=package.saving_vs_single|money percent=package.saving_percent|floatformat:0 %}Saves {{ saving }} ({{ percent }}%) against single lessons{% endblocktranslate %}
+                </span>
+              </p>
+            {% endif %}
+            {% if package.lesson_type_id %}
+              <p class="text-xs text-slate-500 dark:text-slate-400">
+                {% blocktranslate with type=package.lesson_type %}For {{ type }}{% endblocktranslate %}
+              </p>
+            {% endif %}
+          </div>
+          <div class="flex items-center gap-2 border-t border-slate-200 px-5 py-3 dark:border-slate-700">
+            {% can "finance.add" as may_sell %}
+            {% if may_sell and package.is_active %}
+              <a href="{% url 'finance:package_sell' %}?package={{ package.pk }}" class="btn-primary btn-sm">
+                {% icon "banknote" "h-3.5 w-3.5" %} {% translate "Sell" %}
+              </a>
+            {% endif %}
+            {% can "finance.change" as may_change %}
+            {% if may_change %}
+              <a href="{% url 'finance:package_update' package.pk %}" class="btn-secondary btn-sm">
+                {% icon "pencil" "h-3.5 w-3.5" %} {% translate "Edit" %}
+              </a>
+            {% endif %}
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+
+    {% include "partials/pagination.html" %}
+  {% else %}
+    {% can "finance.add" as may_add %}
+    {% if may_add %}
+      {% url 'finance:package_create' as create_url %}
+      {% include "partials/empty_state.html" with icon_name="package" title=_("No packages yet") subtitle=_("A package lets a customer pay for several lessons at once, at a discount.") action_url=create_url action_label=_("New package") %}
+    {% else %}
+      {% include "partials/empty_state.html" with icon_name="package" title=_("No packages yet") subtitle=_("Nothing is on sale at the moment.") %}
+    {% endif %}
+  {% endif %}
+{% endblock %}

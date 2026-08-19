@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Equipment safety checks" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Equipment safety checks" %}{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-3 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'safety:dashboard' %}" class="hover:underline">{% translate "Safety" %}</a>
+    <span class="mx-1">/</span>
+    <span class="text-slate-700 dark:text-slate-300">{% translate "Equipment checks" %}</span>
+  </nav>
+{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "The safety record for each item. Repairs live in maintenance; this is the evidence the item was looked at." %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  {% can "safety.add" as may_add %}
+  {% if may_add %}
+    <a href="{% url 'safety:check_create' %}" class="btn-primary">
+      {% icon "plus" "h-4 w-4" %} {% translate "Record a check" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+
+  {% if overdue %}
+    <div class="alert-error mb-5">
+      {% icon "triangle-alert" "h-5 w-5 shrink-0" %}
+      <div>
+        <p class="font-semibold">
+          {% blocktranslate count counter=overdue|length %}{{ counter }} item is overdue a safety check{% plural %}{{ counter }} items are overdue a safety check{% endblocktranslate %}
+        </p>
+        <ul class="mt-1 list-disc space-y-0.5 ps-5">
+          {% for check in overdue %}
+            <li>
+              {{ check.equipment }} —
+              {% blocktranslate count counter=check.days_overdue %}{{ counter }} day late{% plural %}{{ counter }} days late{% endblocktranslate %}
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  {% endif %}
+
+  <form method="get" action="{% url 'safety:check_list' %}"
+        class="card mb-5 flex flex-wrap items-end gap-3 p-4"
+        hx-get="{% url 'safety:check_list' %}"
+        hx-target="#check-results"
+        hx-swap="innerHTML"
+        hx-push-url="true"
+        hx-trigger="submit, change from:select">
+    <div class="min-w-0 flex-1">
+      <label class="form-label" for="id_q">{% translate "Search" %}</label>
+      <div class="relative">
+        <span class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3 text-slate-400">
+          {% icon "search" "h-4 w-4" %}
+        </span>
+        <input type="search" name="q" id="id_q" value="{{ search_term }}"
+               class="form-input ps-9" placeholder="{% translate 'Item, asset code or issue…' %}">
+      </div>
+    </div>
+    <div class="w-full sm:w-48">
+      <label class="form-label" for="id_outcome">{% translate "Outcome" %}</label>
+      <select name="outcome" id="id_outcome" class="form-select">
+        <option value="" {% if not outcome %}selected{% endif %}>{% translate "All" %}</option>
+        <option value="passed" {% if outcome == "passed" %}selected{% endif %}>{% translate "Passed" %}</option>
+        <option value="failed" {% if outcome == "failed" %}selected{% endif %}>{% translate "Failed" %}</option>
+      </select>
+    </div>
+    <button type="submit" class="btn-primary">{% icon "filter" "h-4 w-4" %} {% translate "Apply" %}</button>
+  </form>
+
+  <div id="check-results" class="card overflow-hidden">
+    {% include "safety/partials/check_table.html" %}
+  </div>
+{% endblock %}

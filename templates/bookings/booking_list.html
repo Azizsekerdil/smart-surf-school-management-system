@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Bookings" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Bookings" %}{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'bookings:calendar' %}" class="btn-secondary">
+    {% icon "calendar-days" "h-4 w-4" %} {% translate "Calendar" %}
+  </a>
+  <a href="{% url 'bookings:waitlist' %}" class="btn-secondary">
+    {% icon "clock" "h-4 w-4" %} {% translate "Waiting list" %}
+  </a>
+  {% can "bookings.add" as may_add %}
+  {% if may_add %}
+    <a href="{% url 'bookings:create' %}" class="btn-primary">
+      {% icon "plus" "h-4 w-4" %} {% translate "New booking" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <div class="mb-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Bookings" %}</p>
+      <p class="stat-value">{{ paginator.count|default:0 }}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Seats" %}</p>
+      <p class="stat-value">{{ summary.seats }}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Awaiting confirmation" %}</p>
+      <p class="stat-value">{{ summary.pending }}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Outstanding balance" %}</p>
+      <p class="stat-value">{{ summary.outstanding|money }}</p>
+    </div>
+  </div>
+
+  {# ------------------------------------------------------------- filters #}
+  <form class="card mb-4 p-4"
+        hx-get="{% url 'bookings:list' %}"
+        hx-target="#booking-table"
+        hx-swap="outerHTML"
+        hx-push-url="true"
+        hx-trigger="change, submit, keyup changed delay:400ms from:#booking-search">
+    <div class="grid gap-3 md:grid-cols-3 lg:grid-cols-6">
+      <div class="lg:col-span-2">
+        <label class="form-label" for="booking-search">{% translate "Search" %}</label>
+        <input type="search" id="booking-search" name="q" value="{{ search_term|default:'' }}"
+               class="form-input" placeholder="{% translate 'Code, customer or student' %}">
+      </div>
+
+      <div>
+        <label class="form-label" for="filter-status">{% translate "Status" %}</label>
+        <select id="filter-status" name="status" class="form-select">
+          <option value="">{% translate "All statuses" %}</option>
+          <option value="active" {% if applied.status == 'active' %}selected{% endif %}>{% translate "Active" %}</option>
+          {% for value, label in status_choices %}
+            <option value="{{ value }}" {% if applied.status == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="form-label" for="filter-payment">{% translate "Payment" %}</label>
+        <select id="filter-payment" name="payment_status" class="form-select">
+          <option value="">{% translate "All payments" %}</option>
+          <option value="outstanding" {% if applied.payment_status == 'outstanding' %}selected{% endif %}>
+            {% translate "Outstanding balance" %}
+          </option>
+          {% for value, label in payment_choices %}
+            <option value="{{ value }}" {% if applied.payment_status == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="form-label" for="filter-type">{% translate "Type" %}</label>
+        <select id="filter-type" name="booking_type" class="form-select">
+          <option value="">{% translate "All types" %}</option>
+          {% for value, label in type_choices %}
+            <option value="{{ value }}" {% if applied.booking_type == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="form-label" for="filter-scope">{% translate "Period" %}</label>
+        <select id="filter-scope" name="scope" class="form-select">
+          <option value="">{% translate "Any date" %}</option>
+          <option value="today" {% if applied.scope == 'today' %}selected{% endif %}>{% translate "Today's sessions" %}</option>
+          <option value="upcoming" {% if applied.scope == 'upcoming' %}selected{% endif %}>{% translate "Upcoming sessions" %}</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="form-label" for="filter-start">{% translate "Booked from" %}</label>
+        <input type="date" id="filter-start" name="start" value="{{ applied.start }}" class="form-input">
+      </div>
+
+      <div>
+        <label class="form-label" for="filter-end">{% translate "Booked to" %}</label>
+        <input type="date" id="filter-end" name="end" value="{{ applied.end }}" class="form-input">
+      </div>
+
+      <div class="flex items-end gap-2">
+        <button type="submit" class="btn-secondary">
+          {% icon "filter" "h-4 w-4" %} {% translate "Apply" %}
+        </button>
+        <a href="{% url 'bookings:list' %}" class="btn-ghost">{% translate "Reset" %}</a>
+      </div>
+    </div>
+  </form>
+
+  {% include "bookings/partials/booking_table.html" %}
+{% endblock %}

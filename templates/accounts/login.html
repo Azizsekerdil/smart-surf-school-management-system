@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% load i18n static surf_tags %}
+
+{% block title %}{% translate "Sign in" %} · {{ school_name }}{% endblock %}
+
+{% block auth_content %}
+<div class="grid min-h-screen lg:grid-cols-2">
+
+  {# --- brand panel ------------------------------------------------------ #}
+  <div class="relative hidden overflow-hidden bg-gradient-to-br from-brand-700 via-brand-600 to-brand-900 lg:block">
+    <svg class="absolute inset-x-0 bottom-0 text-white/10" viewBox="0 0 1440 320" preserveAspectRatio="none" aria-hidden="true">
+      <path fill="currentColor" d="M0,224L48,213.3C96,203,192,181,288,181.3C384,181,480,203,576,213.3C672,224,768,224,864,208C960,192,1056,160,1152,154.7C1248,149,1344,171,1392,181.3L1440,192L1440,320L0,320Z"></path>
+    </svg>
+    <svg class="absolute inset-x-0 bottom-0 text-white/10" viewBox="0 0 1440 320" preserveAspectRatio="none" aria-hidden="true">
+      <path fill="currentColor" d="M0,256L60,240C120,224,240,192,360,197.3C480,203,600,245,720,250.7C840,256,960,224,1080,208C1200,192,1320,192,1380,192L1440,192L1440,320L0,320Z"></path>
+    </svg>
+
+    <div class="relative flex h-full flex-col justify-between p-12 text-white">
+      <div class="flex items-center gap-3">
+        <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-white/15 backdrop-blur">
+          {% icon "waves" "h-6 w-6" %}
+        </span>
+        <span class="text-lg font-semibold">{{ school_name }}</span>
+      </div>
+
+      <div class="max-w-md">
+        <h2 class="text-3xl font-semibold leading-tight text-balance">
+          {% translate "Everything your surf school runs on, in one place." %}
+        </h2>
+        <p class="mt-4 text-brand-100">
+          {% translate "Lessons, bookings, camps, equipment, rentals, safety, finance and AI-assisted planning." %}
+        </p>
+        <ul class="mt-8 space-y-3 text-sm text-brand-50">
+          <li class="flex items-center gap-3">{% icon "calendar-days" "h-5 w-5 shrink-0 text-brand-200" %} {% translate "Conflict-free scheduling with live surf conditions" %}</li>
+          <li class="flex items-center gap-3">{% icon "package" "h-5 w-5 shrink-0 text-brand-200" %} {% translate "QR-tracked equipment, rentals and maintenance" %}</li>
+          <li class="flex items-center gap-3">{% icon "shield-alert" "h-5 w-5 shrink-0 text-brand-200" %} {% translate "Safety rules that staff — not the AI — sign off" %}</li>
+          <li class="flex items-center gap-3">{% icon "sparkles" "h-5 w-5 shrink-0 text-brand-200" %} {% translate "Local and cloud AI, with full cost tracking" %}</li>
+        </ul>
+      </div>
+
+      <p class="text-xs text-brand-200">v{{ APP_VERSION }}</p>
+    </div>
+  </div>
+
+  {# --- form panel ------------------------------------------------------- #}
+  <div class="flex items-center justify-center bg-slate-50 px-4 py-12 dark:bg-slate-950">
+    <div class="w-full max-w-sm">
+
+      <div class="mb-8 flex items-center gap-3 lg:hidden">
+        <span class="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-600 text-white">
+          {% icon "waves" "h-5 w-5" %}
+        </span>
+        <span class="text-lg font-semibold text-slate-900 dark:text-slate-50">{{ school_name }}</span>
+      </div>
+
+      <h1 class="text-2xl font-semibold text-slate-900 dark:text-slate-50">{% translate "Sign in" %}</h1>
+      <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+        {% translate "Use your username or e-mail address." %}
+      </p>
+
+      {% if form.non_field_errors %}
+        <div class="alert-error mt-5" role="alert">
+          <span class="mt-0.5 shrink-0">{% icon "circle-x" "h-5 w-5" %}</span>
+          <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+        </div>
+      {% endif %}
+
+      {% if not has_any_user %}
+        <div class="alert-warning mt-5">
+          <span class="mt-0.5 shrink-0">{% icon "triangle-alert" "h-5 w-5" %}</span>
+          <div>
+            <p class="font-medium">{% translate "No users exist yet." %}</p>
+            <p class="mt-1 text-xs">
+              {% translate "Create the documented first-run account with:" %}
+              <code class="mt-1 block rounded bg-amber-100 px-2 py-1 font-mono text-[0.7rem] dark:bg-amber-500/20">python manage.py bootstrap_admin</code>
+              {% translate "or create your own administrator with:" %}
+              <code class="mt-1 block rounded bg-amber-100 px-2 py-1 font-mono text-[0.7rem] dark:bg-amber-500/20">python manage.py createsuperuser</code>
+            </p>
+          </div>
+        </div>
+      {% endif %}
+
+      {% if bootstrap_pending %}
+        {# First-run notice. Disappears by itself once the password is changed,
+           because the flag it reads is cleared at that moment. #}
+        <div class="alert-warning mt-5" data-testid="bootstrap-notice">
+          <span class="mt-0.5 shrink-0">{% icon "triangle-alert" "h-5 w-5" %}</span>
+          <div>
+            <p class="font-medium">{% translate "admin / admin — must be changed on first login" %}</p>
+            <p class="mt-1 text-xs">{{ bootstrap_warning }}</p>
+          </div>
+        </div>
+      {% endif %}
+
+      <form method="post" class="mt-6 space-y-4" novalidate>
+        {% csrf_token %}
+
+        <div>
+          <label for="{{ form.username.id_for_label }}" class="form-label">{{ form.username.label }}</label>
+          {{ form.username }}
+          {% for error in form.username.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between">
+            <label for="{{ form.password.id_for_label }}" class="form-label">{{ form.password.label }}</label>
+            <a href="{% url 'accounts:password_reset' %}" class="mb-1.5 text-xs font-medium text-brand-600 hover:underline dark:text-brand-400">
+              {% translate "Forgot?" %}
+            </a>
+          </div>
+          {{ form.password }}
+          {% for error in form.password.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        </div>
+
+        <label class="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+          {{ form.remember_me }} {{ form.remember_me.label }}
+        </label>
+
+        <button type="submit" class="btn-primary w-full">
+          {% icon "log-out" "h-4 w-4 rotate-180" %} {% translate "Sign in" %}
+        </button>
+
+        {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+      </form>
+
+      <div class="mt-8 flex items-center justify-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+        {% get_current_language as CURRENT_LANGUAGE %}
+        {% for code, name in LANGUAGES %}
+          <form action="{% url 'set_language' %}" method="post" class="inline">
+            {% csrf_token %}
+            <input type="hidden" name="language" value="{{ code }}">
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <button type="submit" class="hover:underline {% if code == CURRENT_LANGUAGE %}font-semibold text-brand-600 dark:text-brand-400{% endif %}">
+              {{ name }}
+            </button>
+          </form>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

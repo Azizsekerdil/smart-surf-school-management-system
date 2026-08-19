@@ -1,0 +1,52 @@
+{% load i18n surf_tags %}
+{# Swapped in place by HTMX into #step-status. #}
+<div class="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+  {% if is_completed %}
+    <div class="flex items-center gap-2 text-sm">
+      <span class="text-emerald-600 dark:text-emerald-400">{% icon "circle-check" "h-5 w-5" %}</span>
+      <span class="font-medium text-slate-700 dark:text-slate-300">{% translate "Step completed" %}</span>
+      {% if summary.is_completed %}
+        <span class="badge-emerald">{% translate "Course finished" %}</span>
+      {% endif %}
+    </div>
+  {% else %}
+    <p class="text-sm text-slate-600 dark:text-slate-400">
+      {% translate "Done it? Tick the step off and move on." %}
+    </p>
+  {% endif %}
+
+  <div class="flex flex-wrap items-center gap-2">
+    {% if is_completed %}
+      <form method="post" action="{% url 'training:step_complete' step.pk %}"
+            hx-post="{% url 'training:step_complete' step.pk %}"
+            hx-target="#step-status"
+            hx-swap="innerHTML">
+        {% csrf_token %}
+        <input type="hidden" name="undo" value="1">
+        <button type="submit" class="btn-secondary btn-sm">
+          {% icon "rotate-ccw" "h-4 w-4" %} {% translate "Mark as not done" %}
+        </button>
+      </form>
+    {% else %}
+      <form method="post" action="{% url 'training:step_complete' step.pk %}"
+            hx-post="{% url 'training:step_complete' step.pk %}"
+            hx-target="#step-status"
+            hx-swap="innerHTML">
+        {% csrf_token %}
+        <button type="submit" class="btn-success btn-sm">
+          {% icon "check" "h-4 w-4" %} {% translate "Mark complete" %}
+        </button>
+      </form>
+    {% endif %}
+
+    {% if next_step %}
+      <a href="{% url 'training:step' next_step.pk %}" class="btn-primary btn-sm">
+        {% translate "Next step" %} {% icon "chevron-right" "h-4 w-4" %}
+      </a>
+    {% else %}
+      <a href="{{ course.get_absolute_url }}" class="btn-primary btn-sm">
+        {% icon "list-checks" "h-4 w-4" %} {% translate "Back to the course" %}
+      </a>
+    {% endif %}
+  </div>
+</div>

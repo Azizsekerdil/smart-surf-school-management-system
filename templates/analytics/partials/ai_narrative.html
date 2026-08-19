@@ -1,0 +1,17 @@
+{% load i18n surf_tags %}
+{# Rendered only when a provider actually answered. No provider, no section. #}
+<section class="ai-surface mb-5 p-5" aria-label="{% translate 'AI reading of the numbers' %}">
+  <div class="mb-2 flex flex-wrap items-center gap-2">
+    {% ai_chip %}
+    <span class="text-xs text-slate-500 dark:text-slate-400">
+      {% blocktranslate with period=range_label %}Written from the figures already on this page for {{ period }}.{% endblocktranslate %}
+    </span>
+  </div>
+
+  <p class="whitespace-pre-line text-sm leading-relaxed text-slate-700 dark:text-slate-200">{{ narrative }}</p>
+
+  <p class="mt-3 flex items-start gap-2 text-xs text-slate-500 dark:text-slate-400">
+    {% icon "info" "mt-0.5 h-3.5 w-3.5 shrink-0" %}
+    <span>{% translate "This is a written description of the numbers above, not a source of them. Check the tiles and charts before acting on it." %}</span>
+  </p>
+</section>

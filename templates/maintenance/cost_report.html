@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Maintenance costs" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Maintenance costs" %}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% blocktranslate with period=range_label %}Realised spend for {{ period }}.{% endblocktranslate %}
+  </p>
+{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-3 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'maintenance:list' %}" class="hover:underline">{% translate "Maintenance" %}</a>
+    <span class="mx-1" aria-hidden="true">/</span>
+    <span>{% translate "Costs" %}</span>
+  </nav>
+{% endblock %}
+
+{% block content %}
+
+  <form method="get" class="card mb-5 flex flex-wrap items-end gap-3 p-4">
+    <div>
+      <label for="range" class="form-label">{% translate "Period" %}</label>
+      <select id="range" name="range" class="form-select">
+        <option value="30" {% if range_key == "30" %}selected{% endif %}>{% translate "Last 30 days" %}</option>
+        <option value="90" {% if range_key == "90" %}selected{% endif %}>{% translate "Last 3 months" %}</option>
+        <option value="180" {% if range_key == "180" %}selected{% endif %}>{% translate "Last 6 months" %}</option>
+        <option value="365" {% if range_key == "365" %}selected{% endif %}>{% translate "Last year" %}</option>
+        <option value="all" {% if range_key == "all" %}selected{% endif %}>{% translate "All time" %}</option>
+      </select>
+    </div>
+    <button type="submit" class="btn-primary">{% icon "filter" "h-4 w-4" %} {% translate "Apply" %}</button>
+  </form>
+
+  <div class="mb-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Total spend" %}</p>
+      <p class="stat-value">{{ report.total_cost|money }}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Parts" %}</p>
+      <p class="stat-value">{{ report.parts_cost|money }}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Labour" %}</p>
+      <p class="stat-value">{{ report.labour_cost|money }}</p>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {% blocktranslate with hours=report.labour_hours %}{{ hours }} hours{% endblocktranslate %}
+      </p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Repairs completed" %}</p>
+      <p class="stat-value">{{ report.records }}</p>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {% blocktranslate with amount=report.average_cost|money %}{{ amount }} average{% endblocktranslate %}
+      </p>
+    </div>
+  </div>
+
+  {% if open_commitment.records %}
+    <div class="alert-info mb-5">
+      <span class="mt-0.5 shrink-0">{% icon "info" "h-5 w-5" %}</span>
+      <div>
+        <p class="font-medium">
+          {% blocktranslate count counter=open_commitment.records %}{{ counter }} repair is still open and not counted here.{% plural %}{{ counter }} repairs are still open and not counted here.{% endblocktranslate %}
+        </p>
+        <p class="mt-1 text-xs">
+          {% blocktranslate with n=open_commitment.unusable %}{{ n }} of them have an item out of service.{% endblocktranslate %}
+          <a href="{% url 'maintenance:list' %}?tab=open" class="font-medium hover:underline">{% translate "Review open work" %}</a>
+        </p>
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="grid gap-5 lg:grid-cols-2">
+
+    <section class="card">
+      <div class="card-header"><h2 class="card-title">{% translate "By equipment category" %}</h2></div>
+      {% if report.by_category %}
+        <div class="table-wrap border-0">
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col">{% translate "Category" %}</th>
+                <th scope="col" class="text-end">{% translate "Repairs" %}</th>
+                <th scope="col" class="text-end">{% translate "Parts" %}</th>
+                <th scope="col" class="text-end">{% translate "Labour" %}</th>
+                <th scope="col" class="text-end">{% translate "Total" %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in report.by_category %}
+                <tr>
+                  <td>{{ row.category|default:"—" }}</td>
+                  <td class="text-end tabular-nums">{{ row.records }}</td>
+                  <td class="text-end tabular-nums">{{ row.parts|money }}</td>
+                  <td class="text-end tabular-nums">{{ row.labour|money }}</td>
+                  <td class="text-end font-medium tabular-nums">{{ row.total|money }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="card-body">
+          <p class="text-sm text-slate-500 dark:text-slate-400">
+            {% translate "No completed repairs in this period." %}
+          </p>
+        </div>
+      {% endif %}
+    </section>
+
+    <section class="card">
+      <div class="card-header"><h2 class="card-title">{% translate "By damage type" %}</h2></div>
+      {% if report.by_damage_type %}
+        <div class="table-wrap border-0">
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col">{% translate "Damage type" %}</th>
+                <th scope="col" class="text-end">{% translate "Repairs" %}</th>
+                <th scope="col" class="text-end">{% translate "Total" %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in report.by_damage_type %}
+                <tr>
+                  <td>{{ damage_labels|get_item:row.damage_type|default:row.damage_type }}</td>
+                  <td class="text-end tabular-nums">{{ row.records }}</td>
+                  <td class="text-end font-medium tabular-nums">{{ row.total|money }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="card-body">
+          <p class="text-sm text-slate-500 dark:text-slate-400">
+            {% translate "No completed repairs in this period." %}
+          </p>
+        </div>
+      {% endif %}
+    </section>
+  </div>
+
+  <section class="card mt-5">
+    <div class="card-header">
+      <h2 class="card-title">{% translate "Most expensive items" %}</h2>
+    </div>
+    {% if report.by_item %}
+      <div class="table-wrap border-0">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">{% translate "Equipment" %}</th>
+              <th scope="col" class="text-end">{% translate "Repairs" %}</th>
+              <th scope="col" class="text-end">{% translate "Labour hours" %}</th>
+              <th scope="col" class="text-end">{% translate "Total" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in report.by_item %}
+              <tr>
+                <td>
+                  <a href="{% url 'equipment:detail' row.equipment_id %}"
+                     class="font-medium text-brand-600 hover:underline dark:text-brand-400">
+                    {{ row.code|default:row.name|default:row.equipment_id }}
+                  </a>
+                  {% if row.code and row.name %}
+                    <span class="block text-xs text-slate-500 dark:text-slate-400">{{ row.name }}</span>
+                  {% endif %}
+                </td>
+                <td class="text-end tabular-nums">{{ row.records }}</td>
+                <td class="text-end tabular-nums">{{ row.hours }}</td>
+                <td class="text-end font-medium tabular-nums">{{ row.total|money }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="card-body">
+        <p class="text-sm text-slate-500 dark:text-slate-400">
+          {% translate "No completed repairs in this period." %}
+        </p>
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}

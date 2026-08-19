@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "CRM" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "CRM" %}{% endblock %}
+{% block page_subtitle %}
+  <p class="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+    {% blocktranslate with label=range_label %}Pipeline and retention · {{ label }}{% endblocktranslate %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  {% include "crm/partials/range_filter.html" %}
+  {% can "crm.add" as may_add %}
+  {% if may_add %}
+    <a href="{% url 'crm:lead_create' %}" class="btn-primary">
+      {% icon "plus" "h-4 w-4" %} {% translate "New lead" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+
+  {# ---------------------------------------------------------------- tiles #}
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Open leads" %}</p>
+      <p class="stat-value">{{ open_lead_count }}</p>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {% blocktranslate with total=pipeline_value|money %}{{ total }} in pipeline{% endblocktranslate %}
+      </p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Weighted pipeline" %}</p>
+      <p class="stat-value">{{ weighted_pipeline|money }}</p>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {% translate "Expected value × probability" %}
+      </p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Won in period" %}</p>
+      <p class="stat-value">{{ won_count }}</p>
+      <p class="mt-1 text-xs {% if win_rate %}stat-delta-up{% else %}text-slate-500 dark:text-slate-400{% endif %}">
+        {% if win_rate is not None %}
+          {% blocktranslate with rate=win_rate %}{{ rate }}% win rate{% endblocktranslate %}
+        {% else %}
+          {% translate "Nothing closed yet" %}
+        {% endif %}
+      </p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Overdue actions" %}</p>
+      <p class="stat-value {% if overdue_actions %}text-rose-600 dark:text-rose-400{% endif %}">{{ overdue_actions }}</p>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {% translate "Leads waiting on somebody" %}
+      </p>
+    </div>
+  </div>
+
+  {# --------------------------------------------------------------- funnel #}
+  <section class="card mt-6">
+    <div class="card-header flex items-center justify-between">
+      <h2 class="card-title">{% translate "Pipeline" %}</h2>
+      <a href="{% url 'crm:lead_board' %}" class="btn-secondary btn-sm">
+        {% icon "list-checks" "h-4 w-4" %} {% translate "Open board" %}
+      </a>
+    </div>
+    <div class="card-body">
+      <ol class="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+        {% for stage in funnel %}
+          <li>
+            <a href="{% url 'crm:lead_list' %}?status={{ stage.status }}"
+               class="block rounded-xl border border-slate-200 p-4 transition hover:border-brand-400 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800/60">
+              <p class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ stage.label }}</p>
+              <p class="mt-1 text-2xl font-semibold tabular-nums text-slate-900 dark:text-slate-50">{{ stage.count }}</p>
+              <p class="mt-0.5 text-xs tabular-nums text-slate-500 dark:text-slate-400">{{ stage.value|money }}</p>
+            </a>
+          </li>
+        {% endfor %}
+      </ol>
+    </div>
+  </section>
+
+  <div class="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
+
+    {# ------------------------------------------------------- lead actions #}
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Next actions" %}</h2>
+      </div>
+      <div class="card-body">
+        {% if lead_actions %}
+          <ul class="divide-y divide-slate-100 dark:divide-slate-800">
+            {% for lead in lead_actions %}
+              <li class="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
+                <span class="mt-0.5 shrink-0 {% if lead.is_action_overdue %}text-rose-500{% else %}text-slate-400{% endif %}">
+                  {% icon "clock" "h-4 w-4" %}
+                </span>
+                <div class="min-w-0 flex-1">
+                  <a href="{% url 'crm:lead_detail' lead.pk %}"
+                     class="text-sm font-medium text-slate-900 hover:text-brand-600 dark:text-slate-100">
+                    {{ lead.full_name }}
+                  </a>
+                  <p class="truncate text-sm text-slate-500 dark:text-slate-400">{{ lead.next_action }}</p>
+                </div>
+                <div class="shrink-0 text-end">
+                  <p class="text-xs {% if lead.is_action_overdue %}font-medium text-rose-600 dark:text-rose-400{% else %}text-slate-500 dark:text-slate-400{% endif %}">
+                    {{ lead.next_action_at|date:"d.m.Y H:i" }}
+                  </p>
+                  {% if lead.assigned_to %}
+                    <p class="text-xs text-slate-400">{{ lead.assigned_to.get_display_name }}</p>
+                  {% else %}
+                    <p class="text-xs text-amber-600 dark:text-amber-400">{% translate "Unassigned" %}</p>
+                  {% endif %}
+                </div>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          {% include "partials/empty_state.html" with icon_name="check" title=_("No action is due") subtitle=_("Every open lead has been dealt with for now.") %}
+        {% endif %}
+      </div>
+    </section>
+
+    {# --------------------------------------------------------- follow-ups #}
+    <section class="card" id="follow-up-panel"
+             hx-get="{% url 'crm:dashboard' %}" hx-select="#follow-up-list" hx-target="#follow-up-list"
+             hx-swap="outerHTML" hx-trigger="crm:interaction-logged from:body">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Follow-ups" %}</h2>
+      </div>
+      <div class="card-body">
+        {% include "crm/partials/follow_up_list.html" %}
+      </div>
+    </section>
+  </div>
+
+  <div class="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
+
+    {# --------------------------------------------------------- retention #}
+    <section class="card xl:col-span-2">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Retention" %}</h2>
+      </div>
+      <div class="card-body">
+        {% if retention.data_available %}
+          <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <div>
+              <p class="stat-label">{% translate "Active customers" %}</p>
+              <p class="stat-value">{{ retention.active_customers }}</p>
+            </div>
+            <div>
+              <p class="stat-label">{% translate "New" %}</p>
+              <p class="stat-value">{{ retention.new_customers }}</p>
+            </div>
+            <div>
+              <p class="stat-label">{% translate "Returning" %}</p>
+              <p class="stat-value">{{ retention.returning_customers }}</p>
+            </div>
+            <div>
+              <p class="stat-label">{% translate "Repeat rate" %}</p>
+              <p class="stat-value">{{ retention.repeat_rate|pct }}</p>
+            </div>
+          </div>
+          <div class="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-500/30 dark:bg-amber-500/10">
+            <p class="text-sm font-medium text-amber-900 dark:text-amber-200">
+              {% blocktranslate with count=retention.churn_candidates days=retention.churn_days %}{{ count }} customers have not been seen for {{ days }} days{% endblocktranslate %}
+            </p>
+            <p class="mt-1 text-xs text-amber-800 dark:text-amber-300">
+              {% translate "Build a win-back segment with the “Not seen for” rule and run a campaign at them." %}
+            </p>
+            {% can "crm.add" as may_add %}
+            {% if may_add %}
+              <a href="{% url 'crm:segment_create' %}?no_visit_days={{ retention.churn_days }}" class="btn-secondary btn-sm mt-3">
+                {% icon "users" "h-4 w-4" %} {% translate "Create win-back segment" %}
+              </a>
+            {% endif %}
+          </div>
+        {% else %}
+          {% include "partials/empty_state.html" with icon_name="chart-line" title=_("No visit history yet") subtitle=_("Retention figures appear once bookings have been recorded.") %}
+        {% endif %}
+      </div>
+    </section>
+
+    {# ------------------------------------------------------------ sources #}
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Where leads come from" %}</h2>
+      </div>
+      <div class="card-body">
+        {% if source_breakdown %}
+          <ul class="space-y-2">
+            {% for row in source_breakdown %}
+              <li class="flex items-center justify-between gap-3 text-sm">
+                <a href="{% url 'crm:lead_list' %}?source={{ row.source }}"
+                   class="truncate text-slate-700 hover:text-brand-600 dark:text-slate-300">{{ row.source }}</a>
+                <span class="shrink-0 font-medium tabular-nums text-slate-900 dark:text-slate-100">{{ row.count }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-sm text-slate-500 dark:text-slate-400">{% translate "No leads in this period." %}</p>
+        {% endif %}
+      </div>
+    </section>
+  </div>
+
+  <div class="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
+
+    {# --------------------------------------------------------- campaigns #}
+    <section class="card">
+      <div class="card-header flex items-center justify-between">
+        <h2 class="card-title">{% translate "Live campaigns" %}</h2>
+        <a href="{% url 'crm:campaign_list' %}" class="text-sm font-medium text-brand-600 hover:underline">
+          {% translate "All campaigns" %}
+        </a>
+      </div>
+      <div class="card-body">
+        {% if active_campaigns %}
+          <ul class="divide-y divide-slate-100 dark:divide-slate-800">
+            {% for campaign in active_campaigns %}
+              <li class="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+                <div class="min-w-0 flex-1">
+                  <a href="{% url 'crm:campaign_detail' campaign.pk %}"
+                     class="text-sm font-medium text-slate-900 hover:text-brand-600 dark:text-slate-100">
+                    {{ campaign.name }}
+                  </a>
+                  <p class="truncate text-xs text-slate-500 dark:text-slate-400">
+                    {{ campaign.get_channel_display }}
+                    {% if campaign.target_segment %}· {{ campaign.target_segment.name }}{% endif %}
+                  </p>
+                </div>
+                <div class="shrink-0 text-end">
+                  {% status_badge campaign.status campaign.get_status_display %}
+                  <p class="mt-1 text-xs tabular-nums text-slate-500 dark:text-slate-400">
+                    {{ campaign.actual_spend|money }} / {{ campaign.budget|money }}
+                  </p>
+                </div>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          {% include "partials/empty_state.html" with icon_name="send" title=_("Nothing running") subtitle=_("Scheduled and running campaigns appear here.") %}
+        {% endif %}
+      </div>
+    </section>
+
+    {# ------------------------------------------------------ interactions #}
+    <section class="card">
+      <div class="card-header flex items-center justify-between">
+        <h2 class="card-title">{% translate "Latest contact" %}</h2>
+        <a href="{% url 'crm:interaction_list' %}" class="text-sm font-medium text-brand-600 hover:underline">
+          {% translate "All interactions" %}
+        </a>
+      </div>
+      <div class="card-body">
+        {% if recent_interactions %}
+          <ul class="divide-y divide-slate-100 dark:divide-slate-800">
+            {% for interaction in recent_interactions %}
+              <li class="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
+                <span class="mt-0.5 shrink-0 text-slate-400">{% icon "message-square" "h-4 w-4" %}</span>
+                <div class="min-w-0 flex-1">
+                  <p class="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{{ interaction.subject }}</p>
+                  <p class="truncate text-xs text-slate-500 dark:text-slate-400">
+                    {{ interaction.get_kind_display }} · {{ interaction.contact_display }}
+                  </p>
+                </div>
+                <p class="shrink-0 text-xs text-slate-500 dark:text-slate-400">{{ interaction.occurred_at|date:"d.m H:i" }}</p>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          {% include "partials/empty_state.html" with icon_name="message-square" title=_("No interactions yet") %}
+        {% endif %}
+      </div>
+    </section>
+  </div>
+{% endblock %}

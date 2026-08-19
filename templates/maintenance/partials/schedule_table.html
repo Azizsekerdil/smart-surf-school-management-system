@@ -1,0 +1,84 @@
+{% load i18n surf_tags %}
+
+{% if schedules %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">{% translate "Equipment" %}</th>
+          <th scope="col">{% translate "Interval" %}</th>
+          <th scope="col">{% translate "Last performed" %}</th>
+          <th scope="col">{% translate "Next due" %}</th>
+          <th scope="col">{% translate "Check list" %}</th>
+          <th scope="col" class="text-end">{% translate "Actions" %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for schedule in schedules %}
+          <tr>
+            <td>
+              <a href="{% url 'equipment:detail' schedule.equipment_id %}"
+                 class="font-medium text-brand-600 hover:underline dark:text-brand-400">
+                {{ schedule.equipment }}
+              </a>
+              {% if not schedule.is_active %}
+                <span class="badge-slate ms-1">{% translate "Paused" %}</span>
+              {% endif %}
+            </td>
+            <td class="tabular-nums">
+              {% blocktranslate with days=schedule.interval_days %}{{ days }} days{% endblocktranslate %}
+            </td>
+            <td class="tabular-nums">{{ schedule.last_performed_on|date:"d.m.Y"|default:"—" }}</td>
+            <td>
+              <span class="tabular-nums {% if schedule.is_overdue %}font-semibold text-rose-600 dark:text-rose-400{% endif %}">
+                {{ schedule.next_due_on|date:"d.m.Y"|default:"—" }}
+              </span>
+              {% if schedule.days_until_due is not None %}
+                <span class="block text-xs text-slate-500 dark:text-slate-400">
+                  {% if schedule.is_overdue %}
+                    {% blocktranslate with n=schedule.overdue_days %}overdue by {{ n }} days{% endblocktranslate %}
+                  {% else %}
+                    {% blocktranslate with n=schedule.days_until_due %}in {{ n }} days{% endblocktranslate %}
+                  {% endif %}
+                </span>
+              {% endif %}
+            </td>
+            <td>
+              {% with items=schedule.check_item_list %}
+                {% if items %}
+                  <span class="text-xs text-slate-500 dark:text-slate-400">
+                    {% blocktranslate count counter=items|length %}{{ counter }} check{% plural %}{{ counter }} checks{% endblocktranslate %}
+                  </span>
+                {% else %}
+                  <span class="text-xs text-slate-400">{% translate "None defined" %}</span>
+                {% endif %}
+              {% endwith %}
+            </td>
+            <td class="text-end">
+              <div class="flex items-center justify-end gap-2">
+                {% can "maintenance.change" as may_change %}
+                {% if may_change %}
+                  <form method="post" action="{% url 'maintenance:schedule_performed' schedule.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-success btn-sm" title="{% translate 'Record that this service was carried out today' %}">
+                      {% icon "check" "h-4 w-4" %} {% translate "Mark done" %}
+                    </button>
+                  </form>
+                  <a href="{% url 'maintenance:schedule_update' schedule.pk %}" class="btn-ghost btn-sm">
+                    {% icon "pencil" "h-4 w-4" %}<span class="sr-only">{% translate "Edit" %}</span>
+                  </a>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% include "partials/pagination.html" %}
+{% else %}
+  {% translate "No service plans in this view" as empty_title %}
+  {% translate "Create a plan for an item to have the system tell you when it is due." as empty_subtitle %}
+  {% include "partials/empty_state.html" with icon_name="calendar-days" title=empty_title subtitle=empty_subtitle %}
+{% endif %}

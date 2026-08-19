@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ form_title }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ form_title }}{% endblock %}
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "Totals are calculated from the lines: discount first, then tax on what is left." %}
+  </p>
+{% endblock %}
+
+{% block content %}
+  <form method="post" novalidate class="space-y-5">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="alert-error">
+        {% icon "circle-alert" "h-5 w-5 shrink-0" %}
+        <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+      </div>
+    {% endif %}
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">
+          {% icon "file-text" "inline h-4 w-4 text-brand-500" %} {% translate "Invoice header" %}
+        </h2>
+      </div>
+      <div class="card-body grid gap-4 sm:grid-cols-2">
+        {% include "finance/partials/field.html" with field=form.customer wrapper_class="sm:col-span-2" %}
+        {% include "finance/partials/field.html" with field=form.issue_date %}
+        {% include "finance/partials/field.html" with field=form.due_date %}
+        {% include "finance/partials/field.html" with field=form.discount_amount %}
+        {% include "finance/partials/field.html" with field=form.tax_rate %}
+        {% include "finance/partials/field.html" with field=form.booking %}
+        {% include "finance/partials/field.html" with field=form.rental %}
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">
+          {% icon "list-checks" "inline h-4 w-4 text-brand-500" %} {% translate "Lines" %}
+        </h2>
+        <span class="text-xs text-slate-500 dark:text-slate-400">
+          {% translate "Leave a row blank to skip it." %}
+        </span>
+      </div>
+      <div class="card-body space-y-4">
+        {{ line_formset.management_form }}
+        {% if line_formset.non_form_errors %}
+          <div class="alert-error">
+            {% icon "circle-alert" "h-5 w-5 shrink-0" %}
+            <div>{% for error in line_formset.non_form_errors %}<p>{{ error }}</p>{% endfor %}</div>
+          </div>
+        {% endif %}
+
+        {% for line_form in line_formset %}
+          <div class="grid gap-3 rounded-lg border border-slate-200 p-3 sm:grid-cols-12 dark:border-slate-700">
+            {% include "finance/partials/field.html" with field=line_form.description wrapper_class="sm:col-span-6" %}
+            {% include "finance/partials/field.html" with field=line_form.quantity wrapper_class="sm:col-span-2" %}
+            {% include "finance/partials/field.html" with field=line_form.unit_price wrapper_class="sm:col-span-2" %}
+            {% include "finance/partials/field.html" with field=line_form.discount_amount wrapper_class="sm:col-span-2" %}
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-body grid gap-4 sm:grid-cols-2">
+        {% include "finance/partials/field.html" with field=form.notes %}
+        {% include "finance/partials/field.html" with field=form.terms %}
+      </div>
+    </section>
+
+    <div class="flex flex-wrap items-center gap-2">
+      <button type="submit" class="btn-primary">
+        {% icon "save" "h-4 w-4" %} {% translate "Save as draft" %}
+      </button>
+      <a href="{{ cancel_url }}" class="btn-secondary">{% translate "Cancel" %}</a>
+      <p class="w-full text-xs text-slate-500 dark:text-slate-400">
+        {% translate "A draft becomes a receivable only once you issue it." %}
+      </p>
+    </div>
+  </form>
+{% endblock %}

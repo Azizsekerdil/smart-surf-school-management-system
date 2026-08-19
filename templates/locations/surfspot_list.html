@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Surf spots" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Surf spots" %}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "The breaks this school operates on, who they suit and what is dangerous there." %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <div class="inline-flex overflow-hidden rounded-lg border border-slate-300 dark:border-slate-600">
+    <a href="{% query_string view='cards' %}"
+       class="px-3 py-1.5 text-sm {% if view_mode == 'cards' %}bg-brand-600 text-white{% else %}bg-white text-slate-600 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-300{% endif %}"
+       aria-label="{% translate 'Card view' %}">
+      {% icon "layout-dashboard" "h-4 w-4" %}
+    </a>
+    <a href="{% query_string view='table' %}"
+       class="border-s border-slate-300 px-3 py-1.5 text-sm dark:border-slate-600 {% if view_mode == 'table' %}bg-brand-600 text-white{% else %}bg-white text-slate-600 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-300{% endif %}"
+       aria-label="{% translate 'Table view' %}">
+      {% icon "list-checks" "h-4 w-4" %}
+    </a>
+  </div>
+
+  {% can "locations.add" as may_add %}
+  {% if may_add %}
+    <a href="{% url 'locations:create' %}" class="btn-primary">
+      {% icon "plus" "h-4 w-4" %} {% translate "New spot" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  {# --- headline numbers ------------------------------------------------- #}
+  <div class="mb-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Active spots" %}</p>
+      <p class="stat-value">{{ stats.active }}</p>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {% blocktranslate with total=stats.total %}{{ total }} on record{% endblocktranslate %}
+      </p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Water capacity" %}</p>
+      <p class="stat-value">{{ stats.total_capacity }}</p>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {% translate "Students across all active spots" %}
+      </p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Patrolled" %}</p>
+      <p class="stat-value">{{ stats.lifeguarded }}</p>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {% translate "Spots with a lifeguard service" %}
+      </p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Open serious hazards" %}</p>
+      <p class="stat-value {% if stats.at_risk %}text-rose-600 dark:text-rose-400{% endif %}">{{ stats.at_risk }}</p>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {% translate "Spots with a high or critical hazard" %}
+      </p>
+    </div>
+  </div>
+
+  {% if primary_spot %}
+    <div class="alert-info mb-5">
+      {% icon "star" "h-5 w-5 shrink-0" %}
+      <p>
+        {% blocktranslate with name=primary_spot.name %}<strong>{{ name }}</strong> is the default spot — it is used whenever a lesson, camp day or rental does not name one.{% endblocktranslate %}
+      </p>
+    </div>
+  {% else %}
+    <div class="alert-warning mb-5">
+      {% icon "triangle-alert" "h-5 w-5 shrink-0" %}
+      <p>{% translate "No default spot is set. Add an active spot so scheduling has somewhere to fall back to." %}</p>
+    </div>
+  {% endif %}
+
+  {# --- filters ---------------------------------------------------------- #}
+  <form method="get" action="{% url 'locations:list' %}"
+        class="card mb-5 p-4"
+        hx-get="{% url 'locations:list' %}"
+        hx-target="#spot-results"
+        hx-swap="innerHTML"
+        hx-push-url="true"
+        hx-trigger="submit, change from:select">
+    <input type="hidden" name="view" value="{{ view_mode }}">
+    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <div class="lg:col-span-2">
+        <label class="form-label" for="id_q">{% translate "Search" %}</label>
+        <div class="relative">
+          <span class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3 text-slate-400">
+            {% icon "search" "h-4 w-4" %}
+          </span>
+          <input type="search" name="q" id="id_q" value="{{ search_term }}"
+                 class="form-input ps-9"
+                 placeholder="{% translate 'Name, code or notes…' %}">
+        </div>
+      </div>
+      <div>
+        <label class="form-label" for="{{ filter_form.level.id_for_label }}">{{ filter_form.level.label }}</label>
+        {{ filter_form.level }}
+      </div>
+      <div>
+        <label class="form-label" for="{{ filter_form.break_type.id_for_label }}">{{ filter_form.break_type.label }}</label>
+        {{ filter_form.break_type }}
+      </div>
+      <div>
+        <label class="form-label" for="{{ filter_form.lifeguard.id_for_label }}">{{ filter_form.lifeguard.label }}</label>
+        {{ filter_form.lifeguard }}
+      </div>
+    </div>
+    <div class="mt-3 flex flex-wrap items-end justify-between gap-3">
+      <div class="w-full sm:w-48">
+        <label class="form-label" for="{{ filter_form.status.id_for_label }}">{{ filter_form.status.label }}</label>
+        {{ filter_form.status }}
+      </div>
+      <div class="flex items-center gap-2">
+        {% if has_filters %}
+          <a href="{% url 'locations:list' %}?view={{ view_mode }}" class="btn-secondary">
+            {% icon "rotate-ccw" "h-4 w-4" %} {% translate "Reset" %}
+          </a>
+        {% endif %}
+        <button type="submit" class="btn-primary">
+          {% icon "filter" "h-4 w-4" %} {% translate "Apply" %}
+        </button>
+      </div>
+    </div>
+  </form>
+
+  {# --- results ---------------------------------------------------------- #}
+  <div id="spot-results">
+    {% include "locations/partials/spot_results.html" %}
+  </div>
+{% endblock %}

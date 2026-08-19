@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+{% load i18n static surf_tags %}
+
+{% block title %}{% translate "Knowledge base" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Knowledge base" %}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "The documents the assistant is allowed to quote. Only indexed documents can be retrieved." %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  {% can "ai.change" as may_change_knowledge %}
+  {% if may_change_knowledge %}
+    <form method="post" action="{% url 'ai:knowledge_reindex' %}">
+      {% csrf_token %}
+      <button type="submit" class="btn-secondary">
+        {% icon "refresh-cw" "h-4 w-4" %} {% translate "Re-index all" %}
+      </button>
+    </form>
+    <a href="{% url 'ai:knowledge_create' %}" class="btn-primary">
+      {% icon "plus" "h-4 w-4" %} {% translate "New document" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  {% can "ai.change" as may_edit %}
+  {% can "ai.delete" as may_delete %}
+
+  {# ============================================================== status #}
+  <div class="mb-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Active documents" %}</p>
+      <p class="stat-value">{{ rag_status.documents }}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Indexed" %}</p>
+      <p class="stat-value">{{ rag_status.indexed_documents }}</p>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {% translate "Documents that can actually be retrieved" %}
+      </p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Chunks" %}</p>
+      <p class="stat-value">{{ rag_status.chunks }}</p>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {% translate "Passages held as embeddings" %}
+      </p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Embedding model" %}</p>
+      <p class="mt-1 break-all font-mono text-xs text-slate-800 dark:text-slate-200">
+        {{ rag_status.embedding_models|join:", "|default:_("None yet") }}
+      </p>
+    </div>
+  </div>
+
+  {% if rag_status.needs_reindex %}
+    <div class="alert-warning mb-5" role="alert">
+      {% icon "triangle-alert" "h-5 w-5 shrink-0" %}
+      <div>
+        <p class="font-semibold">{% translate "Part of this index cannot be searched." %}</p>
+        <p class="mt-1">
+          {% translate "The index contains chunks from more than one embedding model. Vectors from different models are not comparable, so a query can only ever reach the chunks built with the model that answers it. Re-index everything to make the whole base searchable again." %}
+        </p>
+      </div>
+    </div>
+  {% endif %}
+
+  {# ====================================================== test retrieval #}
+  <section class="card mb-5">
+    <div class="card-header">
+      <h2 class="card-title">{% icon "search" "inline h-4 w-4 text-brand-500" %} {% translate "Test retrieval" %}</h2>
+      <p class="text-xs text-slate-500 dark:text-slate-400">
+        {% translate "See exactly what the assistant would find" %}
+      </p>
+    </div>
+    <div class="card-body">
+      <form hx-post="{% url 'ai:knowledge_search' %}"
+            hx-target="#retrieval-results"
+            hx-swap="innerHTML"
+            hx-indicator="#retrieval-spinner">
+        {% csrf_token %}
+        <label class="form-label" for="id_query">{% translate "Question" %}</label>
+        <div class="flex flex-wrap items-center gap-2">
+          <input type="search" name="query" id="id_query"
+                 class="form-input flex-1"
+                 autocomplete="off"
+                 placeholder="{% translate 'e.g. What is the procedure for a rip current rescue?' %}"
+                 hx-post="{% url 'ai:knowledge_search' %}"
+                 hx-target="#retrieval-results"
+                 hx-swap="innerHTML"
+                 hx-trigger="keyup changed delay:500ms, search"
+                 hx-indicator="#retrieval-spinner">
+          <button type="submit" class="btn-primary">
+            {% icon "search" "h-4 w-4" %} {% translate "Search" %}
+          </button>
+          <span id="retrieval-spinner" class="htmx-indicator flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+            {% icon "loader-circle" "h-4 w-4 animate-spin" %} {% translate "Embedding the question…" %}
+          </span>
+        </div>
+        <p class="form-help">
+          {% translate "Retrieval needs an embedding provider. If none is reachable the search returns nothing rather than guessing." %}
+        </p>
+      </form>
+      <div id="retrieval-results" class="mt-4"></div>
+    </div>
+  </section>
+
+  {# =========================================================== documents #}
+  <form method="get" class="card mb-5 p-4">
+    <label class="form-label" for="id_q">{% translate "Search documents" %}</label>
+    <div class="flex flex-wrap items-center gap-2">
+      <input type="search" name="q" id="id_q" value="{{ search_term }}"
+             class="form-input flex-1"
+             placeholder="{% translate 'Title or content…' %}">
+      <button type="submit" class="btn-secondary">
+        {% icon "filter" "h-4 w-4" %} {% translate "Apply" %}
+      </button>
+      {% if search_term %}
+        <a href="{% url 'ai:knowledge_list' %}" class="btn-ghost">
+          {% icon "rotate-ccw" "h-4 w-4" %} {% translate "Reset" %}
+        </a>
+      {% endif %}
+    </div>
+  </form>
+
+  {% if documents %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">{% translate "Title" %}</th>
+            <th scope="col">{% translate "Type" %}</th>
+            <th scope="col">{% translate "Language" %}</th>
+            <th scope="col">{% translate "Index" %}</th>
+            <th scope="col" class="text-end">{% translate "Chunks" %}</th>
+            <th scope="col">{% translate "Updated" %}</th>
+            <th scope="col"><span class="sr-only">{% translate "Actions" %}</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for document in documents %}
+            <tr>
+              <td>
+                <span class="font-medium text-slate-900 dark:text-slate-100">{{ document.title }}</span>
+                {% if not document.is_active %}
+                  <span class="badge-slate ms-1">{% translate "Inactive" %}</span>
+                {% endif %}
+                {% if document.source_url %}
+                  <span class="block truncate text-xs text-slate-400 dark:text-slate-500">{{ document.source_url }}</span>
+                {% endif %}
+              </td>
+              <td>{{ document.get_source_type_display }}</td>
+              <td class="uppercase">{{ document.language }}</td>
+              <td>
+                {% if document.is_indexed %}
+                  <span class="badge-emerald">{% icon "circle-check" "h-3 w-3" %} {% translate "Indexed" %}</span>
+                  {% if document.indexed_at %}
+                    <span class="block text-[0.7rem] text-slate-400 dark:text-slate-500">
+                      {{ document.indexed_at|date:"d.m.Y H:i" }}
+                    </span>
+                  {% endif %}
+                {% else %}
+                  <span class="badge-amber">{% icon "circle-alert" "h-3 w-3" %} {% translate "Not indexed" %}</span>
+                  <span class="block text-[0.7rem] text-slate-400 dark:text-slate-500">
+                    {% translate "Invisible to the assistant" %}
+                  </span>
+                {% endif %}
+              </td>
+              <td class="text-end tabular-nums">{{ document.chunk_count }}</td>
+              <td class="whitespace-nowrap">{{ document.updated_at|date:"d.m.Y H:i" }}</td>
+              <td class="text-end">
+                <div class="flex items-center justify-end gap-1">
+                  {% if may_edit %}
+                    <a href="{% url 'ai:knowledge_update' document.pk %}"
+                       class="btn-icon text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                       title="{% translate 'Edit' %}">
+                      {% icon "pencil" "h-4 w-4" %}
+                      <span class="sr-only">{% translate "Edit" %}</span>
+                    </a>
+                  {% endif %}
+                  {% if may_delete %}
+                    <a href="{% url 'ai:knowledge_delete' document.pk %}"
+                       class="btn-icon text-slate-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10"
+                       title="{% translate 'Delete' %}">
+                      {% icon "trash-2" "h-4 w-4" %}
+                      <span class="sr-only">{% translate "Delete" %}</span>
+                    </a>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% include "partials/pagination.html" %}
+  {% else %}
+    {% url 'ai:knowledge_create' as create_url %}
+    {% if search_term %}
+      {% include "partials/empty_state.html" with icon_name="search" title=_("No document matches that search") subtitle=_("Try a different word, or clear the search to see everything.") %}
+    {% elif may_edit %}
+      {% include "partials/empty_state.html" with icon_name="book-open" title=_("The knowledge base is empty") subtitle=_("Add your safety procedures, lesson plans and equipment manuals so the assistant can quote them instead of guessing.") action_url=create_url action_label=_("New document") %}
+    {% else %}
+      {% include "partials/empty_state.html" with icon_name="book-open" title=_("The knowledge base is empty") subtitle=_("Ask a manager to add the school's procedures and manuals.") %}
+    {% endif %}
+  {% endif %}
+{% endblock %}

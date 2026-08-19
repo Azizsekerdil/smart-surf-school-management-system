@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ title }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'accounts:user_list' %}" class="btn-ghost">{% translate "Cancel" %}</a>
+{% endblock %}
+
+{% block content %}
+  <form method="post" enctype="multipart/form-data" class="card mx-auto max-w-2xl" novalidate>
+    {% csrf_token %}
+    <div class="card-body space-y-4">
+      {% if form.non_field_errors %}
+        <div class="alert-error" role="alert">
+          <span class="mt-0.5 shrink-0">{% icon "circle-x" "h-5 w-5" %}</span>
+          <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+        </div>
+      {% endif %}
+
+      <div class="grid gap-4 sm:grid-cols-2">
+        {% for field in form %}
+          <div class="{% if field.name in 'notes,photo' %}sm:col-span-2{% endif %}">
+            <label for="{{ field.id_for_label }}" class="form-label">
+              {{ field.label }}{% if field.field.required %} <span class="text-rose-500">*</span>{% endif %}
+            </label>
+            {{ field }}
+            {% if field.help_text %}<p class="form-help">{{ field.help_text|safe }}</p>{% endif %}
+            {% for error in field.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-5 py-4 dark:border-slate-700">
+      <a href="{% url 'accounts:user_list' %}" class="btn-secondary">{% translate "Cancel" %}</a>
+      <button type="submit" class="btn-primary">
+        {% icon "save" "h-4 w-4" %} {% translate "Save" %}
+      </button>
+    </div>
+  </form>
+{% endblock %}

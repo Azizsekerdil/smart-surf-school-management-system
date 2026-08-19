@@ -1,0 +1,108 @@
+{% load i18n l10n surf_tags %}
+{# Usage: {% include "maintenance/partials/risk_card.html" with p=prediction %} #}
+<article class="card flex flex-col">
+  <div class="card-header flex items-start justify-between gap-3">
+    <div class="min-w-0">
+      <h3 class="card-title truncate">
+        <a href="{% url 'equipment:detail' p.equipment_id %}" class="hover:underline">
+          {{ p.equipment }}
+        </a>
+      </h3>
+      <p class="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">
+        {% if p.equipment_name %}{{ p.equipment_name }}{% endif %}
+        {% if p.category %}· {{ p.category }}{% endif %}
+      </p>
+    </div>
+    <div class="shrink-0 text-end">
+      <p class="text-2xl font-semibold tabular-nums
+                {% if p.risk_score >= 80 %}text-rose-600 dark:text-rose-400
+                {% elif p.risk_score >= 60 %}text-amber-600 dark:text-amber-400
+                {% elif p.risk_score >= 40 %}text-sky-600 dark:text-sky-400
+                {% else %}text-slate-500 dark:text-slate-400{% endif %}">
+        {{ p.risk_score }}
+      </p>
+      <p class="text-[0.65rem] uppercase tracking-wide text-slate-400">{% translate "risk" %}</p>
+    </div>
+  </div>
+
+  <div class="card-body space-y-4">
+
+    {# --- score bar ---------------------------------------------------- #}
+    <div>
+      <div class="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+        <div class="h-full rounded-full
+                    {% if p.risk_score >= 80 %}bg-rose-500
+                    {% elif p.risk_score >= 60 %}bg-amber-500
+                    {% elif p.risk_score >= 40 %}bg-sky-500
+                    {% else %}bg-slate-400{% endif %}"
+             style="width: {{ p.risk_score|unlocalize }}%"></div>
+      </div>
+      <div class="mt-2 flex flex-wrap items-center gap-2 text-xs">
+        <span class="badge-slate">{{ p.action_label }}</span>
+        <span class="{% if p.confidence_label == 'high' %}badge-emerald{% elif p.confidence_label == 'medium' %}badge-amber{% else %}badge-slate{% endif %}">
+          {% if p.confidence_label == "high" %}{% translate "High confidence" %}
+          {% elif p.confidence_label == "medium" %}{% translate "Medium confidence" %}
+          {% else %}{% translate "Low confidence" %}{% endif %}
+        </span>
+        <span class="text-slate-500 dark:text-slate-400">
+          {% blocktranslate with used=p.signals_used total=p.signals_total %}{{ used }} of {{ total }} signals measured{% endblocktranslate %}
+        </span>
+      </div>
+    </div>
+
+    {# --- reasons ------------------------------------------------------- #}
+    <ul class="space-y-1.5 text-sm">
+      {% for reason in p.reason_texts %}
+        {% if reason.text %}
+          <li class="flex items-start gap-2 {% if not reason.available %}text-slate-400 dark:text-slate-500{% else %}text-slate-700 dark:text-slate-300{% endif %}">
+            <span class="mt-1 shrink-0">
+              {% if not reason.available %}
+                {% icon "minus" "h-3.5 w-3.5" %}
+              {% elif reason.score >= 0.7 %}
+                {% icon "triangle-alert" "h-3.5 w-3.5 text-rose-500" %}
+              {% elif reason.score >= 0.4 %}
+                {% icon "circle-alert" "h-3.5 w-3.5 text-amber-500" %}
+              {% else %}
+                {% icon "circle-check" "h-3.5 w-3.5 text-emerald-500" %}
+              {% endif %}
+            </span>
+            <span>{{ reason.text }}</span>
+          </li>
+        {% endif %}
+      {% endfor %}
+    </ul>
+
+    {# --- context ------------------------------------------------------- #}
+    <dl class="grid grid-cols-2 gap-2 border-t border-slate-200 pt-3 text-xs dark:border-slate-700">
+      <div>
+        <dt class="text-slate-500 dark:text-slate-400">{% translate "Last serviced" %}</dt>
+        <dd class="tabular-nums text-slate-900 dark:text-slate-100">{{ p.last_service_on|default:"—" }}</dd>
+      </div>
+      <div>
+        <dt class="text-slate-500 dark:text-slate-400">{% translate "Next due" %}</dt>
+        <dd class="tabular-nums text-slate-900 dark:text-slate-100">{{ p.next_due_on|default:"—" }}</dd>
+      </div>
+    </dl>
+
+    {% if p.open_records %}
+      <p class="text-xs font-medium text-amber-700 dark:text-amber-400">
+        {% blocktranslate count counter=p.open_records %}{{ counter }} maintenance record is already open for this item.{% plural %}{{ counter }} maintenance records are already open for this item.{% endblocktranslate %}
+      </p>
+    {% endif %}
+  </div>
+
+  <div class="mt-auto flex items-center gap-2 border-t border-slate-200 p-4 dark:border-slate-700">
+    {% can "maintenance.add" as may_add %}
+    {% if may_add %}
+      <a href="{% url 'maintenance:create' %}?equipment={{ p.equipment_id }}" class="btn-primary btn-sm">
+        {% icon "wrench" "h-4 w-4" %} {% translate "Report a problem" %}
+      </a>
+      <a href="{% url 'maintenance:schedule_create' %}?equipment={{ p.equipment_id }}" class="btn-ghost btn-sm">
+        {% icon "calendar-days" "h-4 w-4" %} {% translate "Service plan" %}
+      </a>
+    {% endif %}
+    <a href="{% url 'maintenance:list' %}?tab=all&amp;equipment={{ p.equipment_id }}" class="btn-ghost btn-sm ms-auto">
+      {% translate "History" %}
+    </a>
+  </div>
+</article>

@@ -1,0 +1,176 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================================================
+   Design tokens
+   ========================================================================== */
+@layer base {
+  :root {
+    --surface: 255 255 255;
+    --surface-muted: 248 250 252;
+    --border: 226 232 240;
+  }
+
+  .dark {
+    --surface: 30 41 59;
+    --surface-muted: 15 23 42;
+    --border: 51 65 85;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100;
+  }
+
+  /* Visible focus for keyboard users only. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-brand-500 ring-offset-2 ring-offset-white dark:ring-offset-slate-900;
+  }
+
+  ::-webkit-scrollbar { @apply h-2 w-2; }
+  ::-webkit-scrollbar-track { @apply bg-transparent; }
+  ::-webkit-scrollbar-thumb { @apply rounded-full bg-slate-300 dark:bg-slate-700; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-slate-400 dark:bg-slate-600; }
+}
+
+/* ==========================================================================
+   Components
+   ========================================================================== */
+@layer components {
+
+  /* --- surfaces --------------------------------------------------------- */
+  .card {
+    @apply rounded-xl border border-slate-200 bg-white shadow-card dark:border-slate-700 dark:bg-slate-900;
+  }
+  .card-header {
+    @apply flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-4 dark:border-slate-700;
+  }
+  .card-title { @apply text-base font-semibold text-slate-900 dark:text-slate-100; }
+  .card-body { @apply p-5; }
+
+  /* --- buttons ---------------------------------------------------------- */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium
+           transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary { @apply btn bg-brand-600 text-white hover:bg-brand-700 active:bg-brand-800; }
+  .btn-secondary {
+    @apply btn border border-slate-300 bg-white text-slate-700 hover:bg-slate-50
+           dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700;
+  }
+  .btn-danger { @apply btn bg-rose-600 text-white hover:bg-rose-700; }
+  .btn-success { @apply btn bg-emerald-600 text-white hover:bg-emerald-700; }
+  .btn-ghost {
+    @apply btn text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800;
+  }
+  .btn-sm { @apply px-2.5 py-1.5 text-xs; }
+  .btn-icon { @apply inline-flex h-9 w-9 items-center justify-center rounded-lg; }
+
+  /* --- forms ------------------------------------------------------------ */
+  .form-label {
+    @apply mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300;
+  }
+  .form-input, .form-select, .form-textarea {
+    @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900
+           placeholder-slate-400 shadow-sm transition focus:border-brand-500 focus:outline-none
+           focus:ring-2 focus:ring-brand-500/30 dark:border-slate-600 dark:bg-slate-800
+           dark:text-slate-100 dark:placeholder-slate-500;
+  }
+  .form-help { @apply mt-1 text-xs text-slate-500 dark:text-slate-400; }
+  .form-error { @apply mt-1 text-xs font-medium text-rose-600 dark:text-rose-400; }
+
+  /* --- badges ----------------------------------------------------------- */
+  .badge {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+  .badge-slate   { @apply badge bg-slate-100 text-slate-700 dark:bg-slate-700/40 dark:text-slate-300; }
+  .badge-sky     { @apply badge bg-sky-100 text-sky-800 dark:bg-sky-500/15 dark:text-sky-300; }
+  .badge-emerald { @apply badge bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300; }
+  .badge-amber   { @apply badge bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300; }
+  .badge-rose    { @apply badge bg-rose-100 text-rose-800 dark:bg-rose-500/15 dark:text-rose-300; }
+  .badge-violet  { @apply badge bg-violet-100 text-violet-800 dark:bg-violet-500/15 dark:text-violet-300; }
+
+  /* --- tables ----------------------------------------------------------- */
+  .table-wrap { @apply overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700; }
+  .table { @apply min-w-full divide-y divide-slate-200 dark:divide-slate-700; }
+  .table thead { @apply bg-slate-50 dark:bg-slate-800/60; }
+  .table th {
+    @apply whitespace-nowrap px-4 py-3 text-start text-xs font-semibold uppercase
+           tracking-wide text-slate-500 dark:text-slate-400;
+  }
+  .table td { @apply px-4 py-3 text-sm text-slate-700 dark:text-slate-300; }
+  .table tbody { @apply divide-y divide-slate-100 bg-white dark:divide-slate-800 dark:bg-slate-900; }
+  .table tbody tr:hover { @apply bg-slate-50 dark:bg-slate-800/40; }
+
+  /* --- navigation ------------------------------------------------------- */
+  .nav-link {
+    @apply flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-600
+           transition-colors hover:bg-slate-100 hover:text-slate-900
+           dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100;
+  }
+  .nav-link-active {
+    @apply bg-brand-50 text-brand-700 hover:bg-brand-50 hover:text-brand-700
+           dark:bg-brand-500/10 dark:text-brand-300 dark:hover:bg-brand-500/10;
+  }
+  .nav-section-title {
+    @apply px-3 pb-1 pt-4 text-[0.68rem] font-semibold uppercase tracking-wider
+           text-slate-400 dark:text-slate-500;
+  }
+
+  /* --- stat tiles ------------------------------------------------------- */
+  .stat-card { @apply card p-5; }
+  .stat-label { @apply text-sm font-medium text-slate-500 dark:text-slate-400; }
+  .stat-value { @apply mt-1 text-2xl font-semibold tabular-nums text-slate-900 dark:text-slate-50; }
+  .stat-delta-up { @apply text-xs font-medium text-emerald-600 dark:text-emerald-400; }
+  .stat-delta-down { @apply text-xs font-medium text-rose-600 dark:text-rose-400; }
+
+  /* --- alerts ----------------------------------------------------------- */
+  .alert { @apply flex items-start gap-3 rounded-lg border p-4 text-sm; }
+  .alert-info    { @apply alert border-sky-200 bg-sky-50 text-sky-900 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-200; }
+  .alert-success { @apply alert border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200; }
+  .alert-warning { @apply alert border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200; }
+  .alert-error   { @apply alert border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200; }
+
+  /* --- AI-specific ------------------------------------------------------ */
+  /* AI output is always visually distinct from system-of-record data, and any
+     AI recommendation carries the "AI Recommendation" chip (safety rule). */
+  .ai-surface {
+    @apply rounded-xl border border-violet-200 bg-violet-50/50 dark:border-violet-500/25 dark:bg-violet-500/5;
+  }
+  .ai-chip {
+    @apply inline-flex items-center gap-1 rounded-full bg-violet-100 px-2 py-0.5 text-[0.68rem]
+           font-semibold uppercase tracking-wide text-violet-700
+           dark:bg-violet-500/15 dark:text-violet-300;
+  }
+  .terminal {
+    @apply rounded-xl bg-slate-950 p-4 font-mono text-[0.8rem] leading-relaxed text-slate-200;
+  }
+
+  /* --- HTMX loading state ----------------------------------------------- */
+  .htmx-indicator { @apply invisible opacity-0 transition-opacity duration-150; }
+  .htmx-request .htmx-indicator,
+  .htmx-request.htmx-indicator { @apply visible opacity-100; }
+
+  .skeleton {
+    @apply animate-pulse rounded bg-slate-200 dark:bg-slate-700;
+  }
+}
+
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+  /* Logical properties so the layout survives an RTL locale later. */
+  .ps-safe { padding-inline-start: 1rem; }
+  .pe-safe { padding-inline-end: 1rem; }
+}
+
+/* Print: reports and receipts must come out clean. */
+@media print {
+  .no-print { display: none !important; }
+  body { @apply bg-white text-black; }
+  .card { @apply border border-slate-300 shadow-none; }
+}

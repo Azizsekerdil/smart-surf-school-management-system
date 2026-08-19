@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Booking calendar" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Booking calendar" %}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "Every session on the schedule, coloured by lesson type and showing seats sold." %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'bookings:schedule' %}" class="btn-secondary">
+    {% icon "clipboard-list" "h-4 w-4" %} {% translate "Today's run sheet" %}
+  </a>
+  <a href="{% url 'bookings:list' %}" class="btn-secondary">
+    {% icon "list-checks" "h-4 w-4" %} {% translate "Booking list" %}
+  </a>
+  {% can "bookings.add" as may_add %}
+  {% if may_add %}
+    <a href="{% url 'bookings:create' %}" class="btn-primary">
+      {% icon "plus" "h-4 w-4" %} {% translate "New booking" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  {% include "bookings/partials/calendar_shell.html" %}
+{% endblock %}

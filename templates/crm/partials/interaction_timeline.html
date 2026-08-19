@@ -1,0 +1,57 @@
+{% load i18n surf_tags %}
+<ol id="lead-timeline" class="relative space-y-4">
+  {% for interaction in interactions %}
+    <li class="relative ps-8">
+      <span class="absolute start-0 top-0.5 flex h-6 w-6 items-center justify-center rounded-full
+                   {% if interaction.is_negative %}bg-rose-100 text-rose-600 dark:bg-rose-500/20 dark:text-rose-300
+                   {% elif interaction.sentiment == 'positive' %}bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-300
+                   {% else %}bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-300{% endif %}">
+        {% if interaction.kind == "call" %}{% icon "phone" "h-3.5 w-3.5" %}
+        {% elif interaction.kind == "email" %}{% icon "mail" "h-3.5 w-3.5" %}
+        {% elif interaction.kind == "meeting" %}{% icon "users" "h-3.5 w-3.5" %}
+        {% elif interaction.kind == "visit" %}{% icon "map-pin" "h-3.5 w-3.5" %}
+        {% elif interaction.kind == "review" %}{% icon "star" "h-3.5 w-3.5" %}
+        {% elif interaction.kind == "complaint" %}{% icon "triangle-alert" "h-3.5 w-3.5" %}
+        {% elif interaction.kind == "note" %}{% icon "file-text" "h-3.5 w-3.5" %}
+        {% else %}{% icon "message-square" "h-3.5 w-3.5" %}{% endif %}
+      </span>
+
+      <div class="rounded-lg border border-slate-200 p-3 dark:border-slate-700">
+        <div class="flex flex-wrap items-baseline justify-between gap-2">
+          <p class="text-sm font-medium text-slate-900 dark:text-slate-100">{{ interaction.subject }}</p>
+          <p class="text-xs text-slate-500 dark:text-slate-400">{{ interaction.occurred_at|date:"d.m.Y H:i" }}</p>
+        </div>
+
+        <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+          {{ interaction.get_kind_display }} · {{ interaction.get_direction_display }}
+          {% if interaction.duration_minutes %}· {{ interaction.duration_minutes|duration_hm }}{% endif %}
+          {% if interaction.handled_by %}· {{ interaction.handled_by.get_display_name }}{% endif %}
+        </p>
+
+        {% if interaction.body %}
+          <p class="mt-2 whitespace-pre-line text-sm text-slate-700 dark:text-slate-300">{{ interaction.body }}</p>
+        {% endif %}
+
+        {% if interaction.follow_up_required %}
+          <div class="mt-2 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-2 dark:border-slate-800">
+            <span class="badge-{% if interaction.is_follow_up_overdue %}rose{% else %}amber{% endif %}">
+              {% translate "Follow up" %} {{ interaction.follow_up_at|date:"d.m.Y H:i" }}
+            </span>
+            {% can "crm.change" as may_change %}
+            {% if may_change %}
+              <button type="button" class="btn-ghost btn-sm"
+                      hx-post="{% url 'crm:follow_up_complete' interaction.pk %}"
+                      hx-swap="none">
+                {% icon "check" "h-4 w-4" %} {% translate "Mark done" %}
+              </button>
+            {% endif %}
+          </div>
+        {% endif %}
+      </div>
+    </li>
+  {% empty %}
+    <li>
+      {% include "partials/empty_state.html" with icon_name="message-square" title=_("No contact recorded yet") subtitle=_("Log the first call, e-mail or visit so the next person knows what was said.") %}
+    </li>
+  {% endfor %}
+</ol>

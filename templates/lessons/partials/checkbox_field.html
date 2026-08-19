@@ -1,0 +1,11 @@
+{% comment %}
+One checkbox with its label on the same line.
+Usage: {% include "lessons/partials/checkbox_field.html" with field=form.some_flag %}
+{% endcomment %}
+<div>
+  <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
+    {{ field }} {{ field.label }}
+  </label>
+  {% if field.help_text %}<p class="form-help">{{ field.help_text }}</p>{% endif %}
+  {% for error in field.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+</div>

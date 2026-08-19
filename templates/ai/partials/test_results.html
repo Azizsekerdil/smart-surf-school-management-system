@@ -1,0 +1,58 @@
+{% load i18n surf_tags %}
+{# Rendered into #ai-test-results after ai:test_provider. Context: results. #}
+<section class="card" aria-label="{% translate 'Health check results' %}">
+  <div class="card-header">
+    <h2 class="card-title">{% icon "activity" "inline h-4 w-4 text-brand-500" %} {% translate "Health check" %}</h2>
+    <p class="text-xs text-slate-500 dark:text-slate-400">
+      {% translate "Live result, taken just now." %}
+    </p>
+  </div>
+
+  {% if results %}
+    <div class="table-wrap rounded-none border-0">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">{% translate "Provider" %}</th>
+            <th scope="col">{% translate "Result" %}</th>
+            <th scope="col" class="text-end">{% translate "Latency" %}</th>
+            <th scope="col" class="text-end">{% translate "Models listed" %}</th>
+            <th scope="col">{% translate "Detail" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for result in results %}
+            <tr class="{% if not result.ok %}bg-rose-50/60 dark:bg-rose-500/5{% endif %}">
+              <td>
+                <span class="font-medium text-slate-900 dark:text-slate-100">{{ result.label }}</span>
+                <span class="ms-1 font-mono text-xs text-slate-400 dark:text-slate-500">{{ result.name }}</span>
+              </td>
+              <td>
+                {% if result.ok %}
+                  <span class="badge-emerald">{% icon "circle-check" "h-3 w-3" %} {% translate "Pass" %}</span>
+                {% else %}
+                  <span class="badge-rose">{% icon "circle-x" "h-3 w-3" %} {% translate "Fail" %}</span>
+                {% endif %}
+              </td>
+              <td class="text-end tabular-nums">
+                {% if result.latency_ms %}
+                  {% blocktranslate with ms=result.latency_ms %}{{ ms }} ms{% endblocktranslate %}
+                {% else %}—{% endif %}
+              </td>
+              <td class="text-end tabular-nums">{{ result.model_count }}</td>
+              <td class="max-w-md break-words text-xs {% if not result.ok %}text-rose-700 dark:text-rose-300{% else %}text-slate-500 dark:text-slate-400{% endif %}">
+                {{ result.message|default:"—" }}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="card-body">
+      <p class="text-sm text-slate-500 dark:text-slate-400">
+        {% translate "No provider matched that name, so nothing was tested." %}
+      </p>
+    </div>
+  {% endif %}
+</section>

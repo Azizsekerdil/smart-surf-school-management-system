@@ -1,0 +1,26 @@
+# =============================================================================
+# Development / QA dependencies
+# Install with:  pip install -r requirements.txt -r requirements-dev.txt
+# =============================================================================
+-r requirements.txt
+
+pytest>=8.3                            # MIT
+pytest-django>=4.9                     # BSD-3-Clause
+pytest-cov>=5.0                        # MIT
+pytest-xdist>=3.6                      # MIT
+factory-boy>=3.3                       # MIT
+Faker>=30.0                            # MIT
+freezegun>=1.5                         # Apache-2.0
+responses>=0.25                        # Apache-2.0
+
+ruff>=0.7                              # MIT   (lint + format)
+bandit>=1.7                            # Apache-2.0 (security static analysis)
+pip-audit>=2.7                         # Apache-2.0 (dependency CVE audit)
+django-debug-toolbar>=4.4              # BSD-3-Clause
+
+# --- presentation generation (scripts/generate_presentation.py) --------------
+# Windows-only for the PDF/PNG step: pywin32 drives PowerPoint over COM, which
+# is the only converter available on the build machine. The PPTX files build
+# without it; the PDF and HTML decks do not.
+python-pptx>=1.0                       # MIT
+pywin32>=306 ; sys_platform == "win32" # PSF-style

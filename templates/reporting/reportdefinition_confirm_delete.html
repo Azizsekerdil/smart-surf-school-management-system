@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Archive saved report" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Archive saved report" %}{% endblock %}
+
+{% block content %}
+  <div class="card max-w-2xl p-6">
+    <div class="flex items-start gap-3">
+      <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-100 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300">
+        {% icon "triangle-alert" "h-5 w-5" %}
+      </span>
+      <div>
+        <h2 class="text-base font-semibold text-slate-900 dark:text-slate-100">
+          {% blocktranslate with name=definition.name %}Archive “{{ name }}”?{% endblocktranslate %}
+        </h2>
+        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          {% translate "The configuration stops being listed and stops running on its schedule." %}
+        </p>
+      </div>
+    </div>
+
+    <dl class="mt-5 grid gap-3 text-sm sm:grid-cols-2">
+      <div>
+        <dt class="text-slate-500 dark:text-slate-400">{% translate "Report" %}</dt>
+        <dd class="font-medium text-slate-900 dark:text-slate-100">{{ definition.report_key }}</dd>
+      </div>
+      <div>
+        <dt class="text-slate-500 dark:text-slate-400">{% translate "Schedule" %}</dt>
+        <dd class="font-medium text-slate-900 dark:text-slate-100">
+          {% if definition.is_scheduled %}{{ definition.schedule_cron }}{% else %}{% translate "Manual" %}{% endif %}
+        </dd>
+      </div>
+      <div class="sm:col-span-2">
+        <dt class="text-slate-500 dark:text-slate-400">{% translate "Exports produced" %}</dt>
+        <dd class="font-medium text-slate-900 dark:text-slate-100">{{ run_count }}</dd>
+      </div>
+    </dl>
+
+    {% if run_count %}
+      <div class="alert-info mt-5">
+        {% icon "info" "h-5 w-5 shrink-0" %}
+        <p>
+          {% blocktranslate count counter=run_count %}The {{ counter }} file already produced stays in the export history and can still be downloaded.{% plural %}The {{ counter }} files already produced stay in the export history and can still be downloaded.{% endblocktranslate %}
+        </p>
+      </div>
+    {% endif %}
+
+    <form method="post" class="mt-6 flex flex-wrap items-center gap-2">
+      {% csrf_token %}
+      <button type="submit" class="btn-danger">
+        {% icon "trash-2" "h-4 w-4" %} {% translate "Archive" %}
+      </button>
+      <a href="{% url 'reporting:definition_list' %}" class="btn-secondary">{% translate "Cancel" %}</a>
+    </form>
+  </div>
+{% endblock %}

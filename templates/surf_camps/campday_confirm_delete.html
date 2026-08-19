@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Delete camp day" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Delete camp day" %}{% endblock %}
+
+{% block content %}
+  <div class="card mx-auto max-w-xl">
+    <div class="card-body space-y-4">
+      <div class="alert-warning">
+        {% icon "triangle-alert" "h-5 w-5 shrink-0" %}
+        <div>
+          <p class="font-medium">
+            {% blocktranslate with title=day.display_title date=day.date|date:"d.m.Y" %}Delete {{ title }} ({{ date }})?{% endblocktranslate %}
+          </p>
+          <p class="mt-1">
+            {% blocktranslate count count=day.activities.count %}{{ count }} activity will be removed with it.{% plural %}{{ count }} activities will be removed with it.{% endblocktranslate %}
+          </p>
+        </div>
+      </div>
+
+      <form method="post" class="flex justify-end gap-2">
+        {% csrf_token %}
+        <a href="{% url 'surf_camps:detail' camp.pk %}?tab=programme" class="btn-secondary">{% translate "Keep it" %}</a>
+        <button type="submit" class="btn-danger">
+          {% icon "trash-2" "h-4 w-4" %} {% translate "Delete day" %}
+        </button>
+      </form>
+    </div>
+  </div>
+{% endblock %}

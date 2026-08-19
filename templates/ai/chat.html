@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+{% load i18n static surf_tags %}
+
+{% block title %}{% translate "AI Assistant" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "AI Assistant" %}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "Ask questions about this school's own data. Every answer is a recommendation — check it before you act on it." %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'ai:chat' %}" class="btn-primary">
+    {% icon "plus" "h-4 w-4" %} {% translate "New chat" %}
+  </a>
+  {% can "ai.view" as may_view_ai %}
+  {% if may_view_ai %}
+    <a href="{% url 'ai:knowledge_list' %}" class="btn-secondary">
+      {% icon "book-open" "h-4 w-4" %} {% translate "Knowledge base" %}
+    </a>
+  {% endif %}
+  {% can "ai.manage" as may_manage_ai %}
+  {% if may_manage_ai %}
+    <a href="{% url 'ai:control_center' %}" class="btn-secondary">
+      {% icon "cpu" "h-4 w-4" %} {% translate "Control Center" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="flex flex-col gap-4 lg:flex-row lg:items-start">
+
+  {# ================================================================= left #}
+  <aside class="card lg:w-72 lg:shrink-0" aria-label="{% translate 'Conversations' %}">
+    <div class="card-header">
+      <h2 class="card-title">{% translate "Conversations" %}</h2>
+      <a href="{% url 'ai:chat' %}" class="btn-ghost btn-sm" title="{% translate 'Start a new chat' %}">
+        {% icon "plus" "h-4 w-4" %}
+        <span class="sr-only">{% translate "Start a new chat" %}</span>
+      </a>
+    </div>
+
+    <ul class="max-h-[28rem] overflow-y-auto p-2">
+      {% for item in conversations %}
+        <li class="group relative">
+          <a href="{% url 'ai:chat' %}?c={{ item.pk }}"
+             class="nav-link {% if item.pk == conversation.pk %}nav-link-active{% endif %} pe-10">
+            {% if item.is_pinned %}
+              {% icon "bookmark" "h-4 w-4 shrink-0 text-amber-500" %}
+              <span class="sr-only">{% translate "Pinned" %}</span>
+            {% else %}
+              {% icon "message-square" "h-4 w-4 shrink-0" %}
+            {% endif %}
+            <span class="min-w-0 flex-1">
+              <span class="block truncate">{{ item.title|default:_("Untitled conversation") }}</span>
+              <span class="block truncate text-xs text-slate-400 dark:text-slate-500">
+                {{ item.updated_at|date:"d.m.Y H:i" }}
+              </span>
+            </span>
+          </a>
+
+          <form method="post" action="{% url 'ai:conversation_delete' item.pk %}"
+                class="absolute end-1 top-1.5">
+            {% csrf_token %}
+            <button type="submit"
+                    class="btn-icon text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10"
+                    x-data
+                    data-confirm="{% translate 'Delete this conversation permanently?' %}"
+                    @click="if (!window.confirm($el.dataset.confirm)) { $event.preventDefault(); }"
+                    title="{% translate 'Delete conversation' %}">
+              {% icon "trash-2" "h-4 w-4" %}
+              <span class="sr-only">{% translate "Delete conversation" %}</span>
+            </button>
+          </form>
+        </li>
+      {% empty %}
+        <li class="px-3 py-6 text-center text-sm text-slate-500 dark:text-slate-400">
+          {% translate "No conversations yet. Ask your first question." %}
+        </li>
+      {% endfor %}
+    </ul>
+
+    {# --- what the assistant can look up for THIS user ------------------- #}
+    <details class="border-t border-slate-200 dark:border-slate-700">
+      <summary class="cursor-pointer select-none px-5 py-3 text-sm font-medium text-slate-700 dark:text-slate-300">
+        {% blocktranslate count counter=available_tools|length %}Available tool ({{ counter }}){% plural %}Available tools ({{ counter }}){% endblocktranslate %}
+      </summary>
+      <div class="max-h-72 overflow-y-auto px-5 pb-4">
+        <p class="mb-2 text-xs text-slate-500 dark:text-slate-400">
+          {% translate "These are the look-ups the assistant may run on your behalf. It can never see data your role is not allowed to see." %}
+        </p>
+        <ul class="space-y-2">
+          {% for tool in available_tools %}
+            <li>
+              <p class="font-mono text-xs font-medium text-slate-800 dark:text-slate-200">{{ tool.name }}</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400">{{ tool.description }}</p>
+            </li>
+          {% empty %}
+            <li class="text-xs text-slate-500 dark:text-slate-400">
+              {% translate "Your role grants no data look-ups, so the assistant answers from general knowledge only." %}
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </details>
+  </aside>
+
+  {# ================================================================ right #}
+  <section class="card min-w-0 flex-1"
+           x-data="{
+             fill(text) {
+               const field = this.$el.querySelector('#id_message');
+               if (!field) { return; }
+               field.value = text;
+               field.focus();
+             }
+           }"
+           @htmx:before-swap="if ($event.detail.xhr.status === 400 || $event.detail.xhr.status === 403) { $event.detail.shouldSwap = true; $event.detail.isError = false; }"
+           @htmx:after-request="if ($event.detail.xhr.status === 200) { const box = $el.querySelector('#id_message'); if (box) { box.value = ''; box.focus(); } }">
+
+    <div class="card-header">
+      <h2 class="card-title truncate">
+        {{ conversation.title|default:_("New conversation") }}
+      </h2>
+      <p class="shrink-0 text-xs text-slate-500 dark:text-slate-400">
+        {% blocktranslate with tokens=conversation.total_tokens %}{{ tokens }} tokens in this thread{% endblocktranslate %}
+      </p>
+    </div>
+
+    {# --- thread -------------------------------------------------------- #}
+    <div id="chat-thread"
+         class="flex max-h-[60vh] min-h-[22rem] flex-col gap-4 overflow-y-auto p-5"
+         x-data
+         x-init="$el.scrollTop = $el.scrollHeight"
+         @htmx:after-swap="const placeholder = $el.querySelector('#chat-placeholder'); if (placeholder) { placeholder.remove(); } $el.scrollTop = $el.scrollHeight"
+         aria-live="polite">
+      {% for entry in chat_messages %}
+        {% if entry.role == "user" %}
+          {% include "ai/partials/user_bubble.html" with text=entry.content when=entry.created_at %}
+        {% else %}
+          {% include "ai/partials/assistant_message.html" with message=entry %}
+        {% endif %}
+      {% empty %}
+        <div id="chat-placeholder" class="flex flex-1 flex-col items-center justify-center py-8 text-center">
+          <span class="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-violet-100 text-violet-600 dark:bg-violet-500/15 dark:text-violet-300">
+            {% icon "sparkles" "h-6 w-6" %}
+          </span>
+          <p class="text-sm font-medium text-slate-900 dark:text-slate-100">
+            {% translate "Ask anything about the school" %}
+          </p>
+          <p class="mt-1 max-w-md text-sm text-slate-500 dark:text-slate-400">
+            {% translate "Lessons, bookings, revenue, equipment, instructors and sea conditions — the assistant reads live data through the tools listed on the left." %}
+          </p>
+        </div>
+      {% endfor %}
+    </div>
+
+    {# --- suggestions ---------------------------------------------------- #}
+    {% if suggestions %}
+      <div class="border-t border-slate-200 px-5 py-3 dark:border-slate-700">
+        <p class="mb-2 text-[0.7rem] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+          {% translate "Try one of these" %}
+        </p>
+        <div class="flex flex-wrap gap-1.5">
+          {% for suggestion in suggestions %}
+            <button type="button"
+                    class="rounded-full border border-slate-300 px-3 py-1 text-xs text-slate-600 transition-colors hover:border-brand-400 hover:bg-brand-50 hover:text-brand-700 dark:border-slate-600 dark:text-slate-300 dark:hover:border-brand-500 dark:hover:bg-brand-500/10 dark:hover:text-brand-300"
+                    data-prompt="{{ suggestion }}"
+                    @click="fill($el.dataset.prompt)">
+              {{ suggestion }}
+            </button>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+    {# --- composer ------------------------------------------------------- #}
+    <form id="chat-composer"
+          class="border-t border-slate-200 p-5 dark:border-slate-700"
+          hx-post="{% url 'ai:chat_send' %}"
+          hx-target="#chat-thread"
+          hx-swap="beforeend"
+          hx-indicator="#chat-sending"
+          hx-disabled-elt="find button[type='submit']">
+      {% csrf_token %}
+      <input type="hidden" name="conversation_id" value="{{ conversation.pk }}">
+
+      <label class="sr-only" for="{{ form.message.id_for_label }}">{{ form.message.label }}</label>
+      {{ form.message }}
+      {% for error in form.message.errors %}
+        <p class="form-error">{{ error }}</p>
+      {% endfor %}
+
+      <div class="mt-3 flex flex-wrap items-end justify-between gap-3">
+        <div class="flex flex-wrap items-end gap-3">
+          <div>
+            <label class="form-label" for="id_routing_mode">{% translate "AI mode" %}</label>
+            <select name="routing_mode" id="id_routing_mode" class="form-select w-auto">
+              <option value="auto" {% if conversation.routing_mode == "auto" %}selected{% endif %}>{% translate "Automatic" %}</option>
+              <option value="local_only" {% if conversation.routing_mode == "local_only" %}selected{% endif %}>{% translate "Local only" %}</option>
+              <option value="cloud_only" {% if conversation.routing_mode == "cloud_only" %}selected{% endif %}>{% translate "Cloud only" %}</option>
+            </select>
+          </div>
+
+          <label class="flex items-center gap-2 pb-2 text-sm text-slate-700 dark:text-slate-300" for="id_use_rag">
+            <input type="checkbox" name="use_rag" id="id_use_rag" checked
+                   class="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500 dark:border-slate-600">
+            <span>{% translate "Use knowledge base" %}</span>
+          </label>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <span id="chat-sending" class="htmx-indicator flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+            {% icon "loader-circle" "h-4 w-4 animate-spin" %}
+            {% translate "Thinking…" %}
+          </span>
+          <button type="submit" class="btn-primary">
+            {% icon "send" "h-4 w-4" %} {% translate "Send" %}
+          </button>
+        </div>
+      </div>
+
+      <p class="mt-2 text-xs text-slate-400 dark:text-slate-500">
+        {% translate "Enter sends · Shift+Enter adds a new line. Never paste passwords, card numbers or ID numbers here." %}
+      </p>
+    </form>
+  </section>
+</div>
+{% endblock %}

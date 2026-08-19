@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+{% load i18n static surf_tags %}
+
+{% block title %}{{ proposal.title }} · {% translate "Code change" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ proposal.title }}{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-3 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'ai_terminal:console' %}" class="hover:underline">{% translate "AI Development Terminal" %}</a>
+    <span class="mx-1">/</span>
+    <a href="{% url 'ai_terminal:proposal_list' %}" class="hover:underline">{% translate "Proposals" %}</a>
+    <span class="mx-1">/</span>
+    <span class="text-slate-700 dark:text-slate-300">{{ proposal.file_path }}</span>
+  </nav>
+{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 break-all font-mono text-sm text-slate-500 dark:text-slate-400">{{ proposal.file_path }}</p>
+{% endblock %}
+
+{% block page_actions %}
+  {% status_badge proposal.status proposal.get_status_display %}
+  <span class="badge-slate">{{ proposal.get_change_type_display }}</span>
+  <span class="badge-emerald tabular-nums">+{{ proposal.added_lines }}</span>
+  <span class="badge-rose tabular-nums">−{{ proposal.removed_lines }}</span>
+{% endblock %}
+
+{% block content %}
+  <div class="grid gap-5 xl:grid-cols-3">
+
+    {# ================================================================ diff #}
+    <div class="space-y-5 xl:col-span-2">
+
+      {% if proposal.summary %}
+        <section class="ai-surface p-4">
+          <div class="mb-2">{% ai_chip %}</div>
+          <h2 class="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
+            {% translate "Why the agent proposes this" %}
+          </h2>
+          <p class="whitespace-pre-line text-sm leading-relaxed text-slate-700 dark:text-slate-300">{{ proposal.summary }}</p>
+          <p class="mt-2 text-[0.7rem] text-slate-500 dark:text-slate-400">
+            {% translate "A model wrote this change. Read the diff yourself before approving — you are the one accountable for it." %}
+          </p>
+        </section>
+      {% endif %}
+
+      <section class="card">
+        <div class="card-header flex-wrap">
+          <h2 class="card-title">{% translate "Diff" %}</h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400">
+            {% if proposal.change_type == "create" %}
+              {% translate "This file does not exist yet — every line is new." %}
+            {% elif proposal.change_type == "delete" %}
+              {% translate "This proposal deletes the file." %}
+            {% else %}
+              {% translate "Only the changed regions are shown." %}
+            {% endif %}
+          </p>
+        </div>
+
+        {% if diff_lines %}
+          <div class="overflow-x-auto bg-slate-950 p-4 font-mono text-[0.75rem] leading-5 text-slate-300">
+            <div class="min-w-max">
+              {% for line in diff_lines %}
+                <div class="min-h-[1.25rem] whitespace-pre
+                            {% if line.kind == 'add' %}bg-emerald-500/15 text-emerald-300
+                            {% elif line.kind == 'remove' %}bg-rose-500/15 text-rose-300
+                            {% elif line.kind == 'hunk' %}mt-2 bg-sky-500/10 font-semibold text-sky-300
+                            {% elif line.kind == 'meta' %}text-slate-500
+                            {% else %}text-slate-400{% endif %}">{{ line.text }}</div>
+              {% endfor %}
+            </div>
+          </div>
+        {% else %}
+          <div class="card-body">
+            <p class="text-sm text-slate-500 dark:text-slate-400">
+              {% translate "No diff was recorded for this proposal — the proposed content is identical to what is on disk." %}
+            </p>
+          </div>
+        {% endif %}
+      </section>
+    </div>
+
+    {# ============================================================ decision #}
+    <div class="space-y-5">
+
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">{% translate "Record" %}</h2>
+        </div>
+        <div class="card-body">
+          <dl class="space-y-3 text-sm">
+            <div>
+              <dt class="text-xs font-medium text-slate-500 dark:text-slate-400">{% translate "Proposed" %}</dt>
+              <dd class="mt-0.5 text-slate-800 dark:text-slate-200">{{ proposal.created_at|date:"d.m.Y H:i" }}</dd>
+            </div>
+            {% if proposal.session_id %}
+              <div>
+                <dt class="text-xs font-medium text-slate-500 dark:text-slate-400">{% translate "Session" %}</dt>
+                <dd class="mt-0.5">
+                  <a href="{% url 'ai_terminal:console' %}?s={{ proposal.session_id }}"
+                     class="text-brand-700 hover:underline dark:text-brand-300">
+                    {{ proposal.session }}
+                  </a>
+                </dd>
+              </div>
+            {% endif %}
+            {% if proposal.decided_at %}
+              <div>
+                <dt class="text-xs font-medium text-slate-500 dark:text-slate-400">{% translate "Decided" %}</dt>
+                <dd class="mt-0.5 text-slate-800 dark:text-slate-200">
+                  {{ proposal.decided_at|date:"d.m.Y H:i" }}
+                  {% if proposal.approved_by %} — {{ proposal.approved_by.get_username }}{% endif %}
+                </dd>
+              </div>
+            {% endif %}
+            {% if proposal.decision_note %}
+              <div>
+                <dt class="text-xs font-medium text-slate-500 dark:text-slate-400">{% translate "Decision note" %}</dt>
+                <dd class="mt-0.5 text-slate-800 dark:text-slate-200">{{ proposal.decision_note }}</dd>
+              </div>
+            {% endif %}
+            {% if proposal.applied_at %}
+              <div>
+                <dt class="text-xs font-medium text-slate-500 dark:text-slate-400">{% translate "Applied" %}</dt>
+                <dd class="mt-0.5 text-slate-800 dark:text-slate-200">{{ proposal.applied_at|date:"d.m.Y H:i" }}</dd>
+              </div>
+            {% endif %}
+            {% if proposal.checkpoint_branch %}
+              <div>
+                <dt class="text-xs font-medium text-slate-500 dark:text-slate-400">{% translate "Checkpoint branch" %}</dt>
+                <dd class="mt-0.5 break-all font-mono text-xs text-slate-800 dark:text-slate-200">{{ proposal.checkpoint_branch }}</dd>
+              </div>
+            {% endif %}
+          </dl>
+
+          {% if proposal.apply_error %}
+            <div class="alert-error mt-3">
+              {% icon "circle-x" "h-5 w-5 shrink-0" %}
+              <div>
+                <p class="font-medium">{% translate "The change could not be written." %}</p>
+                <p class="mt-1">{{ proposal.apply_error }}</p>
+              </div>
+            </div>
+          {% endif %}
+        </div>
+      </section>
+
+      {# --- approve / reject ------------------------------------------- #}
+      {% if can_approve and proposal.status == "awaiting_approval" %}
+        <section class="card border-amber-300 dark:border-amber-500/40">
+          <div class="card-header">
+            <h2 class="card-title flex items-center gap-2">
+              {% icon "lock" "h-4 w-4 text-amber-600 dark:text-amber-400" %}
+              {% translate "Your decision" %}
+            </h2>
+          </div>
+          <div class="card-body space-y-4">
+            <form method="post" action="{% url 'ai_terminal:approve_proposal' proposal.pk %}" class="space-y-3">
+              {% csrf_token %}
+              <div>
+                <label class="form-label" for="id_approve_note">{% translate "Note for the audit log (optional)" %}</label>
+                <input type="text" id="id_approve_note" name="note" maxlength="500" autocomplete="off" class="form-input">
+              </div>
+
+              <label class="flex items-start gap-2.5 text-sm text-slate-700 dark:text-slate-300" for="id_create_checkpoint">
+                <input type="checkbox" name="create_checkpoint" id="id_create_checkpoint" value="1"
+                       class="mt-0.5 h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500 dark:border-slate-600">
+                <span>
+                  <span class="font-medium">{% translate "Create a git checkpoint branch first" %}</span>
+                  <span class="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">
+                    {% translate "Switches to a new branch before the change is applied, so it can be abandoned cleanly. Skipped if git is unavailable." %}
+                  </span>
+                </span>
+              </label>
+
+              <button type="submit" class="btn-success">
+                {% icon "check" "h-4 w-4" %} {% translate "Approve" %}
+              </button>
+              <p class="text-xs text-slate-500 dark:text-slate-400">
+                {% translate "Approving does not write anything. You apply the change as a separate, deliberate step." %}
+              </p>
+            </form>
+
+            <details class="rounded-lg border border-slate-200 dark:border-slate-700">
+              <summary class="cursor-pointer select-none px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+                {% translate "Reject this change" %}
+              </summary>
+              <form method="post" action="{% url 'ai_terminal:reject_proposal' proposal.pk %}"
+                    class="space-y-3 border-t border-slate-200 p-3 dark:border-slate-700">
+                {% csrf_token %}
+                <div>
+                  <label class="form-label" for="id_reject_note">{% translate "Reason (optional)" %}</label>
+                  <input type="text" id="id_reject_note" name="note" maxlength="500" autocomplete="off" class="form-input">
+                </div>
+                <button type="submit" class="btn-danger">
+                  {% icon "x" "h-4 w-4" %} {% translate "Reject" %}
+                </button>
+              </form>
+            </details>
+          </div>
+        </section>
+      {% endif %}
+
+      {# --- apply ------------------------------------------------------- #}
+      {% if proposal.status == "approved" %}
+        <section class="card border-emerald-300 dark:border-emerald-500/40">
+          <div class="card-header">
+            <h2 class="card-title">{% translate "Apply to disk" %}</h2>
+          </div>
+          <div class="card-body space-y-3">
+            <p class="text-sm text-slate-600 dark:text-slate-400">
+              {% translate "This writes the proposed content into the workspace file:" %}
+              <span class="break-all font-mono text-xs">{{ proposal.file_path }}</span>
+            </p>
+            {% if can_apply %}
+              <form method="post" action="{% url 'ai_terminal:apply_proposal' proposal.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn-primary">
+                  {% icon "save" "h-4 w-4" %} {% translate "Apply change" %}
+                </button>
+              </form>
+            {% else %}
+              <div class="alert-info">
+                {% icon "lock" "h-5 w-5 shrink-0" %}
+                <p>{% translate "Applying a code change needs the patch-apply right." %}</p>
+              </div>
+            {% endif %}
+          </div>
+        </section>
+      {% endif %}
+
+      {# --- revert ------------------------------------------------------ #}
+      {% if proposal.status == "applied" %}
+        <section class="card">
+          <div class="card-header">
+            <h2 class="card-title">{% translate "Revert" %}</h2>
+          </div>
+          <div class="card-body space-y-3">
+            <p class="text-sm text-slate-600 dark:text-slate-400">
+              {% translate "Restores the exact file content captured before the change was written." %}
+            </p>
+            {% if can_apply %}
+              <form method="post" action="{% url 'ai_terminal:revert_proposal' proposal.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn-danger"
+                        x-data
+                        data-confirm="{% translate 'Restore the previous content of this file?' %}"
+                        @click="if (!window.confirm($el.dataset.confirm)) { $event.preventDefault(); }">
+                  {% icon "rotate-ccw" "h-4 w-4" %} {% translate "Revert change" %}
+                </button>
+              </form>
+            {% else %}
+              <div class="alert-info">
+                {% icon "lock" "h-5 w-5 shrink-0" %}
+                <p>{% translate "Reverting a code change needs the patch-apply right." %}</p>
+              </div>
+            {% endif %}
+          </div>
+        </section>
+      {% endif %}
+
+      {% if not can_approve and proposal.status == "awaiting_approval" %}
+        <div class="alert-info">
+          {% icon "lock" "h-5 w-5 shrink-0" %}
+          <p>{% translate "This change is waiting for someone with terminal-approval rights." %}</p>
+        </div>
+      {% endif %}
+
+      {% if proposal.status == "rejected" %}
+        <div class="alert-warning">
+          {% icon "circle-x" "h-5 w-5 shrink-0" %}
+          <p>{% translate "This change was rejected and can no longer be applied." %}</p>
+        </div>
+      {% endif %}
+
+      {% if proposal.status == "reverted" %}
+        <div class="alert-info">
+          {% icon "rotate-ccw" "h-5 w-5 shrink-0" %}
+          <p>{% translate "This change was applied and then rolled back. The file holds its original content." %}</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}

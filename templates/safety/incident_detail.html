@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ incident.incident_code }} · {% translate "Incidents" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ incident.incident_code }}{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-3 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'safety:dashboard' %}" class="hover:underline">{% translate "Safety" %}</a>
+    <span class="mx-1">/</span>
+    <a href="{% url 'safety:incident_list' %}" class="hover:underline">{% translate "Incidents" %}</a>
+    <span class="mx-1">/</span>
+    <span class="text-slate-700 dark:text-slate-300">{{ incident.incident_code }}</span>
+  </nav>
+{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+    <span>{{ incident.get_incident_type_display }}</span>
+    <span>·</span>
+    <span>{{ incident.occurred_at|date:"d.m.Y H:i" }}</span>
+    {% if incident.severity == "critical" %}
+      <span class="badge-rose">{{ incident.get_severity_display }}</span>
+    {% elif incident.severity == "high" %}
+      <span class="badge-amber">{{ incident.get_severity_display }}</span>
+    {% else %}
+      <span class="badge-sky">{{ incident.get_severity_display }}</span>
+    {% endif %}
+    {% status_badge incident.status incident.get_status_display %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  {% can "safety.change" as may_change %}
+  {% if may_change %}
+    <a href="{% url 'safety:incident_update' incident.pk %}" class="btn-secondary">
+      {% icon "pencil" "h-4 w-4" %} {% translate "Edit" %}
+    </a>
+  {% endif %}
+  {% can "safety.approve" as may_approve %}
+  {% if may_approve and incident.is_open %}
+    <a href="{% url 'safety:incident_review' incident.pk %}" class="btn-primary">
+      {% icon "clipboard-check" "h-4 w-4" %} {% translate "Review and close" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+
+  {% if incident.is_follow_up_overdue %}
+    <div class="alert-error mb-5">
+      {% icon "triangle-alert" "h-5 w-5 shrink-0" %}
+      <p>
+        {% blocktranslate with due=incident.follow_up_due|date:"d.m.Y" %}The follow-up on this incident was due on {{ due }} and is still outstanding.{% endblocktranslate %}
+      </p>
+    </div>
+  {% elif incident.is_open and incident.is_serious %}
+    <div class="alert-warning mb-5">
+      {% icon "circle-alert" "h-5 w-5 shrink-0" %}
+      <p>{% translate "This is a high or critical incident and it is still open. It cannot be closed without a named reviewer and a written corrective action." %}</p>
+    </div>
+  {% endif %}
+
+  <div class="grid gap-5 lg:grid-cols-3">
+
+    {# ==================================================== main column === #}
+    <div class="space-y-5 lg:col-span-2">
+
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">{% translate "What happened" %}</h2>
+          <span class="text-xs text-slate-500 dark:text-slate-400">
+            {% if incident.is_open %}
+              {% blocktranslate count counter=incident.days_open %}Open for {{ counter }} day{% plural %}Open for {{ counter }} days{% endblocktranslate %}
+            {% else %}
+              {% translate "Closed" %}
+            {% endif %}
+          </span>
+        </div>
+        <div class="card-body space-y-4">
+          <p class="whitespace-pre-line text-sm leading-relaxed text-slate-700 dark:text-slate-300">{{ incident.description }}</p>
+
+          {% if incident.immediate_action %}
+            <div>
+              <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                {% translate "Immediate action taken" %}
+              </h3>
+              <p class="mt-1 whitespace-pre-line text-sm text-slate-700 dark:text-slate-300">{{ incident.immediate_action }}</p>
+            </div>
+          {% endif %}
+
+          <div class="flex flex-wrap gap-2">
+            {% if incident.medical_attention_required %}
+              <span class="badge-rose">{% icon "heart" "h-3 w-3" %}{% translate "Medical attention required" %}</span>
+            {% endif %}
+            {% if incident.emergency_services_called %}
+              <span class="badge-rose">{% icon "phone" "h-3 w-3" %}{% translate "Emergency services called" %}</span>
+            {% endif %}
+          </div>
+
+          {% if incident.photo %}
+            <img src="{{ incident.photo.url }}" alt="{% translate 'Incident photo' %}"
+                 class="max-h-80 w-full rounded-lg object-cover">
+          {% endif %}
+        </div>
+      </section>
+
+      {% if incident.is_reviewed %}
+        <section class="card">
+          <div class="card-header">
+            <h2 class="card-title">
+              {% icon "clipboard-check" "inline h-4 w-4 text-emerald-500" %} {% translate "Review" %}
+            </h2>
+            <span class="text-xs text-slate-500 dark:text-slate-400">
+              {{ incident.reviewed_by.get_display_name }} · {{ incident.reviewed_at|date:"d.m.Y H:i" }}
+            </span>
+          </div>
+          <div class="card-body space-y-4">
+            <div>
+              <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{% translate "Root cause" %}</h3>
+              <p class="mt-1 whitespace-pre-line text-sm text-slate-700 dark:text-slate-300">{{ incident.root_cause|default:"—" }}</p>
+            </div>
+            <div>
+              <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{% translate "Corrective action" %}</h3>
+              <p class="mt-1 whitespace-pre-line text-sm text-slate-700 dark:text-slate-300">{{ incident.corrective_action|default:"—" }}</p>
+            </div>
+          </div>
+        </section>
+      {% endif %}
+
+      {% if incident.conditions_summary %}
+        <section class="card">
+          <div class="card-header">
+            <h2 class="card-title">
+              {% icon "waves" "inline h-4 w-4 text-brand-500" %} {% translate "Conditions at the time" %}
+            </h2>
+          </div>
+          <div class="card-body">
+            <dl class="grid gap-3 sm:grid-cols-3">
+              {% for label, value in incident.conditions_summary %}
+                <div>
+                  <dt class="text-xs text-slate-500 dark:text-slate-400">{{ label }}</dt>
+                  <dd class="mt-0.5 text-sm font-semibold text-slate-900 dark:text-slate-100">{{ value }}</dd>
+                </div>
+              {% endfor %}
+            </dl>
+            <p class="mt-3 text-xs text-slate-500 dark:text-slate-400">
+              {% translate "Recorded when the incident was reported and never edited afterwards." %}
+            </p>
+          </div>
+        </section>
+      {% endif %}
+
+      {% if related_incidents %}
+        <section class="card overflow-hidden">
+          <div class="card-header">
+            <h2 class="card-title">{% translate "Other incidents at this spot" %}</h2>
+          </div>
+          {% include "safety/partials/incident_table.html" with incidents=related_incidents %}
+        </section>
+      {% endif %}
+    </div>
+
+    {# ==================================================== side column === #}
+    <div class="space-y-5">
+
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">{% translate "Where and who" %}</h2>
+        </div>
+        <div class="card-body">
+          <dl class="space-y-3 text-sm">
+            <div class="flex justify-between gap-3">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Spot" %}</dt>
+              <dd class="text-end text-slate-800 dark:text-slate-200">
+                {% if incident.spot %}
+                  <a href="{% url 'locations:detail' incident.spot.pk %}" class="hover:underline">{{ incident.spot.name }}</a>
+                {% else %}—{% endif %}
+              </dd>
+            </div>
+            <div class="flex justify-between gap-3">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Lesson" %}</dt>
+              <dd class="text-end text-slate-800 dark:text-slate-200">
+                {% if incident.lesson %}
+                  <a href="{% url 'lessons:detail' incident.lesson.pk %}" class="font-mono hover:underline">{{ incident.lesson.lesson_code }}</a>
+                {% else %}—{% endif %}
+              </dd>
+            </div>
+            <div class="flex justify-between gap-3">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Reported by" %}</dt>
+              <dd class="text-end text-slate-800 dark:text-slate-200">
+                {% if incident.reported_by %}{{ incident.reported_by.get_display_name }}{% else %}—{% endif %}
+              </dd>
+            </div>
+          </dl>
+
+          <div class="mt-4">
+            <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{% translate "Students involved" %}</h3>
+            {% if incident.people_involved.all %}
+              <ul class="mt-1 space-y-1 text-sm text-slate-700 dark:text-slate-300">
+                {% for student in incident.people_involved.all %}
+                  <li>
+                    <a href="{% url 'students:detail' student.pk %}" class="hover:underline">{{ student.full_name }}</a>
+                  </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{% translate "None recorded." %}</p>
+            {% endif %}
+          </div>
+
+          <div class="mt-4">
+            <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{% translate "Staff involved" %}</h3>
+            {% if incident.staff_involved.all %}
+              <ul class="mt-1 space-y-1 text-sm text-slate-700 dark:text-slate-300">
+                {% for member in incident.staff_involved.all %}<li>{{ member.get_display_name }}</li>{% endfor %}
+              </ul>
+            {% else %}
+              <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{% translate "None recorded." %}</p>
+            {% endif %}
+          </div>
+        </div>
+      </section>
+
+      {% if incident.follow_up_required %}
+        <section class="card">
+          <div class="card-header">
+            <h2 class="card-title">{% translate "Follow-up" %}</h2>
+          </div>
+          <div class="card-body">
+            <p class="text-sm text-slate-700 dark:text-slate-300">
+              {% blocktranslate with due=incident.follow_up_due|date:"d.m.Y" %}Due on {{ due }}.{% endblocktranslate %}
+            </p>
+          </div>
+        </section>
+      {% endif %}
+
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">
+            {% icon "life-buoy" "inline h-4 w-4 text-rose-500" %} {% translate "Emergency contacts" %}
+          </h2>
+          <a href="{% url 'safety:contact_card' %}{% if incident.spot %}?spot={{ incident.spot.pk }}{% endif %}"
+             class="btn-ghost btn-sm">{% translate "Card" %}</a>
+        </div>
+        <div class="card-body space-y-2">
+          {% for contact in emergency_contacts %}
+            <div class="flex items-center justify-between gap-3">
+              <span class="min-w-0 truncate text-sm text-slate-700 dark:text-slate-300">{{ contact.name }}</span>
+              <a href="tel:{{ contact.phone }}" class="shrink-0 text-sm font-medium text-brand-600 hover:underline dark:text-brand-400">
+                {{ contact.phone }}
+              </a>
+            </div>
+          {% empty %}
+            <p class="text-sm text-amber-600 dark:text-amber-400">{% translate "No emergency contacts on file." %}</p>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">{% translate "Record" %}</h2>
+        </div>
+        <div class="card-body">
+          <dl class="space-y-2 text-sm">
+            <div class="flex justify-between gap-3">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Reported" %}</dt>
+              <dd class="text-slate-800 dark:text-slate-200">{{ incident.created_at|date:"d.m.Y H:i" }}</dd>
+            </div>
+            <div class="flex justify-between gap-3">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Last change" %}</dt>
+              <dd class="text-slate-800 dark:text-slate-200">{{ incident.updated_at|date:"d.m.Y H:i" }}</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+    </div>
+  </div>
+{% endblock %}

@@ -1,0 +1,9 @@
+{% load i18n surf_tags %}
+{# Rendered instead of a message pair when the turn could not be handled. #}
+<div class="alert-error" role="alert">
+  {% icon "circle-x" "h-5 w-5 shrink-0" %}
+  <div>
+    <p class="font-medium">{% translate "The message was not sent." %}</p>
+    <p class="mt-0.5">{{ error|default:_("Please try again.") }}</p>
+  </div>
+</div>

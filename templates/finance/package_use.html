@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Use a package lesson" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Use a package lesson" %}{% endblock %}
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% blocktranslate with customer=customer_package.customer package=customer_package.package.name %}{{ customer }} · {{ package }}{% endblocktranslate %}
+  </p>
+{% endblock %}
+
+{% block content %}
+  <div class="grid gap-4 lg:grid-cols-3">
+    <form method="post" novalidate class="space-y-5 lg:col-span-2">
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="alert-error">
+          {% icon "circle-alert" "h-5 w-5 shrink-0" %}
+          <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+        </div>
+      {% endif %}
+
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">
+            {% icon "calendar-days" "inline h-4 w-4 text-brand-500" %} {% translate "Which booking?" %}
+          </h2>
+        </div>
+        <div class="card-body space-y-4">
+          {% include "finance/partials/field.html" with field=form.booking %}
+          <p class="text-xs text-slate-500 dark:text-slate-400">
+            {% translate "The booking is marked as settled from the package. No new payment is recorded — the money arrived when the package was sold." %}
+          </p>
+        </div>
+      </section>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <button type="submit" class="btn-primary" {% if not customer_package.is_usable %}disabled{% endif %}>
+          {% icon "check" "h-4 w-4" %} {% translate "Take one lesson off the card" %}
+        </button>
+        <a href="{{ cancel_url }}" class="btn-secondary">{% translate "Cancel" %}</a>
+      </div>
+    </form>
+
+    <aside class="card h-fit">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "The card" %}</h2>
+        {% status_badge customer_package.status customer_package.get_status_display %}
+      </div>
+      <div class="card-body space-y-3 text-sm">
+        <div class="flex items-center justify-between">
+          <span class="text-slate-500 dark:text-slate-400">{% translate "Lessons left" %}</span>
+          <span class="text-lg font-semibold tabular-nums">
+            {{ customer_package.lessons_remaining }} / {{ customer_package.lessons_total }}
+          </span>
+        </div>
+        <div class="h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+          <div class="h-full rounded-full bg-brand-500" style="width: {{ customer_package.usage_percent }}%"></div>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-slate-500 dark:text-slate-400">{% translate "Expires" %}</span>
+          <span class="font-medium">{{ customer_package.expires_on|date:"d.m.Y" }}</span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-slate-500 dark:text-slate-400">{% translate "Value per lesson" %}</span>
+          <span class="font-medium tabular-nums">{{ customer_package.value_per_lesson|money }}</span>
+        </div>
+
+        {% if not customer_package.is_usable %}
+          <div class="alert-warning">
+            {% icon "triangle-alert" "h-5 w-5 shrink-0" %}
+            <div>
+              {% if customer_package.is_expired %}
+                {% translate "This package has expired and cannot be used." %}
+              {% elif customer_package.lessons_remaining == 0 %}
+                {% translate "Every lesson on this package has been used." %}
+              {% else %}
+                {% translate "This package is not active." %}
+              {% endif %}
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    </aside>
+  </div>
+{% endblock %}

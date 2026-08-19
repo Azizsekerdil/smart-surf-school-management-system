@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Segments" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Segments" %}{% endblock %}
+{% block page_subtitle %}
+  <p class="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "Saved customer audiences that campaigns aim at." %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  {% can "crm.add" as may_add %}
+  {% if may_add %}
+    <a href="{% url 'crm:segment_create' %}" class="btn-primary">
+      {% icon "plus" "h-4 w-4" %} {% translate "New segment" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <form method="get"
+        class="card mb-5 p-4"
+        hx-get="{% url 'crm:segment_list' %}"
+        hx-target="#segment-table"
+        hx-swap="outerHTML"
+        hx-trigger="submit, keyup changed delay:400ms from:input[name='q']"
+        hx-push-url="true">
+    <label for="segment-search" class="form-label">{% translate "Search" %}</label>
+    <input id="segment-search" type="search" name="q" value="{{ search_term }}"
+           class="form-input" placeholder="{% translate 'Segment name or description' %}">
+  </form>
+
+  {% include "crm/partials/segment_table.html" %}
+{% endblock %}

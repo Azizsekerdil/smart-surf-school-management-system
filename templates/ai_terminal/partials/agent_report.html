@@ -1,0 +1,155 @@
+{% load i18n surf_tags %}
+{# Rendered by ai_terminal:run_agent. Context: report, session, can_apply. #}
+<div class="ai-surface p-4">
+
+  <div class="mb-3 flex flex-wrap items-center gap-2">
+    {% ai_chip %}
+    {% if report.provider %}
+      <span class="font-mono text-xs text-slate-500 dark:text-slate-400">{{ report.provider }} / {{ report.model }}</span>
+    {% endif %}
+    {% if report.ok %}
+      <span class="badge-emerald">{% icon "circle-check" "h-3 w-3" %} {% translate "Plan produced" %}</span>
+    {% else %}
+      <span class="badge-rose">{% icon "circle-alert" "h-3 w-3" %} {% translate "No usable plan" %}</span>
+    {% endif %}
+  </div>
+
+  {% if report.error %}
+    <div class="alert-error mb-3" role="alert">
+      {% icon "circle-x" "h-5 w-5 shrink-0" %}
+      <p>{{ report.error }}</p>
+    </div>
+  {% endif %}
+
+  {# --- understanding --------------------------------------------------- #}
+  {% if report.understanding %}
+    <section class="mb-4">
+      <h3 class="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
+        {% translate "What the agent understood" %}
+      </h3>
+      <p class="text-sm leading-relaxed text-slate-700 dark:text-slate-300">{{ report.understanding }}</p>
+    </section>
+  {% endif %}
+
+  {# --- plan -------------------------------------------------------------- #}
+  {% if report.plan %}
+    <section class="mb-4">
+      <h3 class="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">{% translate "Plan" %}</h3>
+      <ol class="list-decimal space-y-1 ps-5 text-sm text-slate-700 dark:text-slate-300">
+        {% for step in report.plan %}<li>{{ step }}</li>{% endfor %}
+      </ol>
+    </section>
+  {% endif %}
+
+  {# --- files -------------------------------------------------------------- #}
+  <div class="mb-4 grid gap-4 sm:grid-cols-2">
+    <section>
+      <h3 class="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">{% translate "Files read" %}</h3>
+      {% if report.files_read %}
+        <ul class="space-y-0.5 font-mono text-xs text-slate-600 dark:text-slate-400">
+          {% for path in report.files_read %}<li class="break-all">{{ path }}</li>{% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-xs text-slate-500 dark:text-slate-400">{% translate "None." %}</p>
+      {% endif %}
+    </section>
+
+    <section>
+      <h3 class="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">{% translate "Files refused" %}</h3>
+      {% if report.files_refused %}
+        <ul class="space-y-0.5 text-xs text-rose-600 dark:text-rose-400">
+          {% for path in report.files_refused %}<li class="break-all font-mono">{{ path }}</li>{% endfor %}
+        </ul>
+        <p class="mt-1 text-[0.7rem] text-slate-500 dark:text-slate-400">
+          {% translate "Refused by the workspace jail — outside the project, protected, or unreadable." %}
+        </p>
+      {% else %}
+        <p class="text-xs text-slate-500 dark:text-slate-400">{% translate "None." %}</p>
+      {% endif %}
+    </section>
+  </div>
+
+  {# --- risks -------------------------------------------------------------- #}
+  {% if report.risks %}
+    <section class="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-500/30 dark:bg-amber-500/10">
+      <h3 class="mb-1 flex items-center gap-1.5 text-sm font-semibold text-amber-900 dark:text-amber-200">
+        {% icon "triangle-alert" "h-4 w-4" %} {% translate "Risks the agent flagged" %}
+      </h3>
+      <ul class="list-disc space-y-1 ps-5 text-sm text-amber-900 dark:text-amber-100">
+        {% for risk in report.risks %}<li>{{ risk }}</li>{% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+
+  {# --- tests --------------------------------------------------------------- #}
+  {% if report.tests_suggested %}
+    <section class="mb-4">
+      <h3 class="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">{% translate "Suggested tests" %}</h3>
+      <ul class="list-disc space-y-1 ps-5 text-sm text-slate-700 dark:text-slate-300">
+        {% for test in report.tests_suggested %}<li>{{ test }}</li>{% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+
+  {# --- proposals ------------------------------------------------------------ #}
+  <section>
+    <h3 class="mb-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
+      {% translate "Proposed file changes" %}
+    </h3>
+    {% if report.proposals %}
+      <p class="mb-2 text-xs text-slate-500 dark:text-slate-400">
+        {% translate "Nothing has been written to disk. Open each proposal, read the diff, then approve and apply it." %}
+      </p>
+      <ul class="space-y-2">
+        {% for proposal in report.proposals %}
+          <li class="card p-3">
+            <div class="flex flex-wrap items-start justify-between gap-2">
+              <div class="min-w-0">
+                <a href="{% url 'ai_terminal:proposal_detail' proposal.pk %}"
+                   class="text-sm font-medium text-brand-700 hover:underline dark:text-brand-300">
+                  {{ proposal.title }}
+                </a>
+                <p class="break-all font-mono text-xs text-slate-500 dark:text-slate-400">{{ proposal.file_path }}</p>
+                {% if proposal.summary %}
+                  <p class="mt-1 text-xs text-slate-600 dark:text-slate-400">{{ proposal.summary }}</p>
+                {% endif %}
+              </div>
+              <div class="flex shrink-0 flex-wrap items-center gap-1.5">
+                <span class="badge-slate">{{ proposal.get_change_type_display }}</span>
+                <span class="badge-emerald tabular-nums">+{{ proposal.added_lines }}</span>
+                <span class="badge-rose tabular-nums">−{{ proposal.removed_lines }}</span>
+                <a href="{% url 'ai_terminal:proposal_detail' proposal.pk %}" class="btn-secondary btn-sm">
+                  {% icon "eye" "h-4 w-4" %} {% translate "Review" %}
+                </a>
+              </div>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+      {% if not can_apply %}
+        <p class="mt-2 flex items-start gap-2 text-xs text-slate-500 dark:text-slate-400">
+          {% icon "lock" "h-4 w-4 shrink-0" %}
+          <span>{% translate "You can review these changes, but applying them needs the patch-apply right." %}</span>
+        </p>
+      {% endif %}
+    {% else %}
+      <p class="text-xs text-slate-500 dark:text-slate-400">
+        {% translate "The agent proposed no file changes for this request." %}
+      </p>
+    {% endif %}
+  </section>
+
+  {# --- notes ---------------------------------------------------------------- #}
+  {% if report.notes %}
+    <details class="mt-4 rounded-lg border border-violet-200 bg-white/60 dark:border-violet-500/25 dark:bg-slate-900/40">
+      <summary class="cursor-pointer select-none px-3 py-2 text-xs font-medium text-violet-700 dark:text-violet-300">
+        {% translate "Agent notes" %}
+      </summary>
+      <p class="whitespace-pre-line border-t border-violet-200 px-3 py-2 text-xs leading-relaxed text-slate-600 dark:border-violet-500/25 dark:text-slate-400">{{ report.notes }}</p>
+    </details>
+  {% endif %}
+
+  <p class="mt-3 text-[0.7rem] text-slate-500 dark:text-slate-400">
+    {% translate "This is a proposal from a model. A named person approves every command and every file change." %}
+  </p>
+</div>

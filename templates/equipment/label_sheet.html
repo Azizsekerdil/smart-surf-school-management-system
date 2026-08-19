@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Equipment labels" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Equipment labels" %}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% blocktranslate count counter=labels|length %}{{ counter }} label{% plural %}{{ counter }} labels{% endblocktranslate %}
+    · {{ printed_at|date:"d.m.Y H:i" }}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <button type="button" class="btn-primary no-print" onclick="window.print()">
+    {% icon "printer" "h-4 w-4" %} {% translate "Print" %}
+  </button>
+  <a href="{% url 'equipment:list' %}" class="btn-secondary no-print">{% translate "Back to inventory" %}</a>
+{% endblock %}
+
+{% block extra_head %}
+  <style>
+    /* The sheet is the document when printing — everything else is chrome. */
+    @media print {
+      aside, header, footer, nav[aria-label] { display: none !important; }
+      main { padding: 0 !important; }
+      .lg\:ps-64 { padding-inline-start: 0 !important; }
+      .label-card { break-inside: avoid; page-break-inside: avoid; }
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+  {% if truncated %}
+    <div class="alert-info mb-4 no-print" role="status">
+      {% icon "info" "h-4 w-4 shrink-0" %}
+      <span>
+        {% blocktranslate with limit=max_labels %}Only the first {{ limit }} labels are shown. Narrow the filters to print the rest.{% endblocktranslate %}
+      </span>
+    </div>
+  {% endif %}
+
+  {% if labels %}
+    <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+      {% for label in labels %}
+        <div class="label-card flex items-center gap-3 rounded-lg border border-slate-300 bg-white p-3 dark:border-slate-600">
+          <div class="shrink-0">{{ label.qr }}</div>
+          <div class="min-w-0">
+            <p class="font-mono text-sm font-bold text-slate-900">{{ label.equipment.asset_code }}</p>
+            <p class="truncate text-xs font-medium text-slate-800">{{ label.equipment.name }}</p>
+            <p class="truncate text-[0.65rem] text-slate-600">
+              {{ label.equipment.category.name }}{% if label.equipment.size_label %} · {{ label.equipment.size_label }}{% endif %}
+            </p>
+            {% if label.equipment.storage_location %}
+              <p class="truncate text-[0.65rem] text-slate-500">{{ label.equipment.storage_location }}</p>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    {% include "partials/empty_state.html" with icon_name="qr-code" title=_("Nothing to print") subtitle=_("Select items from the inventory list, or clear the filters, then print again.") %}
+  {% endif %}
+{% endblock %}

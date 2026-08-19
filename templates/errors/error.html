@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load i18n static surf_tags %}
+
+{% block title %}{{ status_code }} · {{ error_title }}{% endblock %}
+{% block page_title %}{{ error_title }}{% endblock %}
+
+{% block content %}
+  <div class="card mx-auto max-w-lg">
+    <div class="card-body text-center">
+      <span class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-rose-100 text-rose-600 dark:bg-rose-500/15 dark:text-rose-400">
+        {% icon "triangle-alert" "h-7 w-7" %}
+      </span>
+      <p class="text-4xl font-bold text-slate-900 dark:text-slate-50">{{ status_code }}</p>
+      <p class="mt-2 text-base font-medium text-slate-700 dark:text-slate-200">{{ error_title }}</p>
+      <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ error_message }}</p>
+      <div class="mt-6 flex justify-center gap-2">
+        <a href="{% url 'dashboard:home' %}" class="btn-primary">{% translate "Back to dashboard" %}</a>
+        <button type="button" onclick="history.back()" class="btn-secondary">{% translate "Go back" %}</button>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block auth_content %}
+  <div class="flex min-h-screen items-center justify-center bg-slate-50 px-4 dark:bg-slate-950">
+    <div class="card w-full max-w-lg">
+      <div class="card-body text-center">
+        <p class="text-4xl font-bold text-slate-900 dark:text-slate-50">{{ status_code }}</p>
+        <p class="mt-2 text-base font-medium text-slate-700 dark:text-slate-200">{{ error_title }}</p>
+        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ error_message }}</p>
+        <a href="{% url 'accounts:login' %}" class="btn-primary mt-6">{% translate "Sign in" %}</a>
+      </div>
+    </div>
+  </div>
+{% endblock %}

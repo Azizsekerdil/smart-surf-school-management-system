@@ -1,0 +1,139 @@
+{% load i18n surf_tags %}
+
+<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+  <div class="stat-card">
+    <p class="stat-label">{% translate "Sold" %}</p>
+    <p class="stat-value">{{ finance.expected_revenue|money }}</p>
+    <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+      {% blocktranslate with count=finance.participants price=finance.price|money %}{{ count }} × {{ price }}{% endblocktranslate %}
+      {% if finance.single_rooms %}
+        + {% blocktranslate with amount=finance.supplement_revenue|money %}{{ amount }} single rooms{% endblocktranslate %}
+      {% endif %}
+    </p>
+  </div>
+  <div class="stat-card">
+    <p class="stat-label">{% translate "Collected" %}</p>
+    <p class="stat-value text-emerald-600 dark:text-emerald-400">{{ finance.collected|money }}</p>
+    <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ finance.collection_rate|pct }}</p>
+  </div>
+  <div class="stat-card">
+    <p class="stat-label">{% translate "Outstanding" %}</p>
+    <p class="stat-value {% if finance.outstanding %}text-amber-600 dark:text-amber-400{% endif %}">{{ finance.outstanding|money }}</p>
+    <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+      {% blocktranslate count missing=finance.deposits_outstanding %}{{ missing }} deposit not paid{% plural %}{{ missing }} deposits not paid{% endblocktranslate %}
+    </p>
+  </div>
+  <div class="stat-card">
+    <p class="stat-label">{% translate "Unsold capacity" %}</p>
+    <p class="stat-value">{{ finance.revenue_gap|money }}</p>
+    <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+      {% blocktranslate count left=finance.available_places %}{{ left }} empty place{% plural %}{{ left }} empty places{% endblocktranslate %}
+    </p>
+  </div>
+</div>
+
+<div class="mt-4 grid gap-4 lg:grid-cols-3">
+  <section class="card lg:col-span-1">
+    <div class="card-header"><h3 class="card-title">{% translate "Capacity" %}</h3></div>
+    <div class="card-body space-y-4">
+      <div>
+        <div class="mb-1 flex items-center justify-between text-sm">
+          <span class="text-slate-600 dark:text-slate-300">{% translate "Occupancy" %}</span>
+          <span class="font-semibold text-slate-900 dark:text-slate-100">{{ finance.occupancy_rate|pct }}</span>
+        </div>
+        <div class="h-2.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+          {% widthratio finance.participants finance.capacity 100 as fill %}
+          <div class="h-full rounded-full bg-brand-600" style="width: {{ fill }}%"></div>
+        </div>
+      </div>
+
+      <dl class="space-y-2 text-sm">
+        <div class="flex items-center justify-between">
+          <dt class="text-slate-500 dark:text-slate-400">{% translate "Price per person" %}</dt>
+          <dd class="font-medium text-slate-900 dark:text-slate-100">{{ finance.price|money }}</dd>
+        </div>
+        <div class="flex items-center justify-between">
+          <dt class="text-slate-500 dark:text-slate-400">{% translate "Deposit" %}</dt>
+          <dd class="font-medium text-slate-900 dark:text-slate-100">{{ finance.deposit_amount|money }}</dd>
+        </div>
+        <div class="flex items-center justify-between">
+          <dt class="text-slate-500 dark:text-slate-400">{% translate "Average per participant" %}</dt>
+          <dd class="font-medium text-slate-900 dark:text-slate-100">{{ finance.average_per_participant|money }}</dd>
+        </div>
+        <div class="flex items-center justify-between">
+          <dt class="text-slate-500 dark:text-slate-400">{% translate "Full house value" %}</dt>
+          <dd class="font-medium text-slate-900 dark:text-slate-100">{{ finance.potential_revenue|money }}</dd>
+        </div>
+        <div class="flex items-center justify-between border-t border-slate-100 pt-2 dark:border-slate-800">
+          <dt class="text-slate-500 dark:text-slate-400">{% translate "Minimum to run" %}</dt>
+          <dd class="font-medium {% if finance.reaches_minimum %}text-emerald-600 dark:text-emerald-400{% else %}text-rose-600 dark:text-rose-400{% endif %}">
+            {{ finance.participants }} / {{ finance.min_participants }}
+          </dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="card lg:col-span-2">
+    <div class="card-header">
+      <h3 class="card-title">{% translate "Balances" %}</h3>
+      {% can "surf_camps.export" as may_export %}
+      {% if may_export %}
+        <a href="{% url 'surf_camps:export' camp.pk %}" class="btn-secondary btn-sm">
+          {% icon "download" "h-4 w-4" %} {% translate "CSV" %}
+        </a>
+      {% endif %}
+    </div>
+    <div class="card-body">
+      {% if participants %}
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>{% translate "Student" %}</th>
+                <th>{% translate "Room type" %}</th>
+                <th class="text-end">{% translate "Price" %}</th>
+                <th class="text-end">{% translate "Paid" %}</th>
+                <th class="text-end">{% translate "Balance" %}</th>
+                <th>{% translate "Deposit" %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for participant in participants %}
+                <tr>
+                  <td class="font-medium text-slate-900 dark:text-slate-100">{{ participant.student }}</td>
+                  <td>{{ participant.get_room_type_display }}</td>
+                  <td class="text-end tabular-nums">{{ participant.total_price|money }}</td>
+                  <td class="text-end tabular-nums">{{ participant.amount_paid|money }}</td>
+                  <td class="text-end tabular-nums {% if not participant.is_fully_paid %}font-semibold text-amber-600 dark:text-amber-400{% endif %}">
+                    {{ participant.balance_due|money }}
+                  </td>
+                  <td>
+                    {% if participant.deposit_paid %}
+                      <span class="badge-emerald">{% translate "Paid" %}</span>
+                    {% else %}
+                      <span class="badge-amber">{% translate "Pending" %}</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+            <tfoot class="bg-slate-50 dark:bg-slate-800/60">
+              <tr>
+                <th colspan="2" class="px-4 py-3 text-start">{% translate "Total" %}</th>
+                <th class="px-4 py-3 text-end tabular-nums">{{ finance.expected_revenue|money }}</th>
+                <th class="px-4 py-3 text-end tabular-nums">{{ finance.collected|money }}</th>
+                <th class="px-4 py-3 text-end tabular-nums">{{ finance.outstanding|money }}</th>
+                <th></th>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      {% else %}
+        <p class="text-sm text-slate-500 dark:text-slate-400">
+          {% translate "No places sold yet, so there is nothing to collect." %}
+        </p>
+      {% endif %}
+    </div>
+  </section>
+</div>

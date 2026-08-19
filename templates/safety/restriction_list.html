@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Student restrictions" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Student restrictions" %}{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-3 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'safety:dashboard' %}" class="hover:underline">{% translate "Safety" %}</a>
+    <span class="mx-1">/</span>
+    <span class="text-slate-700 dark:text-slate-300">{% translate "Restrictions" %}</span>
+  </nav>
+{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% blocktranslate count counter=blocking_count %}{{ counter }} student may not enter the water.{% plural %}{{ counter }} students may not enter the water.{% endblocktranslate %}
+    {% translate "Bookings and lessons check these before they confirm anything." %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  {% can "safety.add" as may_add %}
+  {% if may_add %}
+    <a href="{% url 'safety:restriction_create' %}" class="btn-primary">
+      {% icon "plus" "h-4 w-4" %} {% translate "New restriction" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <form method="get" action="{% url 'safety:restriction_list' %}" class="card mb-5 flex flex-wrap items-end gap-3 p-4">
+    <div class="min-w-0 flex-1">
+      <label class="form-label" for="id_q">{% translate "Search" %}</label>
+      <div class="relative">
+        <span class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3 text-slate-400">
+          {% icon "search" "h-4 w-4" %}
+        </span>
+        <input type="search" name="q" id="id_q" value="{{ search_term }}"
+               class="form-input ps-9" placeholder="{% translate 'Student name, code or reason…' %}">
+      </div>
+    </div>
+    <div class="w-full sm:w-56">
+      <label class="form-label" for="id_scope">{% translate "Show" %}</label>
+      <select name="scope" id="id_scope" class="form-select">
+        <option value="current" {% if scope == "current" %}selected{% endif %}>{% translate "In force today" %}</option>
+        <option value="blocking" {% if scope == "blocking" %}selected{% endif %}>{% translate "Cannot surf" %}</option>
+        <option value="all" {% if scope == "all" %}selected{% endif %}>{% translate "All on record" %}</option>
+      </select>
+    </div>
+    <button type="submit" class="btn-primary">{% icon "filter" "h-4 w-4" %} {% translate "Apply" %}</button>
+  </form>
+
+  {% if restrictions %}
+    <div class="card table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">{% translate "Student" %}</th>
+            <th scope="col">{% translate "Type" %}</th>
+            <th scope="col">{% translate "Limits" %}</th>
+            <th scope="col">{% translate "Period" %}</th>
+            <th scope="col">{% translate "Issued by" %}</th>
+            <th scope="col" class="text-end">{% translate "Actions" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for restriction in restrictions %}
+            <tr>
+              <td>
+                <a href="{% url 'students:detail' restriction.student.pk %}"
+                   class="font-medium text-brand-600 hover:underline dark:text-brand-400">
+                  {{ restriction.student.full_name }}
+                </a>
+                <p class="font-mono text-xs text-slate-500 dark:text-slate-400">{{ restriction.student.student_code }}</p>
+              </td>
+              <td>
+                {{ restriction.get_restriction_type_display }}
+                {% if restriction.cannot_surf %}
+                  <span class="badge-rose ms-1">{% translate "No water" %}</span>
+                {% elif restriction.requires_supervision %}
+                  <span class="badge-amber ms-1">{% translate "Supervised" %}</span>
+                {% endif %}
+              </td>
+              <td class="text-xs">
+                <p class="text-slate-700 dark:text-slate-300">{{ restriction.description|truncatewords:16 }}</p>
+                {% if restriction.limit_summary %}
+                  <p class="mt-0.5 text-slate-500 dark:text-slate-400">{{ restriction.limit_summary|join:" · " }}</p>
+                {% endif %}
+              </td>
+              <td class="whitespace-nowrap text-xs">
+                {{ restriction.starts_on|date:"d.m.Y" }} –
+                {% if restriction.ends_on %}
+                  {{ restriction.ends_on|date:"d.m.Y" }}
+                {% else %}
+                  <span class="font-medium">{% translate "open ended" %}</span>
+                {% endif %}
+                {% if restriction.is_current %}
+                  <span class="badge-rose ms-1">{% translate "In force" %}</span>
+                {% elif not restriction.is_active %}
+                  <span class="badge-slate ms-1">{% translate "Lifted" %}</span>
+                {% else %}
+                  <span class="badge-slate ms-1">{% translate "Not current" %}</span>
+                {% endif %}
+              </td>
+              <td class="text-xs">
+                {% if restriction.issued_by %}{{ restriction.issued_by.get_display_name }}{% else %}—{% endif %}
+              </td>
+              <td class="text-end">
+                <div class="flex flex-wrap items-center justify-end gap-1">
+                  {% can "safety.change" as may_change %}
+                  {% if may_change %}
+                    <a href="{% url 'safety:restriction_update' restriction.pk %}" class="btn-ghost btn-sm">
+                      {% icon "pencil" "h-4 w-4" %}
+                    </a>
+                    {% if restriction.is_active %}
+                      <form method="post" action="{% url 'safety:restriction_lift' restriction.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-ghost btn-sm">{% translate "Lift" %}</button>
+                      </form>
+                    {% endif %}
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% include "partials/pagination.html" %}
+  {% else %}
+    {% include "partials/empty_state.html" with icon_name="user-check" title=_("No restrictions match this filter") subtitle=_("Record a restriction when a student has a medical condition, a skill gap or a temporary limit the beach team must respect.") %}
+  {% endif %}
+{% endblock %}

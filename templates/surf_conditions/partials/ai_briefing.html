@@ -1,0 +1,20 @@
+{% load i18n surf_tags %}
+{% comment %}
+  AI narrative. Loaded on its own so the dashboard never waits for a model, and
+  rendered only when the assistant actually answered — an empty block is better
+  than a placeholder that looks like content.
+{% endcomment %}
+{% if narrative and is_ai_generated %}
+  <section class="ai-surface p-5" aria-labelledby="ai-briefing-heading">
+    <div class="mb-2 flex flex-wrap items-center gap-2">
+      <h2 class="text-sm font-semibold text-violet-900 dark:text-violet-200" id="ai-briefing-heading">
+        {% icon "sparkles" "inline h-4 w-4" %} {% translate "Briefing" %}
+      </h2>
+      {% ai_chip %}
+    </div>
+    <p class="text-sm leading-relaxed text-slate-700 dark:text-slate-300">{{ narrative }}</p>
+    <p class="mt-3 text-xs text-violet-800/80 dark:text-violet-300/80">
+      {% translate "Written by the assistant from the figures above. The score itself is computed, not generated, and a named staff member still signs off every session." %}
+    </p>
+  </section>
+{% endif %}

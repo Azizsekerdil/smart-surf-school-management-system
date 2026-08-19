@@ -1,0 +1,68 @@
+{% load i18n surf_tags %}
+<li id="notification-row-{{ notification.pk }}"
+    class="flex items-start gap-3 px-4 py-3 {% if not notification.is_read %}bg-sky-50/60 dark:bg-sky-500/5{% endif %}">
+
+  <span class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+    {% icon notification.icon_name "h-4 w-4" %}
+  </span>
+
+  <div class="min-w-0 flex-1">
+    <div class="flex flex-wrap items-center gap-2">
+      <p class="text-sm font-medium text-slate-900 dark:text-slate-100">{{ notification.title }}</p>
+      <span class="badge-{{ notification.badge_color }}">{{ notification.get_level_display }}</span>
+      <span class="badge-slate">{{ notification.get_category_display }}</span>
+      {% if not notification.is_read %}
+        <span class="badge-sky">{% translate "New" %}</span>
+      {% endif %}
+    </div>
+
+    {% if notification.body %}
+      <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">{{ notification.body|linebreaksbr }}</p>
+    {% endif %}
+
+    <p class="mt-1 flex flex-wrap items-center gap-x-2 text-xs text-slate-400 dark:text-slate-500">
+      <time datetime="{{ notification.created_at|date:'c' }}">{{ notification.created_at|date:"d.m.Y H:i" }}</time>
+      {% if notification.related_label %}
+        <span aria-hidden="true">·</span>
+        <span class="font-mono">{{ notification.related_label }}</span>
+      {% endif %}
+      {% if notification.is_emailed %}
+        <span aria-hidden="true">·</span>
+        <span class="inline-flex items-center gap-1">{% icon "mail" "h-3 w-3" %} {% translate "E-mailed" %}</span>
+      {% endif %}
+    </p>
+  </div>
+
+  <div class="flex shrink-0 items-center gap-1">
+    {% if notification.link_url %}
+      {# POST, because opening also marks the notification read. #}
+      <form method="post" action="{% url 'notifications:open' notification.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="btn-secondary btn-sm" title="{% translate 'Open' %}">
+          {% icon "external-link" "h-4 w-4" %}
+          <span class="sr-only">{% translate "Open" %}</span>
+        </button>
+      </form>
+    {% endif %}
+
+    {% if notification.is_read %}
+      <button type="button" class="btn-secondary btn-sm"
+              hx-post="{% url 'notifications:mark_unread' notification.pk %}"
+              hx-target="#notification-row-{{ notification.pk }}"
+              hx-swap="outerHTML"
+              title="{% translate 'Mark as unread' %}">
+        {% icon "eye-off" "h-4 w-4" %}
+        <span class="sr-only">{% translate "Mark as unread" %}</span>
+      </button>
+    {% else %}
+      <button type="button" class="btn-secondary btn-sm"
+              hx-post="{% url 'notifications:mark_read' notification.pk %}"
+              hx-target="#notification-row-{{ notification.pk }}"
+              hx-swap="outerHTML"
+              title="{% translate 'Mark as read' %}">
+        {% icon "check" "h-4 w-4" %}
+        <span class="sr-only">{% translate "Mark as read" %}</span>
+      </button>
+    {% endif %}
+  </div>
+</li>

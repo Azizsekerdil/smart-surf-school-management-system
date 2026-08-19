@@ -1,0 +1,27 @@
+{% load i18n surf_tags %}
+{# Swapped wholesale by HTMX when the filter bar changes. #}
+{% if spots %}
+  {% if view_mode == "table" %}
+    {% include "locations/partials/spot_table.html" %}
+  {% else %}
+    {% include "locations/partials/spot_cards.html" %}
+  {% endif %}
+  {% include "partials/pagination.html" %}
+{% else %}
+  {% can "locations.add" as may_add %}
+  {% if has_filters %}
+    {% translate "No spot matches these filters" as empty_title %}
+    {% translate "Widen the level range or clear the filters to see the rest of the coastline." as empty_subtitle %}
+    {% include "partials/empty_state.html" with icon_name="search" title=empty_title subtitle=empty_subtitle %}
+  {% elif may_add %}
+    {% translate "No surf spots yet" as empty_title %}
+    {% translate "Add the breaks your school teaches at. Lessons, camps and the surf score all hang off them." as empty_subtitle %}
+    {% translate "Add the first spot" as empty_action %}
+    {% url 'locations:create' as empty_url %}
+    {% include "partials/empty_state.html" with icon_name="map-pin" title=empty_title subtitle=empty_subtitle action_url=empty_url action_label=empty_action %}
+  {% else %}
+    {% translate "No surf spots yet" as empty_title %}
+    {% translate "Ask a manager to add the school's surf spots." as empty_subtitle %}
+    {% include "partials/empty_state.html" with icon_name="map-pin" title=empty_title subtitle=empty_subtitle %}
+  {% endif %}
+{% endif %}

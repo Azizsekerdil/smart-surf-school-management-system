@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ form_title }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ form_title }}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "Write the steps as instructions someone can follow while frightened. Short lines, one action each." %}
+  </p>
+{% endblock %}
+
+{% block content %}
+  <form method="post" enctype="multipart/form-data" novalidate class="mx-auto max-w-3xl space-y-5">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="alert-error">
+        {% icon "circle-alert" "h-5 w-5 shrink-0" %}
+        <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+      </div>
+    {% endif %}
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "The plan" %}</h2>
+      </div>
+      <div class="card-body grid gap-4 sm:grid-cols-2">
+        {% include "safety/partials/field.html" with field=form.spot %}
+        {% include "safety/partials/field.html" with field=form.title %}
+        {% include "safety/partials/field.html" with field=form.trigger_conditions wrapper_class="sm:col-span-2" %}
+        {% include "safety/partials/field.html" with field=form.assembly_point wrapper_class="sm:col-span-2" %}
+        {% include "safety/partials/field.html" with field=form.steps_text wrapper_class="sm:col-span-2" %}
+        {% include "safety/partials/field.html" with field=form.responsible_role %}
+        {% include "safety/partials/field.html" with field=form.document %}
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Drills" %}</h2>
+      </div>
+      <div class="card-body grid gap-4 sm:grid-cols-2">
+        {% include "safety/partials/field.html" with field=form.last_drill_date %}
+        {% include "safety/partials/field.html" with field=form.next_drill_due %}
+        {% include "safety/partials/field.html" with field=form.is_active wrapper_class="sm:col-span-2" %}
+      </div>
+    </section>
+
+    <div class="flex flex-wrap items-center justify-end gap-2">
+      <a href="{{ cancel_url }}" class="btn-secondary">{% translate "Cancel" %}</a>
+      <button type="submit" class="btn-primary">
+        {% icon "save" "h-4 w-4" %} {% translate "Save plan" %}
+      </button>
+    </div>
+  </form>
+{% endblock %}

@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ lead.full_name }} · {% translate "Lead" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ lead.full_name }}{% endblock %}
+{% block page_subtitle %}
+  <p class="mt-0.5 flex flex-wrap items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+    {% status_badge lead.status lead.get_status_display %}
+    <span>{{ lead.get_source_display }}</span>
+    <span>·</span>
+    <span>{% blocktranslate with days=lead.days_open %}{{ days }} days in the pipeline{% endblocktranslate %}</span>
+  </p>
+{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-3 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'crm:dashboard' %}" class="hover:text-brand-600">{% translate "CRM" %}</a>
+    <span class="mx-1">/</span>
+    <a href="{% url 'crm:lead_list' %}" class="hover:text-brand-600">{% translate "Leads" %}</a>
+    <span class="mx-1">/</span>
+    <span class="text-slate-700 dark:text-slate-300">{{ lead.full_name }}</span>
+  </nav>
+{% endblock %}
+
+{% block page_actions %}
+  {% can "crm.add" as may_add %}
+  {% if may_add %}
+    <button type="button" class="btn-secondary"
+            hx-get="{% url 'crm:interaction_create' %}?lead={{ lead.pk }}"
+            hx-target="#modal-region" hx-swap="innerHTML">
+      {% icon "message-square" "h-4 w-4" %} {% translate "Log interaction" %}
+    </button>
+  {% endif %}
+  {% can "crm.change" as may_change %}
+  {% if may_change %}
+    <a href="{% url 'crm:lead_update' lead.pk %}" class="btn-secondary">
+      {% icon "pencil" "h-4 w-4" %} {% translate "Edit" %}
+    </a>
+  {% endif %}
+  {% can "customers.add" as may_convert %}
+  {% if may_change and may_convert and not lead.converted_customer and lead.status != "lost" %}
+    <a href="{% url 'crm:lead_convert' lead.pk %}" class="btn-primary">
+      {% icon "user-check" "h-4 w-4" %} {% translate "Convert to customer" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  {% if lead.converted_customer %}
+    <div class="alert-success mb-5">
+      {% icon "circle-check" "h-5 w-5" %}
+      <div>
+        {% blocktranslate with customer=lead.converted_customer date=lead.converted_at|date:"d.m.Y" %}
+          Converted into the customer “{{ customer }}” on {{ date }}.
+        {% endblocktranslate %}
+      </div>
+    </div>
+  {% elif lead.status == "lost" %}
+    <div class="alert-warning mb-5">
+      {% icon "circle-x" "h-5 w-5" %}
+      <div>{% blocktranslate with reason=lead.lost_reason %}Lost: {{ reason }}{% endblocktranslate %}</div>
+    </div>
+  {% endif %}
+
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+
+    {# --------------------------------------------------------- lead facts #}
+    <div class="space-y-6 lg:col-span-1">
+      <section class="card">
+        <div class="card-header"><h2 class="card-title">{% translate "Contact" %}</h2></div>
+        <div class="card-body">
+          <dl class="space-y-3 text-sm">
+            <div>
+              <dt class="text-xs uppercase tracking-wide text-slate-400">{% translate "E-mail" %}</dt>
+              <dd class="mt-0.5 text-slate-800 dark:text-slate-200">
+                {% if lead.email %}<a href="mailto:{{ lead.email }}" class="hover:text-brand-600">{{ lead.email }}</a>
+                {% else %}—{% endif %}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs uppercase tracking-wide text-slate-400">{% translate "Phone" %}</dt>
+              <dd class="mt-0.5 text-slate-800 dark:text-slate-200">
+                {% if lead.phone %}<a href="tel:{{ lead.phone }}" class="hover:text-brand-600">{{ lead.phone }}</a>
+                {% else %}—{% endif %}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs uppercase tracking-wide text-slate-400">{% translate "Owner" %}</dt>
+              <dd class="mt-0.5 text-slate-800 dark:text-slate-200">
+                {% if lead.assigned_to %}{{ lead.assigned_to.get_display_name }}
+                {% else %}<span class="text-amber-600 dark:text-amber-400">{% translate "Unassigned" %}</span>{% endif %}
+              </dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-header"><h2 class="card-title">{% translate "Opportunity" %}</h2></div>
+        <div class="card-body">
+          <dl class="space-y-3 text-sm">
+            <div class="flex items-baseline justify-between">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Expected value" %}</dt>
+              <dd class="font-semibold tabular-nums text-slate-900 dark:text-slate-100">{{ lead.expected_value|money }}</dd>
+            </div>
+            <div class="flex items-baseline justify-between">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Probability" %}</dt>
+              <dd class="tabular-nums text-slate-900 dark:text-slate-100">{{ lead.probability|floatformat:0 }}%</dd>
+            </div>
+            <div class="flex items-baseline justify-between border-t border-slate-100 pt-3 dark:border-slate-800">
+              <dt class="text-slate-500 dark:text-slate-400">{% translate "Weighted" %}</dt>
+              <dd class="font-semibold tabular-nums text-brand-600">{{ lead.weighted_value|money }}</dd>
+            </div>
+          </dl>
+          {% if lead.interest %}
+            <div class="mt-4 border-t border-slate-100 pt-4 dark:border-slate-800">
+              <p class="text-xs uppercase tracking-wide text-slate-400">{% translate "Interest" %}</p>
+              <p class="mt-1 whitespace-pre-line text-sm text-slate-700 dark:text-slate-300">{{ lead.interest }}</p>
+            </div>
+          {% endif %}
+        </div>
+      </section>
+
+      {% if lead.next_action %}
+        <section class="card">
+          <div class="card-header"><h2 class="card-title">{% translate "Next action" %}</h2></div>
+          <div class="card-body">
+            <p class="text-sm text-slate-800 dark:text-slate-200">{{ lead.next_action }}</p>
+            {% if lead.next_action_at %}
+              <p class="mt-1 text-xs {% if lead.is_action_overdue %}font-medium text-rose-600 dark:text-rose-400{% else %}text-slate-500 dark:text-slate-400{% endif %}">
+                {{ lead.next_action_at|date:"d.m.Y H:i" }}
+                {% if lead.is_action_overdue %}· {% translate "overdue" %}{% endif %}
+              </p>
+            {% endif %}
+          </div>
+        </section>
+      {% endif %}
+    </div>
+
+    {# ---------------------------------------------------------- timeline #}
+    <div class="lg:col-span-2">
+      <section class="card">
+        <div class="card-header flex items-center justify-between">
+          <h2 class="card-title">{% translate "Interaction history" %}</h2>
+          {% if may_add %}
+            <button type="button" class="btn-secondary btn-sm"
+                    hx-get="{% url 'crm:interaction_create' %}?lead={{ lead.pk }}"
+                    hx-target="#modal-region" hx-swap="innerHTML">
+              {% icon "plus" "h-4 w-4" %} {% translate "Add" %}
+            </button>
+          {% endif %}
+        </div>
+        <div class="card-body"
+             hx-get="{% url 'crm:lead_interactions' lead.pk %}"
+             hx-trigger="crm:interaction-logged from:body"
+             hx-target="#lead-timeline"
+             hx-select="#lead-timeline"
+             hx-swap="outerHTML">
+          {% include "crm/partials/interaction_timeline.html" %}
+        </div>
+      </section>
+    </div>
+  </div>
+{% endblock %}

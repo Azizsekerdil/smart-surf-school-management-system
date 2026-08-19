@@ -1,0 +1,4 @@
+{% load i18n %}
+{# Appended to the thread by HTMX after ai:chat_send. Context: user_text, message, conversation. #}
+{% include "ai/partials/user_bubble.html" with text=user_text when=message.created_at %}
+{% include "ai/partials/assistant_message.html" with message=message %}

@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Sold packages" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Sold packages" %}{% endblock %}
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {% translate "Every package card in circulation, and how many lessons are left on it." %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'finance:package_list' %}" class="btn-secondary">
+    {% icon "package" "h-4 w-4" %} {% translate "Package catalogue" %}
+  </a>
+  {% can "finance.add" as may_add %}
+  {% if may_add %}
+    <a href="{% url 'finance:package_sell' %}" class="btn-primary">
+      {% icon "plus" "h-4 w-4" %} {% translate "Sell a package" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <div class="grid gap-4 sm:grid-cols-2">
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Active cards" %}</p>
+      <p class="stat-value">{{ active_count }}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Value not yet delivered" %}</p>
+      <p class="stat-value">{{ package_liability|money }}</p>
+    </div>
+  </div>
+
+  <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
+    <nav class="flex flex-wrap gap-1" aria-label="{% translate 'Package status' %}">
+      <a href="{% query_string status='all' page=None %}"
+         class="rounded-lg px-3 py-1.5 text-sm font-medium
+                {% if status == 'all' %}bg-brand-600 text-white{% else %}text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800{% endif %}">
+        {% translate "All" %}
+      </a>
+      {% for key, label in status_choices %}
+        <a href="{% query_string status=key page=None %}"
+           class="rounded-lg px-3 py-1.5 text-sm font-medium
+                  {% if status == key %}bg-brand-600 text-white{% else %}text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800{% endif %}">
+          {{ label }}
+        </a>
+      {% endfor %}
+    </nav>
+
+    <form method="get" class="flex items-center gap-2">
+      <input type="hidden" name="status" value="{{ status }}">
+      <div class="relative">
+        <span class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3 text-slate-400">
+          {% icon "search" "h-4 w-4" %}
+        </span>
+        <input type="search" name="q" value="{{ search_term }}" class="form-input ps-9"
+               placeholder="{% translate 'Customer or package' %}"
+               aria-label="{% translate 'Search sold packages' %}">
+      </div>
+      <button type="submit" class="btn-secondary">{% translate "Search" %}</button>
+    </form>
+  </div>
+
+  {% if customer_packages %}
+    <div class="table-wrap mt-4">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">{% translate "Customer" %}</th>
+            <th scope="col">{% translate "Package" %}</th>
+            <th scope="col">{% translate "Bought" %}</th>
+            <th scope="col">{% translate "Expires" %}</th>
+            <th scope="col">{% translate "Used" %}</th>
+            <th scope="col" class="text-end">{% translate "Paid" %}</th>
+            <th scope="col">{% translate "Status" %}</th>
+            <th scope="col"><span class="sr-only">{% translate "Actions" %}</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for card in customer_packages %}
+            <tr>
+              <td class="font-medium text-slate-900 dark:text-slate-100">{{ card.customer }}</td>
+              <td>{{ card.package.name }}</td>
+              <td class="whitespace-nowrap">{{ card.purchased_on|date:"d.m.Y" }}</td>
+              <td class="whitespace-nowrap {% if card.is_expired %}text-rose-600 dark:text-rose-400{% elif card.days_left is not None and card.days_left < 14 %}text-amber-600 dark:text-amber-400{% endif %}">
+                {{ card.expires_on|date:"d.m.Y" }}
+              </td>
+              <td>
+                <div class="flex items-center gap-2">
+                  <div class="h-1.5 w-20 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+                    <div class="h-full rounded-full bg-brand-500" style="width: {{ card.usage_percent }}%"></div>
+                  </div>
+                  <span class="tabular-nums text-xs">{{ card.lessons_used }} / {{ card.lessons_total }}</span>
+                </div>
+              </td>
+              <td class="text-end tabular-nums">{{ card.amount_paid|money }}</td>
+              <td>{% status_badge card.status card.get_status_display %}</td>
+              <td class="text-end">
+                {% can "finance.change" as may_use %}
+                {% if may_use and card.is_usable %}
+                  <a href="{% url 'finance:customer_package_use' card.pk %}" class="btn-secondary btn-sm">
+                    {% icon "check" "h-3.5 w-3.5" %} {% translate "Use a lesson" %}
+                  </a>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% include "partials/pagination.html" %}
+  {% else %}
+    {% can "finance.add" as may_add %}
+    {% if may_add %}
+      {% url 'finance:package_sell' as sell_url %}
+      {% include "partials/empty_state.html" with icon_name="package" title=_("No packages sold") subtitle=_("Nothing matches this filter.") action_url=sell_url action_label=_("Sell a package") %}
+    {% else %}
+      {% include "partials/empty_state.html" with icon_name="package" title=_("No packages sold") subtitle=_("Nothing matches this filter.") %}
+    {% endif %}
+  {% endif %}
+{% endblock %}

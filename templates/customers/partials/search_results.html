@@ -1,0 +1,36 @@
+{% load i18n surf_tags %}
+{% comment %} Type-ahead results for booking / rental screens.
+   Usage: hx-get="{% url 'customers:search' %}" hx-trigger="keyup changed delay:300ms"
+          hx-target="#customer-search-results" name="q" {% endcomment %}
+<div id="customer-search-results" class="divide-y divide-slate-100 dark:divide-slate-800">
+  {% for customer in results %}
+    <button type="button"
+            class="flex w-full items-center justify-between gap-3 px-3 py-2 text-start hover:bg-slate-50 dark:hover:bg-slate-800"
+            data-customer-id="{{ customer.pk }}"
+            data-customer-code="{{ customer.customer_code }}"
+            data-customer-name="{{ customer.full_name }}"
+            data-target="{{ target }}">
+      <span class="min-w-0">
+        <span class="block truncate text-sm font-medium text-slate-900 dark:text-slate-100">{{ customer.full_name }}</span>
+        <span class="block truncate text-xs text-slate-500 dark:text-slate-400">
+          {{ customer.customer_code }}{% if customer.phone %} · {{ customer.phone }}{% endif %}
+        </span>
+      </span>
+      {% if customer.is_minor %}<span class="badge-amber">{% translate "Under 18" %}</span>{% endif %}
+    </button>
+  {% empty %}
+    {% if term %}
+      <p class="px-3 py-4 text-sm text-slate-500 dark:text-slate-400">
+        {% translate "No customer found." %}
+        {% can "customers.add" as may_add %}
+        {% if may_add %}
+          <button type="button" class="ms-1 text-brand-700 underline dark:text-brand-300"
+                  hx-get="{% url 'customers:quick_create' %}?target={{ target }}"
+                  hx-target="#modal-region">
+            {% translate "Create one" %}
+          </button>
+        {% endif %}
+      </p>
+    {% endif %}
+  {% endfor %}
+</div>

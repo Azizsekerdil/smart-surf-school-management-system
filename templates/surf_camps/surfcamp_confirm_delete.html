@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Delete camp" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Delete camp" %}{% endblock %}
+
+{% block content %}
+  <div class="card mx-auto max-w-xl">
+    <div class="card-body space-y-4">
+      <div class="alert-warning">
+        {% icon "triangle-alert" "h-5 w-5 shrink-0" %}
+        <div>
+          <p class="font-medium">
+            {% blocktranslate with name=camp.name %}Delete “{{ name }}”?{% endblocktranslate %}
+          </p>
+          <p class="mt-1">
+            {% translate "The camp, its days and its programme are archived and disappear from every list. Cancel the camp instead if people have already booked." %}
+          </p>
+        </div>
+      </div>
+
+      <dl class="space-y-1.5 text-sm">
+        <div class="flex justify-between">
+          <dt class="text-slate-500 dark:text-slate-400">{% translate "Code" %}</dt>
+          <dd class="font-mono text-slate-900 dark:text-slate-100">{{ camp.code }}</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-slate-500 dark:text-slate-400">{% translate "Dates" %}</dt>
+          <dd class="text-slate-900 dark:text-slate-100">{{ camp.start_date|date:"d.m.Y" }} – {{ camp.end_date|date:"d.m.Y" }}</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-slate-500 dark:text-slate-400">{% translate "Participants" %}</dt>
+          <dd class="text-slate-900 dark:text-slate-100">{{ camp.participant_count }}</dd>
+        </div>
+      </dl>
+
+      <form method="post" class="flex justify-end gap-2">
+        {% csrf_token %}
+        <a href="{% url 'surf_camps:detail' camp.pk %}" class="btn-secondary">{% translate "Keep it" %}</a>
+        <button type="submit" class="btn-danger">
+          {% icon "trash-2" "h-4 w-4" %} {% translate "Delete camp" %}
+        </button>
+      </form>
+    </div>
+  </div>
+{% endblock %}

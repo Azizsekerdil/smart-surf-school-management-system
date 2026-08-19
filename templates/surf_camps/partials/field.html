@@ -1,0 +1,23 @@
+{% load i18n %}
+{# Renders one bound form field with label, help text and errors. #}
+{% if field.widget_type == "checkbox" %}
+  <div class="flex items-start gap-2.5 py-1.5">
+    {{ field }}
+    <div class="min-w-0">
+      <label class="text-sm font-medium text-slate-700 dark:text-slate-300" for="{{ field.id_for_label }}">
+        {{ field.label }}
+      </label>
+      {% if field.help_text %}<p class="form-help">{{ field.help_text }}</p>{% endif %}
+      {% for error in field.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+    </div>
+  </div>
+{% else %}
+  <div>
+    <label class="form-label" for="{{ field.id_for_label }}">
+      {{ field.label }}{% if field.field.required %}<span class="text-rose-500" aria-hidden="true"> *</span>{% endif %}
+    </label>
+    {{ field }}
+    {% if field.help_text %}<p class="form-help">{{ field.help_text }}</p>{% endif %}
+    {% for error in field.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+  </div>
+{% endif %}

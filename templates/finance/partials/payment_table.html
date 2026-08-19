@@ -1,0 +1,59 @@
+{% load i18n surf_tags %}
+
+{% if payments %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">{% translate "Code" %}</th>
+          <th scope="col">{% translate "Date" %}</th>
+          <th scope="col">{% translate "Customer" %}</th>
+          <th scope="col">{% translate "Category" %}</th>
+          <th scope="col">{% translate "Method" %}</th>
+          <th scope="col">{% translate "For" %}</th>
+          <th scope="col" class="text-end">{% translate "Amount" %}</th>
+          <th scope="col"><span class="sr-only">{% translate "Actions" %}</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for payment in payments %}
+          <tr class="{% if payment.is_refund %}bg-rose-50/60 dark:bg-rose-500/5{% endif %}">
+            <td class="font-medium text-slate-900 dark:text-slate-100">
+              <a href="{% url 'finance:payment_detail' payment.pk %}" class="hover:underline">
+                {{ payment.payment_code }}
+              </a>
+              {% if payment.is_refund %}
+                <span class="badge-violet ms-1">{% translate "Refund" %}</span>
+              {% endif %}
+            </td>
+            <td class="whitespace-nowrap">{{ payment.paid_at|date:"d.m.Y H:i" }}</td>
+            <td class="truncate">{{ payment.customer }}</td>
+            <td>{{ payment.get_category_display }}</td>
+            <td>{{ payment.get_method_display }}</td>
+            <td class="text-slate-500 dark:text-slate-400">
+              {% if payment.linked_label %}{{ payment.linked_label }}{% else %}—{% endif %}
+            </td>
+            <td class="text-end tabular-nums font-semibold {% if payment.is_refund %}text-rose-600 dark:text-rose-400{% else %}text-emerald-600 dark:text-emerald-400{% endif %}">
+              {{ payment.amount|money }}
+            </td>
+            <td class="text-end">
+              <a href="{% url 'finance:payment_detail' payment.pk %}" class="btn-ghost btn-sm">
+                {% translate "Open" %}
+              </a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% include "partials/pagination.html" %}
+{% else %}
+  {% can "finance.add" as may_add %}
+  {% if may_add %}
+    {% url 'finance:payment_create' as create_url %}
+    {% include "partials/empty_state.html" with icon_name="wallet" title=_("No payments here") subtitle=_("Nothing matches this period or filter.") action_url=create_url action_label=_("Take a payment") %}
+  {% else %}
+    {% include "partials/empty_state.html" with icon_name="wallet" title=_("No payments here") subtitle=_("Nothing matches this period or filter.") %}
+  {% endif %}
+{% endif %}

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Campaigns" %} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Campaigns" %}{% endblock %}
+
+{% block page_actions %}
+  {% can "crm.add" as may_add %}
+  {% if may_add %}
+    <a href="{% url 'crm:campaign_create' %}" class="btn-primary">
+      {% icon "plus" "h-4 w-4" %} {% translate "New campaign" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <div class="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Running now" %}</p>
+      <p class="stat-value">{{ running_count }}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Spent" %}</p>
+      <p class="stat-value">{{ total_spend|money }}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">{% translate "Attributed revenue" %}</p>
+      <p class="stat-value">{{ total_revenue|money }}</p>
+    </div>
+  </div>
+
+  <form method="get"
+        class="card mb-5 p-4"
+        hx-get="{% url 'crm:campaign_list' %}"
+        hx-target="#campaign-table"
+        hx-swap="outerHTML"
+        hx-trigger="submit, change from:select, keyup changed delay:400ms from:input[name='q']"
+        hx-push-url="true">
+    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div class="lg:col-span-2">
+        <label for="campaign-search" class="form-label">{% translate "Search" %}</label>
+        <input id="campaign-search" type="search" name="q" value="{{ search_term }}"
+               class="form-input" placeholder="{% translate 'Name, code or subject line' %}">
+      </div>
+      <div>
+        <label for="campaign-status" class="form-label">{% translate "Status" %}</label>
+        <select id="campaign-status" name="status" class="form-select">
+          <option value="">{% translate "All" %}</option>
+          {% for value, label in statuses %}
+            <option value="{{ value }}" {% if current_status == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="campaign-channel" class="form-label">{% translate "Channel" %}</label>
+        <select id="campaign-channel" name="channel" class="form-select">
+          <option value="">{% translate "All" %}</option>
+          {% for value, label in channels %}
+            <option value="{{ value }}" {% if current_channel == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+  </form>
+
+  {% include "crm/partials/campaign_table.html" %}
+{% endblock %}

@@ -1,0 +1,308 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{{ title }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block page_actions %}
+  {% if is_update %}
+    <a href="{% url 'bookings:detail' booking.pk %}" class="btn-secondary">
+      {% icon "chevron-left" "h-4 w-4" %} {% translate "Back to booking" %}
+    </a>
+  {% else %}
+    <a href="{% url 'bookings:calendar' %}" class="btn-secondary">
+      {% icon "calendar-days" "h-4 w-4" %} {% translate "Calendar" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+{% if is_update %}
+
+  {# ------------------------------------------------------------- editing #}
+  <form method="post" class="card max-w-2xl">
+    {% csrf_token %}
+    <div class="card-body space-y-4">
+      {% if form.non_field_errors %}
+        <div class="alert-error">{{ form.non_field_errors }}</div>
+      {% endif %}
+      {% for field in form %}
+        <div>
+          <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% if field.help_text %}<p class="form-help">{{ field.help_text }}</p>{% endif %}
+          {% for error in field.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        </div>
+      {% endfor %}
+    </div>
+    <div class="flex items-center justify-end gap-2 border-t border-slate-200 p-4 dark:border-slate-700">
+      <a href="{% url 'bookings:detail' booking.pk %}" class="btn-ghost">{% translate "Cancel" %}</a>
+      <button type="submit" class="btn-primary">
+        {% icon "save" "h-4 w-4" %} {% translate "Save changes" %}
+      </button>
+    </div>
+  </form>
+
+{% else %}
+
+  {# ------------------------------------------------------------- creating #}
+  <div x-data="bookingForm({
+         bookingType: '{{ form.booking_type.value|default:'lesson'|escapejs }}',
+         customerId: '{{ form.customer.value|default:''|escapejs }}',
+         studentId: '{{ form.student.value|default:''|escapejs }}',
+         lessonId: '{{ form.lesson.value|default:''|escapejs }}',
+         campId: '{{ form.surf_camp.value|default:''|escapejs }}'
+       })">
+
+    <form method="post" id="booking-form" class="grid gap-5 lg:grid-cols-3">
+      {% csrf_token %}
+
+      <div class="space-y-5 lg:col-span-2">
+
+        {% if conflicts %}
+          <div class="alert-error">
+            <p class="font-semibold">{% translate "This booking cannot be made" %}</p>
+            <ul class="mt-1 list-disc space-y-0.5 ps-5 text-sm">
+              {% for conflict in conflicts %}<li>{{ conflict }}</li>{% endfor %}
+            </ul>
+          </div>
+        {% endif %}
+        {% if form.non_field_errors %}
+          <div class="alert-error">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        {# --- step 1: what kind of booking --------------------------------- #}
+        <section class="card">
+          <div class="card-header">
+            <h2 class="card-title">
+              <span class="me-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-brand-600 text-xs text-white">1</span>
+              {% translate "What is being booked" %}
+            </h2>
+          </div>
+          <div class="card-body">
+            <div class="flex flex-wrap gap-2">
+              {% for value, label in form.fields.booking_type.choices %}
+                <label class="cursor-pointer rounded-lg border px-3 py-2 text-sm transition"
+                       :class="bookingType === '{{ value|escapejs }}'
+                               ? 'border-brand-500 bg-brand-50 text-brand-800 dark:bg-brand-500/10 dark:text-brand-200'
+                               : 'border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300'">
+                  <input type="radio" name="booking_type" value="{{ value }}" class="sr-only"
+                         x-model="bookingType" @change="refresh()"
+                         {% if form.booking_type.value == value %}checked{% endif %}>
+                  {{ label }}
+                </label>
+              {% endfor %}
+            </div>
+            {% for error in form.booking_type.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+          </div>
+        </section>
+
+        {# --- step 2: customer & student ----------------------------------- #}
+        <section class="card">
+          <div class="card-header">
+            <h2 class="card-title">
+              <span class="me-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-brand-600 text-xs text-white">2</span>
+              {% translate "Who is it for" %}
+            </h2>
+          </div>
+          <div class="card-body space-y-4">
+            {{ form.customer }}
+            {{ form.student }}
+
+            <div>
+              <label class="form-label" for="customer-search">{% translate "Find the customer" %}</label>
+              <input type="search" id="customer-search" name="customer_q" class="form-input"
+                     placeholder="{% translate 'Name, e-mail or phone' %}"
+                     autocomplete="off"
+                     @keydown.enter.prevent
+                     hx-get="{% url 'bookings:pick_customers' %}"
+                     hx-target="#customer-results"
+                     hx-trigger="keyup changed delay:300ms">
+              <div id="customer-results" class="mt-2"></div>
+              <p class="form-help" x-show="customerId">
+                {% translate "Selected" %}: <span class="font-medium" x-text="customerLabel"></span>
+              </p>
+              {% for error in form.customer.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+            </div>
+
+            <div>
+              <p class="form-label">{% translate "Student" %}</p>
+              <div id="student-options"
+                   hx-get="{% url 'bookings:pick_students' %}"
+                   hx-include="#id_customer"
+                   hx-trigger="students from:body">
+                <p class="text-sm text-slate-500 dark:text-slate-400">
+                  {% translate "Choose a customer first." %}
+                </p>
+              </div>
+              {% for error in form.student.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+            </div>
+          </div>
+        </section>
+
+        {# --- step 3: the session ------------------------------------------ #}
+        <section class="card" x-show="bookingType === 'lesson' || bookingType === 'camp'">
+          <div class="card-header">
+            <h2 class="card-title">
+              <span class="me-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-brand-600 text-xs text-white">3</span>
+              {% translate "Which session" %}
+            </h2>
+          </div>
+          <div class="card-body space-y-4">
+            {{ form.lesson }}
+            {{ form.surf_camp }}
+
+            <div class="grid gap-3 sm:grid-cols-3">
+              <div class="sm:col-span-2">
+                <label class="form-label" for="lesson-search">{% translate "Search sessions with free seats" %}</label>
+                <input type="search" id="lesson-search" name="lesson_q" class="form-input"
+                       placeholder="{% translate 'Lesson name or type' %}"
+                       autocomplete="off"
+                       @keydown.enter.prevent
+                       hx-get="{% url 'bookings:pick_lessons' %}"
+                       hx-target="#lesson-options"
+                       hx-include="#lesson-date"
+                       hx-trigger="keyup changed delay:300ms">
+              </div>
+              <div>
+                <label class="form-label" for="lesson-date">{% translate "On date" %}</label>
+                <input type="date" id="lesson-date" name="lesson_date" class="form-input"
+                       hx-get="{% url 'bookings:pick_lessons' %}"
+                       hx-target="#lesson-options"
+                       hx-include="#lesson-search"
+                       hx-trigger="change">
+              </div>
+            </div>
+
+            <div id="lesson-options"
+                 hx-get="{% url 'bookings:pick_lessons' %}"
+                 hx-trigger="load">
+              <p class="text-sm text-slate-500 dark:text-slate-400">{% translate "Loading sessions…" %}</p>
+            </div>
+            {% for error in form.lesson.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+            {% for error in form.surf_camp.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+          </div>
+        </section>
+
+        {# --- step 4: details ---------------------------------------------- #}
+        <section class="card">
+          <div class="card-header">
+            <h2 class="card-title">
+              <span class="me-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-brand-600 text-xs text-white">4</span>
+              {% translate "Details" %}
+            </h2>
+          </div>
+          <div class="card-body grid gap-4 sm:grid-cols-2">
+            <div>
+              <label class="form-label" for="{{ form.participants.id_for_label }}">{{ form.participants.label }}</label>
+              {{ form.participants }}
+              {% for error in form.participants.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+            </div>
+            <div>
+              <label class="form-label" for="{{ form.source.id_for_label }}">{{ form.source.label }}</label>
+              {{ form.source }}
+            </div>
+            <div>
+              <label class="form-label" for="{{ form.unit_price.id_for_label }}">{{ form.unit_price.label }}</label>
+              {{ form.unit_price }}
+              <p class="form-help">{% translate "Leave blank to use the session's own price." %}</p>
+              {% for error in form.unit_price.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+            </div>
+            <div>
+              <label class="form-label" for="{{ form.discount_amount.id_for_label }}">{{ form.discount_amount.label }}</label>
+              {{ form.discount_amount }}
+              {% for error in form.discount_amount.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+            </div>
+            <div class="sm:col-span-2">
+              <label class="form-label" for="{{ form.special_requests.id_for_label }}">{{ form.special_requests.label }}</label>
+              {{ form.special_requests }}
+              <p class="form-help">{{ form.special_requests.help_text }}</p>
+            </div>
+            <div class="sm:col-span-2">
+              <label class="form-label" for="{{ form.internal_notes.id_for_label }}">{{ form.internal_notes.label }}</label>
+              {{ form.internal_notes }}
+            </div>
+            <div class="sm:col-span-2">
+              <label class="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
+                {{ form.confirm_immediately }} {{ form.confirm_immediately.label }}
+              </label>
+              <p class="form-help">{{ form.confirm_immediately.help_text }}</p>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      {# --- live conflict panel -------------------------------------------- #}
+      <div class="space-y-4">
+        <div class="lg:sticky lg:top-4">
+          {% include "bookings/partials/conflict_panel.html" with conflicts=conflicts has_target=False capacity=0 taken=0 free=0 capacity_label="—" participants=1 unit_price=0 estimated_total=0 %}
+
+          <div class="card mt-4 p-4">
+            <button type="submit" class="btn-primary w-full">
+              {% icon "check" "h-4 w-4" %} {% translate "Create booking" %}
+            </button>
+            <a href="{% url 'bookings:calendar' %}" class="btn-ghost mt-2 w-full justify-center">
+              {% translate "Cancel" %}
+            </a>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+{% if not is_update %}
+<script>
+  function bookingForm(initial) {
+    return {
+      bookingType: initial.bookingType || 'lesson',
+      customerId: initial.customerId || '',
+      customerLabel: '',
+      studentId: initial.studentId || '',
+      studentLabel: '',
+      lessonId: initial.lessonId || '',
+      campId: initial.campId || '',
+
+      refresh() {
+        if (!window.htmx) { return; }
+        var panel = document.getElementById('conflict-panel');
+        if (panel) { window.htmx.trigger(panel, 'recheck'); }
+      },
+      pickCustomer(id, label) {
+        this.customerId = String(id);
+        this.customerLabel = label;
+        this.studentId = '';
+        this.studentLabel = '';
+        this.$nextTick(function () {
+          if (window.htmx) { window.htmx.trigger(document.body, 'students'); }
+        });
+        this.$nextTick(this.refresh.bind(this));
+      },
+      pickStudent(id, label) {
+        this.studentId = String(id);
+        this.studentLabel = label;
+        this.$nextTick(this.refresh.bind(this));
+      },
+      pickLesson(id, price) {
+        this.lessonId = String(id);
+        this.campId = '';
+        this.bookingType = 'lesson';
+        var input = document.getElementById('id_unit_price');
+        if (input && !input.value) { input.value = price; }
+        this.$nextTick(this.refresh.bind(this));
+      },
+      pickCamp(id, price) {
+        this.campId = String(id);
+        this.lessonId = '';
+        this.bookingType = 'camp';
+        var input = document.getElementById('id_unit_price');
+        if (input && !input.value) { input.value = price; }
+        this.$nextTick(this.refresh.bind(this));
+      },
+    };
+  }
+</script>
+{% endif %}
+{% endblock %}

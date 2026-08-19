@@ -1,0 +1,42 @@
+{% load i18n surf_tags %}
+{% comment %} Fourteen days of takings. When there is no payment ledger the card says so —
+   a flat line at zero would read as "we took nothing", which is a different
+   and much worse claim. {% endcomment %}
+<div class="card">
+  <div class="card-header">
+    <h2 class="card-title flex items-center gap-2">{% icon "chart-line" "h-4 w-4 text-brand-500" %} {% translate "Revenue, last 14 days" %}</h2>
+    {% if links.finance_dashboard %}
+      <a href="{{ links.finance_dashboard }}" class="btn-ghost btn-sm">{% translate "Finance" %} {% icon "chevron-right" "h-4 w-4" %}</a>
+    {% endif %}
+  </div>
+
+  {% if revenue_chart %}
+    <div class="card-body">
+      <div class="mb-3 flex flex-wrap items-baseline gap-3">
+        <p class="text-2xl font-semibold tabular-nums text-slate-900 dark:text-slate-50">{{ revenue_chart.total|money }}</p>
+        {% if revenue_chart.previous_total is not None %}
+          {% with change=revenue_chart.total|delta:revenue_chart.previous_total %}
+            {% if change is not None %}
+              <span class="{% if change < 0 %}stat-delta-down{% else %}stat-delta-up{% endif %} inline-flex items-center gap-1">
+                {% if change < 0 %}{% icon "trending-down" "h-3.5 w-3.5" %}{% else %}{% icon "trending-up" "h-3.5 w-3.5" %}{% endif %}
+                {{ change|pct }}
+                <span class="text-slate-400">{% translate "vs. previous 14 days" %}</span>
+              </span>
+            {% endif %}
+          {% endwith %}
+        {% endif %}
+      </div>
+
+      <div class="h-40">
+        <canvas id="revenue-sparkline" aria-label="{% translate 'Daily revenue for the last 14 days' %}" role="img"></canvas>
+      </div>
+      <script type="application/json" id="revenue-series">{{ revenue_chart|to_json }}</script>
+    </div>
+  {% else %}
+    <div class="card-body">
+      <p class="text-sm text-slate-500 dark:text-slate-400">
+        {% translate "No payment ledger yet, so daily takings cannot be charted." %}
+      </p>
+    </div>
+  {% endif %}
+</div>

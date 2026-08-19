@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% load i18n surf_tags %}
+
+{% block title %}{% translate "Complete repair" %} · {{ record.record_code }} · {{ SCHOOL_NAME }}{% endblock %}
+{% block page_title %}{% translate "Complete repair" %}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    {{ record.record_code }} · {{ record.equipment }} · {{ record.get_damage_type_display }}
+  </p>
+{% endblock %}
+
+{% block breadcrumbs %}
+  <nav class="mb-3 text-sm text-slate-500 dark:text-slate-400" aria-label="{% translate 'Breadcrumb' %}">
+    <a href="{% url 'maintenance:list' %}" class="hover:underline">{% translate "Maintenance" %}</a>
+    <span class="mx-1" aria-hidden="true">/</span>
+    <a href="{% url 'maintenance:detail' record.pk %}" class="hover:underline">{{ record.record_code }}</a>
+    <span class="mx-1" aria-hidden="true">/</span>
+    <span>{% translate "Complete" %}</span>
+  </nav>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl">
+
+  {% if other_open %}
+    <div class="alert-warning mb-5" role="status">
+      <span class="mt-0.5 shrink-0">{% icon "triangle-alert" "h-5 w-5" %}</span>
+      <div>
+        <p class="font-medium">{% translate "The item stays out of service after this repair." %}</p>
+        <p class="mt-1 text-xs">
+          {% translate "These records are still open on the same item:" %}
+          {% for other in other_open %}
+            <a href="{% url 'maintenance:detail' other.pk %}" class="font-medium hover:underline">{{ other.record_code }}</a>{% if not forloop.last %}, {% endif %}
+          {% endfor %}
+        </p>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if form.non_field_errors %}
+    <div class="alert-error mb-5" role="alert">
+      <span class="mt-0.5 shrink-0">{% icon "circle-x" "h-5 w-5" %}</span>
+      <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+    </div>
+  {% endif %}
+
+  <form method="post" enctype="multipart/form-data" class="card" novalidate>
+    {% csrf_token %}
+    <div class="card-body space-y-5">
+
+      {% include "maintenance/partials/form_field.html" with field=form.resolution %}
+      {% include "maintenance/partials/form_field.html" with field=form.parts_used %}
+
+      <fieldset class="rounded-lg border border-slate-200 p-4 dark:border-slate-700">
+        <legend class="px-1 text-sm font-medium text-slate-900 dark:text-slate-100">
+          {% translate "Cost" %}
+        </legend>
+        <div class="grid gap-5 sm:grid-cols-3">
+          {% include "maintenance/partials/form_field.html" with field=form.labour_hours %}
+          {% include "maintenance/partials/form_field.html" with field=form.labour_cost %}
+          {% include "maintenance/partials/form_field.html" with field=form.parts_cost %}
+        </div>
+        {% if labour_rate %}
+          <p class="form-help mt-3">
+            {% blocktranslate with rate=labour_rate %}Workshop rate on file: {{ rate }} per hour.{% endblocktranslate %}
+          </p>
+        {% else %}
+          <p class="form-help mt-3">
+            {% translate "No workshop hourly rate is configured, so enter the labour cost directly." %}
+          </p>
+        {% endif %}
+      </fieldset>
+
+      <div class="grid gap-5 sm:grid-cols-2">
+        {% include "maintenance/partials/form_field.html" with field=form.condition_after %}
+        {% include "maintenance/partials/form_field.html" with field=form.photo_after %}
+      </div>
+
+      <fieldset class="space-y-3 rounded-lg border border-slate-200 p-4 dark:border-slate-700">
+        <legend class="px-1 text-sm font-medium text-slate-900 dark:text-slate-100">
+          {% translate "What happens to the item" %}
+        </legend>
+        {% include "maintenance/partials/form_field.html" with field=form.still_unusable %}
+        {% include "maintenance/partials/form_field.html" with field=form.retire_equipment %}
+        <p class="form-help">
+          {% translate "Leave both unticked to return the item to the available pool." %}
+        </p>
+      </fieldset>
+    </div>
+
+    <div class="flex items-center justify-end gap-2 border-t border-slate-200 p-4 dark:border-slate-700">
+      <a href="{% url 'maintenance:detail' record.pk %}" class="btn-secondary">{% translate "Back" %}</a>
+      <button type="submit" class="btn-success">
+        {% icon "circle-check" "h-4 w-4" %} {% translate "Complete repair" %}
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

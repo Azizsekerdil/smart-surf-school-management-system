@@ -1,0 +1,64 @@
+{% load i18n surf_tags %}
+
+{% if articles %}
+  <p class="mb-3 text-sm text-slate-500 dark:text-slate-400">
+    {% if search_term %}
+      {% blocktranslate count counter=paginator.count with term=search_term %}
+        {{ counter }} article matches “{{ term }}”
+      {% plural %}
+        {{ counter }} articles match “{{ term }}”
+      {% endblocktranslate %}
+    {% else %}
+      {% blocktranslate count counter=paginator.count %}{{ counter }} article{% plural %}{{ counter }} articles{% endblocktranslate %}
+    {% endif %}
+    {% if active_category %}
+      · {% blocktranslate with section=active_category.name %}in {{ section }}{% endblocktranslate %}
+    {% endif %}
+  </p>
+
+  <ul class="space-y-3">
+    {% for article in articles %}
+      <li class="card p-5 transition-shadow hover:shadow-card-hover">
+        <div class="flex flex-wrap items-center gap-2">
+          <a href="{{ article.category.get_absolute_url }}" class="badge-sky">
+            {% icon article.category.icon "h-3 w-3" %} {{ article.category.name }}
+          </a>
+          {% if article.related_module %}
+            <span class="badge-slate">{{ article.get_related_module_display }}</span>
+          {% endif %}
+        </div>
+        <a href="{{ article.get_absolute_url }}" class="mt-2 block">
+          <h2 class="text-base font-semibold text-slate-900 hover:text-brand-600 dark:text-slate-100 dark:hover:text-brand-400">
+            {{ article.title }}
+          </h2>
+          <p class="mt-1.5 text-sm text-slate-600 dark:text-slate-400">{{ article.excerpt }}</p>
+        </a>
+        <div class="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+          <span class="inline-flex items-center gap-1">
+            {% icon "clock" "h-3.5 w-3.5" %}
+            {% blocktranslate with minutes=article.reading_minutes %}{{ minutes }} min read{% endblocktranslate %}
+          </span>
+          <span class="inline-flex items-center gap-1">
+            {% icon "eye" "h-3.5 w-3.5" %} {{ article.view_count }}
+          </span>
+        </div>
+      </li>
+    {% endfor %}
+  </ul>
+
+  {% include "partials/pagination.html" %}
+{% else %}
+  {% if search_term %}
+    {% blocktranslate with term=search_term asvar empty_title %}Nothing found for “{{ term }}”{% endblocktranslate %}
+    {% translate "Try a shorter term, the name of the screen, or browse the sections from the Help Center home page." as empty_subtitle %}
+  {% else %}
+    {% translate "No articles to show" as empty_title %}
+    {% translate "Type something to search, or browse the sections from the Help Center home page." as empty_subtitle %}
+  {% endif %}
+  {% include "partials/empty_state.html" with icon_name="search" title=empty_title subtitle=empty_subtitle %}
+  <div class="mt-4 text-center">
+    <a href="{% url 'help_center:home' %}" class="btn-secondary">
+      {% icon "circle-help" "h-4 w-4" %} {% translate "Browse all sections" %}
+    </a>
+  </div>
+{% endif %}

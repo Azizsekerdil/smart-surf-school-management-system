@@ -1,0 +1,23 @@
+{% load i18n surf_tags %}
+
+{% if results %}
+  <ul class="mt-1 max-h-56 divide-y divide-slate-100 overflow-y-auto rounded-lg border border-slate-200 bg-white text-sm shadow-sm dark:divide-slate-800 dark:border-slate-700 dark:bg-slate-900">
+    {% for row in results %}
+      <li>
+        <button type="button"
+                class="flex w-full items-center gap-2 px-3 py-2 text-start hover:bg-slate-50 dark:hover:bg-slate-800"
+                data-target="{{ target|default:kind }}"
+                data-id="{{ row.pk }}"
+                data-label="{{ row.label }}"
+                onclick="surfPickEntity(this)">
+          {% icon "check" "h-3.5 w-3.5 text-slate-300" %}
+          <span class="truncate">{{ row.label }}</span>
+        </button>
+      </li>
+    {% endfor %}
+  </ul>
+{% elif term %}
+  <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+    {% blocktranslate %}Nothing found for “{{ term }}”.{% endblocktranslate %}
+  </p>
+{% endif %}
