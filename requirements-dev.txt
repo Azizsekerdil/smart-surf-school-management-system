@@ -16,7 +16,7 @@ responses>=0.25                        # Apache-2.0
 ruff>=0.7                              # MIT   (lint + format)
 bandit>=1.7                            # Apache-2.0 (security static analysis)
 pip-audit>=2.7                         # Apache-2.0 (dependency CVE audit)
-django-debug-toolbar>=4.4              # BSD-3-Clause
+django-debug-toolbar>=7.1.1              # BSD-3-Clause
 
 # --- presentation generation (scripts/generate_presentation.py) --------------
 # Windows-only for the PDF/PNG step: pywin32 drives PowerPoint over COM, which
