@@ -62,7 +62,7 @@
           <div class="overflow-x-auto bg-slate-950 p-4 font-mono text-[0.75rem] leading-5 text-slate-300">
             <div class="min-w-max">
               {% for line in diff_lines %}
-                <div class="min-h-[1.25rem] whitespace-pre
+                <div class="min-h-5 whitespace-pre
                             {% if line.kind == 'add' %}bg-emerald-500/15 text-emerald-300
                             {% elif line.kind == 'remove' %}bg-rose-500/15 text-rose-300
                             {% elif line.kind == 'hunk' %}mt-2 bg-sky-500/10 font-semibold text-sky-300
@@ -165,7 +165,7 @@
 
               <label class="flex items-start gap-2.5 text-sm text-slate-700 dark:text-slate-300" for="id_create_checkpoint">
                 <input type="checkbox" name="create_checkpoint" id="id_create_checkpoint" value="1"
-                       class="mt-0.5 h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500 dark:border-slate-600">
+                       class="mt-0.5 h-4 w-4 rounded-sm border-slate-300 text-brand-600 focus:ring-brand-500 dark:border-slate-600">
                 <span>
                   <span class="font-medium">{% translate "Create a git checkpoint branch first" %}</span>
                   <span class="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">

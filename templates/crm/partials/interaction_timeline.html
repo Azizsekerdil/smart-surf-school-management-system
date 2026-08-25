@@ -2,7 +2,7 @@
 <ol id="lead-timeline" class="relative space-y-4">
   {% for interaction in interactions %}
     <li class="relative ps-8">
-      <span class="absolute start-0 top-0.5 flex h-6 w-6 items-center justify-center rounded-full
+      <span class="absolute inset-s-0 top-0.5 flex h-6 w-6 items-center justify-center rounded-full
                    {% if interaction.is_negative %}bg-rose-100 text-rose-600 dark:bg-rose-500/20 dark:text-rose-300
                    {% elif interaction.sentiment == 'positive' %}bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-300
                    {% else %}bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-300{% endif %}">

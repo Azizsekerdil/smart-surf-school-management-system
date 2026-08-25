@@ -104,7 +104,7 @@
               </template>
               <template x-for="event in events" :key="event.id">
                 <a :href="`${detailBase}${event.id}/`"
-                   class="absolute end-2 start-12 overflow-hidden rounded-md px-2 py-1 text-xs text-white shadow-sm transition hover:opacity-90"
+                   class="absolute inset-e-2 inset-s-12 overflow-hidden rounded-md px-2 py-1 text-xs text-white shadow-xs transition hover:opacity-90"
                    :style="`top:${offset(event.start)}px; height:${Math.max(24, offset(event.end) - offset(event.start))}px; background-color:${event.colour}`">
                   <span class="block font-semibold" x-text="`${event.start} ${event.lesson_type}`"></span>
                   <span class="block opacity-90" x-text="`${event.instructor} · ${event.booked}/${event.capacity}`"></span>

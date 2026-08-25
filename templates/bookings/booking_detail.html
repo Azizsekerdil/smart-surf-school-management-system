@@ -196,7 +196,7 @@
           <ol class="relative space-y-4 border-s border-slate-200 ps-5 dark:border-slate-700">
             {% for entry in timeline %}
               <li class="relative">
-                <span class="absolute -start-[27px] flex h-5 w-5 items-center justify-center rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800">
+                <span class="absolute inset-s-[-27px] flex h-5 w-5 items-center justify-center rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800">
                   {% icon entry.icon "h-3 w-3" %}
                 </span>
                 <p class="text-sm font-medium text-slate-800 dark:text-slate-100">{{ entry.label }}</p>

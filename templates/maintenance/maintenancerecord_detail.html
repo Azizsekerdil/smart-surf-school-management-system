@@ -168,7 +168,7 @@
         <div class="card-body">
           <ol class="relative space-y-5 border-s border-slate-200 ps-6 dark:border-slate-700">
             <li>
-              <span class="absolute -start-2 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500"></span>
+              <span class="absolute -inset-s-2 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500"></span>
               <p class="text-sm font-medium text-slate-900 dark:text-slate-100">{% translate "Reported" %}</p>
               <p class="text-xs text-slate-500 dark:text-slate-400">
                 {{ record.reported_at|date:"d.m.Y H:i" }}
@@ -177,7 +177,7 @@
             </li>
             {% if record.started_at %}
               <li>
-                <span class="absolute -start-2 flex h-4 w-4 items-center justify-center rounded-full bg-sky-500"></span>
+                <span class="absolute -inset-s-2 flex h-4 w-4 items-center justify-center rounded-full bg-sky-500"></span>
                 <p class="text-sm font-medium text-slate-900 dark:text-slate-100">{% translate "Work started" %}</p>
                 <p class="text-xs text-slate-500 dark:text-slate-400">
                   {{ record.started_at|date:"d.m.Y H:i" }}
@@ -187,7 +187,7 @@
             {% endif %}
             {% if record.completed_at %}
               <li>
-                <span class="absolute -start-2 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500"></span>
+                <span class="absolute -inset-s-2 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500"></span>
                 <p class="text-sm font-medium text-slate-900 dark:text-slate-100">
                   {% if record.status == "cancelled" %}{% translate "Cancelled" %}{% else %}{% translate "Completed" %}{% endif %}
                 </p>
@@ -200,7 +200,7 @@
               </li>
             {% else %}
               <li>
-                <span class="absolute -start-2 flex h-4 w-4 items-center justify-center rounded-full bg-slate-300 dark:bg-slate-600"></span>
+                <span class="absolute -inset-s-2 flex h-4 w-4 items-center justify-center rounded-full bg-slate-300 dark:bg-slate-600"></span>
                 <p class="text-sm font-medium text-slate-500 dark:text-slate-400">{% translate "Not completed yet" %}</p>
                 <p class="text-xs text-slate-500 dark:text-slate-400">
                   {% blocktranslate with days=record.age_days %}Open for {{ days }} days{% endblocktranslate %}
