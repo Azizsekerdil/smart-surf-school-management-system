@@ -63,7 +63,7 @@
                 {% translate "Quick return" %}
               </label>
               <div class="relative">
-                <span class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3 text-slate-400">
+                <span class="pointer-events-none absolute inset-y-0 inset-s-0 flex items-center ps-3 text-slate-400">
                   {% icon "barcode" "h-4 w-4" %}
                 </span>
                 <input type="text" name="asset_code" id="quick-asset-code" autocomplete="off"
@@ -102,7 +102,7 @@
           hx-indicator="#rental-search-indicator">
       <input type="hidden" name="tab" value="{{ tab }}">
       <div class="relative">
-        <span class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3 text-slate-400">
+        <span class="pointer-events-none absolute inset-y-0 inset-s-0 flex items-center ps-3 text-slate-400">
           {% icon "search" "h-4 w-4" %}
         </span>
         <input type="search" name="q" value="{{ search_term }}"

@@ -40,7 +40,7 @@
                 {% else %}—{% endif %}
               </td>
               <td class="text-end tabular-nums">{{ result.model_count }}</td>
-              <td class="max-w-md break-words text-xs {% if not result.ok %}text-rose-700 dark:text-rose-300{% else %}text-slate-500 dark:text-slate-400{% endif %}">
+              <td class="max-w-md wrap-break-word text-xs {% if not result.ok %}text-rose-700 dark:text-rose-300{% else %}text-slate-500 dark:text-slate-400{% endif %}">
                 {{ result.message|default:"—" }}
               </td>
             </tr>

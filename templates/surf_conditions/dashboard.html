@@ -45,7 +45,7 @@
     {# --- spot selector --------------------------------------------------- #}
     <form method="get" action="{% url 'surf_conditions:dashboard' %}" class="card mb-5 p-4">
       <div class="flex flex-wrap items-end gap-3">
-        <div class="min-w-[14rem] flex-1">
+        <div class="min-w-56 flex-1">
           <label class="form-label" for="spot-select">{% translate "Surf spot" %}</label>
           <select name="spot" id="spot-select" class="form-select"
                   x-data x-on:change="$el.form.submit()">

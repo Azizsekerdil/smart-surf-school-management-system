@@ -74,7 +74,7 @@
               <input type="number" name="quantity" value="{{ line.quantity|floatformat:'-2' }}"
                      step="{% if line.product.allows_fractional_quantity %}0.25{% else %}1{% endif %}"
                      min="0" inputmode="decimal"
-                     class="w-16 border-x border-slate-300 bg-transparent px-1 py-1.5 text-center text-sm tabular-nums text-slate-900 focus:outline-none dark:border-slate-600 dark:text-slate-100"
+                     class="w-16 border-x border-slate-300 bg-transparent px-1 py-1.5 text-center text-sm tabular-nums text-slate-900 focus:outline-hidden dark:border-slate-600 dark:text-slate-100"
                      hx-post="{% url 'pos:cart_update' %}"
                      hx-vals='{"product": "{{ line.product.pk }}"}'
                      hx-trigger="change"

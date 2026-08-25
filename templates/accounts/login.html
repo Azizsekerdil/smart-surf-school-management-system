@@ -7,7 +7,7 @@
 <div class="grid min-h-screen lg:grid-cols-2">
 
   {# --- brand panel ------------------------------------------------------ #}
-  <div class="relative hidden overflow-hidden bg-gradient-to-br from-brand-700 via-brand-600 to-brand-900 lg:block">
+  <div class="relative hidden overflow-hidden bg-linear-to-br from-brand-700 via-brand-600 to-brand-900 lg:block">
     <svg class="absolute inset-x-0 bottom-0 text-white/10" viewBox="0 0 1440 320" preserveAspectRatio="none" aria-hidden="true">
       <path fill="currentColor" d="M0,224L48,213.3C96,203,192,181,288,181.3C384,181,480,203,576,213.3C672,224,768,224,864,208C960,192,1056,160,1152,154.7C1248,149,1344,171,1392,181.3L1440,192L1440,320L0,320Z"></path>
     </svg>
@@ -17,7 +17,7 @@
 
     <div class="relative flex h-full flex-col justify-between p-12 text-white">
       <div class="flex items-center gap-3">
-        <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-white/15 backdrop-blur">
+        <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-white/15 backdrop-blur-sm">
           {% icon "waves" "h-6 w-6" %}
         </span>
         <span class="text-lg font-semibold">{{ school_name }}</span>
@@ -72,9 +72,9 @@
             <p class="font-medium">{% translate "No users exist yet." %}</p>
             <p class="mt-1 text-xs">
               {% translate "Create the documented first-run account with:" %}
-              <code class="mt-1 block rounded bg-amber-100 px-2 py-1 font-mono text-[0.7rem] dark:bg-amber-500/20">python manage.py bootstrap_admin</code>
+              <code class="mt-1 block rounded-sm bg-amber-100 px-2 py-1 font-mono text-[0.7rem] dark:bg-amber-500/20">python manage.py bootstrap_admin</code>
               {% translate "or create your own administrator with:" %}
-              <code class="mt-1 block rounded bg-amber-100 px-2 py-1 font-mono text-[0.7rem] dark:bg-amber-500/20">python manage.py createsuperuser</code>
+              <code class="mt-1 block rounded-sm bg-amber-100 px-2 py-1 font-mono text-[0.7rem] dark:bg-amber-500/20">python manage.py createsuperuser</code>
             </p>
           </div>
         </div>

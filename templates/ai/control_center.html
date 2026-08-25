@@ -213,7 +213,7 @@
                   <time datetime="{{ provider.last_at|date:'c' }}">{{ provider.last_at|date:"d.m.Y H:i" }}</time>
                 </p>
                 {% if provider.last_message %}
-                  <p class="mt-1 break-words text-[0.7rem] text-slate-500 dark:text-slate-400">{{ provider.last_message }}</p>
+                  <p class="mt-1 wrap-break-word text-[0.7rem] text-slate-500 dark:text-slate-400">{{ provider.last_message }}</p>
                 {% endif %}
               {% else %}
                 <p class="mt-0.5 text-sm text-slate-500 dark:text-slate-400">{% translate "Never tested" %}</p>

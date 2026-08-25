@@ -3,7 +3,7 @@
 <div class="relative" x-data="{ open: false }" @keydown.escape.window="open = false">
   <button type="button"
           @click="open = !open"
-          class="w-full rounded-md border-s-4 bg-white/90 px-1.5 py-1 text-start text-xs shadow-sm ring-1 ring-slate-200 transition hover:ring-brand-400 dark:bg-slate-800/90 dark:ring-slate-700"
+          class="w-full rounded-md border-s-4 bg-white/90 px-1.5 py-1 text-start text-xs shadow-xs ring-1 ring-slate-200 transition hover:ring-brand-400 dark:bg-slate-800/90 dark:ring-slate-700"
           style="border-inline-start-color: {{ event.colour }}"
           :aria-expanded="open">
     <span class="flex items-center gap-1">

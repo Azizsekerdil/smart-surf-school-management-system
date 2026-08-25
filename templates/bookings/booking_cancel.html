@@ -30,7 +30,7 @@
         <div x-data="{ override: {{ form.override_fee.value|yesno:'true,false,false' }} }">
           <label class="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
             <input type="checkbox" name="override_fee" value="on" x-model="override"
-                   class="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500 dark:border-slate-600">
+                   class="h-4 w-4 rounded-sm border-slate-300 text-sky-600 focus:ring-sky-500 dark:border-slate-600">
             {{ form.override_fee.label }}
           </label>
           <div class="mt-2" x-show="override" x-transition style="display: none">
