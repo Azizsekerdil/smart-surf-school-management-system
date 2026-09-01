@@ -1,0 +1,30 @@
+name: macOS Paketi
+
+# Elle (workflow_dispatch) veya v* etiketiyle tetiklenir. Tüm paketleme
+# mantığı build_macos.sh içindedir; iş akışı yalnızca ortamı hazırlar.
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - name: macOS paketini oluştur
+        run: |
+          chmod +x build_macos.sh && ./build_macos.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Smart-Surf-School-macOS
+          path: dist/Smart Surf School-macOS.zip
+          if-no-files-found: error
