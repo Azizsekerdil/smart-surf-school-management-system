@@ -509,7 +509,9 @@ def _tr() -> list[dict]:
                 "Yapay zekâ yalnızca gerçek veriyi konuşur",
                 "İnternet olmadan da tam çalışır",
             ],
-            "meta": f"Sürüm {APP_VERSION}  ·  {REPO_URL}",
+            "meta": f"Sürüm {APP_VERSION}  ·  {REPO_URL}\n"
+            f"Windows 10/11 (x64) + macOS (Apple Silicon)  ·  İndirme: {REPO_URL}/releases (v{APP_VERSION})\n"
+            "macOS paketi Apple Silicon (arm64) içindir ve notarize edilmemiştir — ilk açılışta sağ tık → Aç.",
         },
     ]
 
@@ -948,7 +950,9 @@ def _en() -> list[dict]:
                 "The assistant only ever talks about real data",
                 "It works with no internet at all",
             ],
-            "meta": f"Version {APP_VERSION}  ·  {REPO_URL}",
+            "meta": f"Version {APP_VERSION}  ·  {REPO_URL}\n"
+            f"Windows 10/11 (x64) & macOS (Apple Silicon)  ·  Download: GitHub Releases (v{APP_VERSION})\n"
+            "The macOS build targets Apple Silicon (arm64) and is not notarized — first launch: right-click → Open.",
         },
     ]
 
