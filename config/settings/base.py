@@ -13,6 +13,8 @@ Design rules enforced here
 
 from __future__ import annotations
 
+import os
+import sys
 from pathlib import Path
 
 import environ
@@ -21,7 +23,30 @@ import environ
 # Paths
 # ---------------------------------------------------------------------------
 # config/settings/base.py -> config/settings -> config -> <project root>
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
+#
+# When packaged with PyInstaller (see launcher.py + surf_school.spec) the
+# source tree is unpacked into a *temporary* directory (`sys._MEIPASS`) that
+# is deleted when the program exits. Read-only resources (templates, static
+# files, code) live there, but anything writable — the SQLite database,
+# media uploads, logs, backups — must go NEXT TO THE EXE instead, otherwise
+# all data would silently disappear on every restart.
+if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+    BASE_DIR = Path(sys._MEIPASS)  # type: ignore[attr-defined]
+    IS_FROZEN = True
+else:
+    BASE_DIR = Path(__file__).resolve().parent.parent.parent
+    IS_FROZEN = False
+
+#: Directory for writable data (database, media, logs, backups). In a normal
+#: checkout this is the project root, so development behaviour is unchanged.
+_data_override = os.environ.get("SURF_SCHOOL_DATA_DIR", "").strip()
+if _data_override:
+    DATA_DIR = Path(_data_override).resolve()
+elif IS_FROZEN:
+    DATA_DIR = Path(sys.executable).resolve().parent
+else:
+    DATA_DIR = BASE_DIR
+DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 # ---------------------------------------------------------------------------
 # Environment
@@ -30,10 +55,13 @@ env = environ.Env()
 
 # Read .env if present. Absence is not an error: every value below has a
 # development-safe default so `python manage.py runserver` works on a fresh
-# checkout with zero configuration.
-_ENV_FILE = BASE_DIR / ".env"
-if _ENV_FILE.exists():
-    env.read_env(str(_ENV_FILE))
+# checkout with zero configuration. In the packaged desktop build the user's
+# .env sits next to the exe (DATA_DIR); in development both paths are the
+# same file, so only the first existing one is read.
+for _env_file in (DATA_DIR / ".env", BASE_DIR / ".env"):
+    if _env_file.exists():
+        env.read_env(str(_env_file))
+        break
 
 DEBUG = env.bool("DJANGO_DEBUG", default=True)
 
@@ -184,7 +212,7 @@ TEMPLATES = [
 DATABASES = {
     "default": env.db_url(
         "DATABASE_URL",
-        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        default=f"sqlite:///{DATA_DIR / 'db.sqlite3'}",
     )
 }
 DATABASES["default"]["CONN_MAX_AGE"] = env.int("DATABASE_CONN_MAX_AGE", default=60)
@@ -297,12 +325,14 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 
 MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_ROOT = DATA_DIR / "media"
 
 STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        # WhiteNoise manifest storage, but tolerant of vendored bundles that
+        # reference source maps we do not ship (see apps/core/staticfiles.py).
+        "BACKEND": "apps.core.staticfiles.ForgivingCompressedManifestStaticFilesStorage",
     },
 }
 
@@ -553,7 +583,7 @@ AI_TERMINAL = {
 # Backup
 # ---------------------------------------------------------------------------
 BACKUP = {
-    "ROOT": Path(env("BACKUP_ROOT", default=str(BASE_DIR / "backups"))),
+    "ROOT": Path(env("BACKUP_ROOT", default=str(DATA_DIR / "backups"))),
     "RETENTION_DAILY": env.int("BACKUP_RETENTION_DAILY", default=7),
     "RETENTION_WEEKLY": env.int("BACKUP_RETENTION_WEEKLY", default=4),
     "RETENTION_MONTHLY": env.int("BACKUP_RETENTION_MONTHLY", default=12),
@@ -576,7 +606,7 @@ BACKUP = {
 # ---------------------------------------------------------------------------
 # Logging — structured, with automatic secret redaction
 # ---------------------------------------------------------------------------
-LOG_DIR = BASE_DIR / "logs"
+LOG_DIR = DATA_DIR / "logs"
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 LOGGING = {

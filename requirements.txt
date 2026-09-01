@@ -52,3 +52,6 @@ bleach>=6.1                            # Apache-2.0 (HTML sanitising)
 
 # --- Content -----------------------------------------------------------------
 Markdown>=3.7                          # BSD-3-Clause (Help Center / Training content)
+
+# --- Desktop packaging (launcher.py / surf_school.spec) ----------------------
+waitress>=3.0                          # ZPL-2.1 (pure-python production WSGI server)

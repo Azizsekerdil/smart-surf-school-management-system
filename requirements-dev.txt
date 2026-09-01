@@ -13,6 +13,8 @@ Faker>=30.0                            # MIT
 freezegun>=1.5                         # Apache-2.0
 responses>=0.25                        # Apache-2.0
 
+pyinstaller>=6.10                      # GPL-2.0-with-exception (build tool only, not shipped)
+
 ruff>=0.7                              # MIT   (lint + format)
 bandit>=1.7                            # Apache-2.0 (security static analysis)
 pip-audit>=2.7                         # Apache-2.0 (dependency CVE audit)

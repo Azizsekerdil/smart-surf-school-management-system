@@ -97,6 +97,20 @@ urlpatterns += i18n_patterns(
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.BASE_DIR / "static")
+elif getattr(settings, "SERVE_MEDIA", False):
+    # Desktop (PyInstaller) build: DEBUG is off and there is no reverse proxy
+    # in front of the app, so Django serves media uploads itself. Static files
+    # are handled by WhiteNoise; this covers /media/ only.
+    from django.urls import re_path
+    from django.views.static import serve as _media_serve
+
+    urlpatterns += [
+        re_path(
+            r"^media/(?P<path>.*)$",
+            _media_serve,
+            {"document_root": settings.MEDIA_ROOT},
+        ),
+    ]
 
 handler400 = "apps.core.views.bad_request"
 handler403 = "apps.core.views.permission_denied"
