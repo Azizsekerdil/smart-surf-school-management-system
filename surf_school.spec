@@ -70,6 +70,11 @@ hiddenimports = [
     "psycopg",
     # Şifreleme / oturum / önbellek
     "django.contrib.auth.hashers",
+    # Argon2id parola hash'i: Django hasher'ı "argon2" paketini çalışma
+    # anında importlib ile yükler; statik çözümleyici bunu göremez.
+    "argon2",
+    "argon2.low_level",
+    "_cffi_backend",
     "django.contrib.sessions.backends.db",
     "django.contrib.staticfiles.storage",
     "django.core.cache.backends.locmem",
