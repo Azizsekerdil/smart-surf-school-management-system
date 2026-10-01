@@ -21,7 +21,7 @@ jobs:
       - name: macOS paketini oluştur
         run: |
           chmod +x build_macos.sh && ./build_macos.sh
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: Smart-Surf-School-macOS
           path: dist/Smart Surf School-macOS.zip
