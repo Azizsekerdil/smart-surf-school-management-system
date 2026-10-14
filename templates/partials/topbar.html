@@ -1,5 +1,5 @@
 {% load i18n static surf_tags %}
-<header class="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-slate-200 bg-white/90 px-4 backdrop-blur sm:px-6 lg:px-8 dark:border-slate-800 dark:bg-slate-900/90">
+<header class="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-slate-200 bg-white/90 px-4 backdrop-blur-sm sm:px-6 lg:px-8 dark:border-slate-800 dark:bg-slate-900/90">
 
   <button type="button" @click="sidebarOpen = true"
           class="btn-icon text-slate-600 lg:hidden dark:text-slate-300"
@@ -10,7 +10,7 @@
   {# --- global search ---------------------------------------------------- #}
   <form action="{% url 'dashboard:search' %}" method="get" class="hidden max-w-md flex-1 sm:block">
     <div class="relative">
-      <span class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3 text-slate-400">
+      <span class="pointer-events-none absolute inset-y-0 inset-s-0 flex items-center ps-3 text-slate-400">
         {% icon "search" "h-4 w-4" %}
       </span>
       <input type="search" name="q" value="{{ request.GET.q|default:'' }}"
@@ -28,7 +28,7 @@
         {% icon "languages" "h-5 w-5" %}
       </button>
       <div x-show="open" @click.outside="open = false" x-transition style="display:none"
-           class="absolute end-0 mt-2 w-36 overflow-hidden rounded-lg border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-800">
+           class="absolute inset-e-0 mt-2 w-36 overflow-hidden rounded-lg border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-800">
         {% get_current_language as CURRENT_LANGUAGE %}
         {% for code, name in LANGUAGES %}
           <form action="{% url 'set_language' %}" method="post">
@@ -57,7 +57,7 @@
        aria-label="{% translate 'Notifications' %}">
       {% icon "bell" "h-5 w-5" %}
       {% if unread_notification_count %}
-        <span class="absolute -end-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[0.6rem] font-semibold text-white">
+        <span class="absolute -inset-e-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[0.6rem] font-semibold text-white">
           {{ unread_notification_count }}
         </span>
       {% endif %}
@@ -83,7 +83,7 @@
       </button>
 
       <div x-show="open" @click.outside="open = false" x-transition style="display:none"
-           class="absolute end-0 mt-2 w-56 overflow-hidden rounded-lg border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-800">
+           class="absolute inset-e-0 mt-2 w-56 overflow-hidden rounded-lg border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-800">
         <a href="{% url 'accounts:profile' %}" class="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700">
           {% icon "user" "h-4 w-4" %} {% translate "My profile" %}
         </a>

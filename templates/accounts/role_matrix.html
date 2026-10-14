@@ -21,12 +21,12 @@
         <table class="min-w-full border-separate border-spacing-0 text-sm">
           <thead>
             <tr>
-              <th class="sticky start-0 z-10 bg-slate-50 px-3 py-2 text-start text-xs font-semibold uppercase tracking-wide text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+              <th class="sticky inset-s-0 z-10 bg-slate-50 px-3 py-2 text-start text-xs font-semibold uppercase tracking-wide text-slate-500 dark:bg-slate-800 dark:text-slate-400">
                 {% translate "Module" %}
               </th>
               {% for value, label in roles %}
                 <th class="whitespace-nowrap px-2 py-2 text-center text-[0.65rem] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                  <span class="block max-w-[5.5rem] truncate" title="{{ label }}">{{ label }}</span>
+                  <span class="block max-w-22 truncate" title="{{ label }}">{{ label }}</span>
                 </th>
               {% endfor %}
             </tr>
@@ -34,7 +34,7 @@
           <tbody>
             {% for row in rows %}
               <tr class="border-t border-slate-100 dark:border-slate-800">
-                <th class="sticky start-0 z-10 whitespace-nowrap bg-white px-3 py-2 text-start font-medium text-slate-800 dark:bg-slate-900 dark:text-slate-200">
+                <th class="sticky inset-s-0 z-10 whitespace-nowrap bg-white px-3 py-2 text-start font-medium text-slate-800 dark:bg-slate-900 dark:text-slate-200">
                   {{ row.label }}
                 </th>
                 {% for cell in row.roles %}
@@ -43,7 +43,7 @@
                       <span class="inline-flex flex-wrap justify-center gap-0.5"
                             title="{{ cell.actions|join:', ' }}">
                         {% for action in cell.actions %}
-                          <span class="rounded bg-brand-100 px-1 text-[0.6rem] font-semibold uppercase text-brand-700 dark:bg-brand-500/20 dark:text-brand-300">
+                          <span class="rounded-sm bg-brand-100 px-1 text-[0.6rem] font-semibold uppercase text-brand-700 dark:bg-brand-500/20 dark:text-brand-300">
                             {{ action|slice:":3" }}
                           </span>
                         {% endfor %}

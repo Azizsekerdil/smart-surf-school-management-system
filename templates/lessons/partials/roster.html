@@ -182,11 +182,11 @@
             hx-swap="outerHTML"
             class="flex flex-wrap items-end gap-3 rounded-lg border border-dashed border-slate-300 p-4 dark:border-slate-600">
         {% csrf_token %}
-        <div class="min-w-[12rem] flex-1">
+        <div class="min-w-48 flex-1">
           <label class="form-label" for="{{ add_form.student.id_for_label }}">{% translate "Student" %}</label>
           {{ add_form.student }}
         </div>
-        <div class="min-w-[12rem] flex-1">
+        <div class="min-w-48 flex-1">
           <label class="form-label" for="{{ add_form.booking.id_for_label }}">{% translate "Booking" %}</label>
           {{ add_form.booking }}
         </div>
@@ -201,7 +201,7 @@
         {% csrf_token %}
         <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
           <input type="checkbox" name="mark_unchecked_as_no_show" value="1"
-                 class="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500 dark:border-slate-600">
+                 class="h-4 w-4 rounded-sm border-slate-300 text-sky-600 focus:ring-sky-500 dark:border-slate-600">
           {% translate "Mark students who never checked in as no-shows" %}
         </label>
         <button type="submit" class="btn-success">

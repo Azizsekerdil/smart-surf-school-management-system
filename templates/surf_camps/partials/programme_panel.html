@@ -76,7 +76,7 @@
             <ol class="relative space-y-3 border-s border-slate-200 ps-5 dark:border-slate-700">
               {% for activity in day.activities.all %}
                 <li class="relative">
-                  <span class="absolute -start-[1.6rem] flex h-6 w-6 items-center justify-center rounded-full
+                  <span class="absolute inset-s-[-1.6rem] flex h-6 w-6 items-center justify-center rounded-full
                                {% if activity.is_water_activity %}bg-sky-100 text-sky-700 dark:bg-sky-500/20 dark:text-sky-300{% else %}bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400{% endif %}">
                     {% icon activity_type_icons|get_item:activity.activity_type|default:"circle-check" "h-3.5 w-3.5" %}
                   </span>

@@ -42,7 +42,7 @@
 
       <div class="relative" style="height: {{ grid_height }}px;">
         {% for hour in hours %}
-          <div class="absolute end-1 -translate-y-1/2 text-[11px] tabular-nums text-slate-400"
+          <div class="absolute inset-e-1 -translate-y-1/2 text-[11px] tabular-nums text-slate-400"
                style="top: calc({{ forloop.counter0 }} * {{ pixels_per_hour }}px);">
             {{ hour }}:00
           </div>

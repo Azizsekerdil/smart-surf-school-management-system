@@ -443,7 +443,7 @@ class EquipmentSafetyCheckForm(TailwindFormMixin, forms.ModelForm):
                 label=item, required=False, initial=bool(existing)
             )
             self.fields[f"{self.CHECK_FIELD_PREFIX}{index}"].widget.attrs["class"] = (
-                "h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                "h-4 w-4 rounded-sm border-slate-300 text-brand-600 focus:ring-brand-500"
             )
 
     def _items(self) -> list[str]:

@@ -1,6 +1,337 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss' source(none);
+
+/* ==========================================================================
+   Sources — Tailwind 4 scans these instead of the old `content` globs.
+   ========================================================================== */
+@source '../../templates';
+@source '../../apps';
+@source '../../static/js';
+
+/* Status badge colours are chosen at runtime from model fields, so Tailwind
+   cannot see them in the templates (was `safelist` in tailwind.config.js). */
+@source inline('{bg,text,border,ring}-{slate,sky,emerald,amber,rose,violet,cyan,orange,teal,indigo}-{50,{100..900..100}}');
+@source inline('{bg,text,border}-{slate,sky,emerald,amber,rose,violet,cyan,orange,teal,indigo}-{400,500,600}/{10,20,30}');
+
+/* Class-based dark mode (was `darkMode: 'class'`). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@plugin '@tailwindcss/forms' {
+  strategy: class;
+}
+@plugin '@tailwindcss/typography';
+
+/* ==========================================================================
+   Theme — carried over from tailwind.config.js `theme.extend`.
+   ========================================================================== */
+@theme {
+  /* Ocean-inspired brand palette. */
+  --color-brand-50: #eff9ff;
+  --color-brand-100: #def2ff;
+  --color-brand-200: #b6e7ff;
+  --color-brand-300: #75d5ff;
+  --color-brand-400: #2cbeff;
+  --color-brand-500: #02a4f0;
+  --color-brand-600: #0083ce;
+  --color-brand-700: #0068a6;
+  --color-brand-800: #065889;
+  --color-brand-900: #0b4a71;
+  --color-brand-950: #072e4b;
+
+  --color-sand-50: #fbf8f1;
+  --color-sand-100: #f5eede;
+  --color-sand-200: #eadbbc;
+  --color-sand-300: #dcc292;
+  --color-sand-400: #cda568;
+  --color-sand-500: #c28f4c;
+  --color-sand-600: #b47940;
+  --color-sand-700: #956036;
+  --color-sand-800: #794e32;
+  --color-sand-900: #63412b;
+
+  --font-sans: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Cascadia Code', 'Consolas', monospace;
+
+  --shadow-card: 0 1px 2px 0 rgb(15 23 42 / 0.04), 0 1px 3px 1px rgb(15 23 42 / 0.06);
+  --shadow-card-hover: 0 4px 6px -1px rgb(15 23 42 / 0.08), 0 2px 4px -2px rgb(15 23 42 / 0.06);
+
+  --animate-slide-in: slide-in 0.2s ease-out;
+  --animate-shimmer: shimmer 2s infinite linear;
+
+  @keyframes slide-in {
+    0% { opacity: 0; transform: translateY(-6px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes shimmer {
+    0% { background-position: -1000px 0; }
+    100% { background-position: 1000px 0; }
+  }
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
+/* ==========================================================================
+   Components
+   ========================================================================== */
+
+@utility card {
+  /* --- surfaces --------------------------------------------------------- */
+  @apply rounded-xl border border-slate-200 bg-white shadow-card dark:border-slate-700 dark:bg-slate-900;
+}
+
+@utility card-header {
+  @apply flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-4 dark:border-slate-700;
+}
+
+@utility card-title {
+  @apply text-base font-semibold text-slate-900 dark:text-slate-100;
+}
+
+@utility card-body {
+  @apply p-5;
+}
+
+@utility btn {
+  /* --- buttons ---------------------------------------------------------- */
+  @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium
+           transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+@utility btn-primary {
+  @apply btn bg-brand-600 text-white hover:bg-brand-700 active:bg-brand-800;
+}
+
+@utility btn-secondary {
+  @apply btn border border-slate-300 bg-white text-slate-700 hover:bg-slate-50
+           dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700;
+}
+
+@utility btn-danger {
+  @apply btn bg-rose-600 text-white hover:bg-rose-700;
+}
+
+@utility btn-success {
+  @apply btn bg-emerald-600 text-white hover:bg-emerald-700;
+}
+
+@utility btn-ghost {
+  @apply btn text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800;
+}
+
+@utility btn-sm {
+  @apply px-2.5 py-1.5 text-xs;
+}
+
+@utility btn-icon {
+  @apply inline-flex h-9 w-9 items-center justify-center rounded-lg;
+}
+
+@utility form-label {
+  /* --- forms ------------------------------------------------------------ */
+  @apply mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300;
+}
+
+@utility form-input {
+  @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900
+           placeholder-slate-400 shadow-xs transition focus:border-brand-500 focus:outline-hidden
+           focus:ring-2 focus:ring-brand-500/30 dark:border-slate-600 dark:bg-slate-800
+           dark:text-slate-100 dark:placeholder-slate-500;
+}
+
+@utility form-select {
+  @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900
+           placeholder-slate-400 shadow-xs transition focus:border-brand-500 focus:outline-hidden
+           focus:ring-2 focus:ring-brand-500/30 dark:border-slate-600 dark:bg-slate-800
+           dark:text-slate-100 dark:placeholder-slate-500;
+}
+
+@utility form-textarea {
+  @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900
+           placeholder-slate-400 shadow-xs transition focus:border-brand-500 focus:outline-hidden
+           focus:ring-2 focus:ring-brand-500/30 dark:border-slate-600 dark:bg-slate-800
+           dark:text-slate-100 dark:placeholder-slate-500;
+}
+
+@utility form-help {
+  @apply mt-1 text-xs text-slate-500 dark:text-slate-400;
+}
+
+@utility form-error {
+  @apply mt-1 text-xs font-medium text-rose-600 dark:text-rose-400;
+}
+
+@utility badge {
+  /* --- badges ----------------------------------------------------------- */
+  @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium;
+}
+
+@utility badge-slate {
+  @apply badge bg-slate-100 text-slate-700 dark:bg-slate-700/40 dark:text-slate-300;
+}
+
+@utility badge-sky {
+  @apply badge bg-sky-100 text-sky-800 dark:bg-sky-500/15 dark:text-sky-300;
+}
+
+@utility badge-emerald {
+  @apply badge bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300;
+}
+
+@utility badge-amber {
+  @apply badge bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300;
+}
+
+@utility badge-rose {
+  @apply badge bg-rose-100 text-rose-800 dark:bg-rose-500/15 dark:text-rose-300;
+}
+
+@utility badge-violet {
+  @apply badge bg-violet-100 text-violet-800 dark:bg-violet-500/15 dark:text-violet-300;
+}
+
+@utility table-wrap {
+  /* --- tables ----------------------------------------------------------- */
+  @apply overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700;
+}
+
+@utility table {
+  @apply min-w-full divide-y divide-slate-200 dark:divide-slate-700;
+  & thead {
+    @apply bg-slate-50 dark:bg-slate-800/60;
+  }
+  & th {
+    @apply whitespace-nowrap px-4 py-3 text-start text-xs font-semibold uppercase
+           tracking-wide text-slate-500 dark:text-slate-400;
+  }
+  & td {
+    @apply px-4 py-3 text-sm text-slate-700 dark:text-slate-300;
+  }
+  & tbody {
+    @apply divide-y divide-slate-100 bg-white dark:divide-slate-800 dark:bg-slate-900;
+  }
+  & tbody tr:hover {
+    @apply bg-slate-50 dark:bg-slate-800/40;
+  }
+}
+
+@utility nav-link {
+  /* --- navigation ------------------------------------------------------- */
+  @apply flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-600
+           transition-colors hover:bg-slate-100 hover:text-slate-900
+           dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100;
+}
+
+@utility nav-link-active {
+  @apply bg-brand-50 text-brand-700 hover:bg-brand-50 hover:text-brand-700
+           dark:bg-brand-500/10 dark:text-brand-300 dark:hover:bg-brand-500/10;
+}
+
+@utility nav-section-title {
+  @apply px-3 pb-1 pt-4 text-[0.68rem] font-semibold uppercase tracking-wider
+           text-slate-400 dark:text-slate-500;
+}
+
+@utility stat-card {
+  /* --- stat tiles ------------------------------------------------------- */
+  @apply card p-5;
+}
+
+@utility stat-label {
+  @apply text-sm font-medium text-slate-500 dark:text-slate-400;
+}
+
+@utility stat-value {
+  @apply mt-1 text-2xl font-semibold tabular-nums text-slate-900 dark:text-slate-50;
+}
+
+@utility stat-delta-up {
+  @apply text-xs font-medium text-emerald-600 dark:text-emerald-400;
+}
+
+@utility stat-delta-down {
+  @apply text-xs font-medium text-rose-600 dark:text-rose-400;
+}
+
+@utility alert {
+  /* --- alerts ----------------------------------------------------------- */
+  @apply flex items-start gap-3 rounded-lg border p-4 text-sm;
+}
+
+@utility alert-info {
+  @apply alert border-sky-200 bg-sky-50 text-sky-900 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-200;
+}
+
+@utility alert-success {
+  @apply alert border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200;
+}
+
+@utility alert-warning {
+  @apply alert border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200;
+}
+
+@utility alert-error {
+  @apply alert border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200;
+}
+
+@utility ai-surface {
+  /* --- AI-specific ------------------------------------------------------ */
+  /* AI output is always visually distinct from system-of-record data, and any
+     AI recommendation carries the "AI Recommendation" chip (safety rule). */
+  @apply rounded-xl border border-violet-200 bg-violet-50/50 dark:border-violet-500/25 dark:bg-violet-500/5;
+}
+
+@utility ai-chip {
+  @apply inline-flex items-center gap-1 rounded-full bg-violet-100 px-2 py-0.5 text-[0.68rem]
+           font-semibold uppercase tracking-wide text-violet-700
+           dark:bg-violet-500/15 dark:text-violet-300;
+}
+
+@utility terminal {
+  @apply rounded-xl bg-slate-950 p-4 font-mono text-[0.8rem] leading-relaxed text-slate-200;
+}
+
+/* --- HTMX loading state --------------------------------------------------
+   Plain CSS (not @utility): `htmx-request` is added at runtime by htmx and
+   never appears in the scanned sources. */
+.htmx-indicator {
+  @apply invisible opacity-0 transition-opacity duration-150;
+}
+.htmx-request .htmx-indicator,
+.htmx-request.htmx-indicator {
+  @apply visible opacity-100;
+}
+
+@utility skeleton {
+  @apply animate-pulse rounded-sm bg-slate-200 dark:bg-slate-700;
+}
+
+@utility text-balance {
+  text-wrap: balance;
+}
+
+@utility ps-safe {
+  /* Logical properties so the layout survives an RTL locale later. */
+  padding-inline-start: 1rem;
+}
+
+@utility pe-safe {
+  padding-inline-end: 1rem;
+}
 
 /* ==========================================================================
    Design tokens
@@ -29,143 +360,13 @@
 
   /* Visible focus for keyboard users only. */
   :focus-visible {
-    @apply outline-none ring-2 ring-brand-500 ring-offset-2 ring-offset-white dark:ring-offset-slate-900;
+    @apply outline-hidden ring-2 ring-brand-500 ring-offset-2 ring-offset-white dark:ring-offset-slate-900;
   }
 
   ::-webkit-scrollbar { @apply h-2 w-2; }
   ::-webkit-scrollbar-track { @apply bg-transparent; }
   ::-webkit-scrollbar-thumb { @apply rounded-full bg-slate-300 dark:bg-slate-700; }
   ::-webkit-scrollbar-thumb:hover { @apply bg-slate-400 dark:bg-slate-600; }
-}
-
-/* ==========================================================================
-   Components
-   ========================================================================== */
-@layer components {
-
-  /* --- surfaces --------------------------------------------------------- */
-  .card {
-    @apply rounded-xl border border-slate-200 bg-white shadow-card dark:border-slate-700 dark:bg-slate-900;
-  }
-  .card-header {
-    @apply flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-4 dark:border-slate-700;
-  }
-  .card-title { @apply text-base font-semibold text-slate-900 dark:text-slate-100; }
-  .card-body { @apply p-5; }
-
-  /* --- buttons ---------------------------------------------------------- */
-  .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium
-           transition-colors disabled:cursor-not-allowed disabled:opacity-50;
-  }
-  .btn-primary { @apply btn bg-brand-600 text-white hover:bg-brand-700 active:bg-brand-800; }
-  .btn-secondary {
-    @apply btn border border-slate-300 bg-white text-slate-700 hover:bg-slate-50
-           dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700;
-  }
-  .btn-danger { @apply btn bg-rose-600 text-white hover:bg-rose-700; }
-  .btn-success { @apply btn bg-emerald-600 text-white hover:bg-emerald-700; }
-  .btn-ghost {
-    @apply btn text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800;
-  }
-  .btn-sm { @apply px-2.5 py-1.5 text-xs; }
-  .btn-icon { @apply inline-flex h-9 w-9 items-center justify-center rounded-lg; }
-
-  /* --- forms ------------------------------------------------------------ */
-  .form-label {
-    @apply mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300;
-  }
-  .form-input, .form-select, .form-textarea {
-    @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900
-           placeholder-slate-400 shadow-sm transition focus:border-brand-500 focus:outline-none
-           focus:ring-2 focus:ring-brand-500/30 dark:border-slate-600 dark:bg-slate-800
-           dark:text-slate-100 dark:placeholder-slate-500;
-  }
-  .form-help { @apply mt-1 text-xs text-slate-500 dark:text-slate-400; }
-  .form-error { @apply mt-1 text-xs font-medium text-rose-600 dark:text-rose-400; }
-
-  /* --- badges ----------------------------------------------------------- */
-  .badge {
-    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium;
-  }
-  .badge-slate   { @apply badge bg-slate-100 text-slate-700 dark:bg-slate-700/40 dark:text-slate-300; }
-  .badge-sky     { @apply badge bg-sky-100 text-sky-800 dark:bg-sky-500/15 dark:text-sky-300; }
-  .badge-emerald { @apply badge bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300; }
-  .badge-amber   { @apply badge bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300; }
-  .badge-rose    { @apply badge bg-rose-100 text-rose-800 dark:bg-rose-500/15 dark:text-rose-300; }
-  .badge-violet  { @apply badge bg-violet-100 text-violet-800 dark:bg-violet-500/15 dark:text-violet-300; }
-
-  /* --- tables ----------------------------------------------------------- */
-  .table-wrap { @apply overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700; }
-  .table { @apply min-w-full divide-y divide-slate-200 dark:divide-slate-700; }
-  .table thead { @apply bg-slate-50 dark:bg-slate-800/60; }
-  .table th {
-    @apply whitespace-nowrap px-4 py-3 text-start text-xs font-semibold uppercase
-           tracking-wide text-slate-500 dark:text-slate-400;
-  }
-  .table td { @apply px-4 py-3 text-sm text-slate-700 dark:text-slate-300; }
-  .table tbody { @apply divide-y divide-slate-100 bg-white dark:divide-slate-800 dark:bg-slate-900; }
-  .table tbody tr:hover { @apply bg-slate-50 dark:bg-slate-800/40; }
-
-  /* --- navigation ------------------------------------------------------- */
-  .nav-link {
-    @apply flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-600
-           transition-colors hover:bg-slate-100 hover:text-slate-900
-           dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100;
-  }
-  .nav-link-active {
-    @apply bg-brand-50 text-brand-700 hover:bg-brand-50 hover:text-brand-700
-           dark:bg-brand-500/10 dark:text-brand-300 dark:hover:bg-brand-500/10;
-  }
-  .nav-section-title {
-    @apply px-3 pb-1 pt-4 text-[0.68rem] font-semibold uppercase tracking-wider
-           text-slate-400 dark:text-slate-500;
-  }
-
-  /* --- stat tiles ------------------------------------------------------- */
-  .stat-card { @apply card p-5; }
-  .stat-label { @apply text-sm font-medium text-slate-500 dark:text-slate-400; }
-  .stat-value { @apply mt-1 text-2xl font-semibold tabular-nums text-slate-900 dark:text-slate-50; }
-  .stat-delta-up { @apply text-xs font-medium text-emerald-600 dark:text-emerald-400; }
-  .stat-delta-down { @apply text-xs font-medium text-rose-600 dark:text-rose-400; }
-
-  /* --- alerts ----------------------------------------------------------- */
-  .alert { @apply flex items-start gap-3 rounded-lg border p-4 text-sm; }
-  .alert-info    { @apply alert border-sky-200 bg-sky-50 text-sky-900 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-200; }
-  .alert-success { @apply alert border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200; }
-  .alert-warning { @apply alert border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200; }
-  .alert-error   { @apply alert border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200; }
-
-  /* --- AI-specific ------------------------------------------------------ */
-  /* AI output is always visually distinct from system-of-record data, and any
-     AI recommendation carries the "AI Recommendation" chip (safety rule). */
-  .ai-surface {
-    @apply rounded-xl border border-violet-200 bg-violet-50/50 dark:border-violet-500/25 dark:bg-violet-500/5;
-  }
-  .ai-chip {
-    @apply inline-flex items-center gap-1 rounded-full bg-violet-100 px-2 py-0.5 text-[0.68rem]
-           font-semibold uppercase tracking-wide text-violet-700
-           dark:bg-violet-500/15 dark:text-violet-300;
-  }
-  .terminal {
-    @apply rounded-xl bg-slate-950 p-4 font-mono text-[0.8rem] leading-relaxed text-slate-200;
-  }
-
-  /* --- HTMX loading state ----------------------------------------------- */
-  .htmx-indicator { @apply invisible opacity-0 transition-opacity duration-150; }
-  .htmx-request .htmx-indicator,
-  .htmx-request.htmx-indicator { @apply visible opacity-100; }
-
-  .skeleton {
-    @apply animate-pulse rounded bg-slate-200 dark:bg-slate-700;
-  }
-}
-
-@layer utilities {
-  .text-balance { text-wrap: balance; }
-  /* Logical properties so the layout survives an RTL locale later. */
-  .ps-safe { padding-inline-start: 1rem; }
-  .pe-safe { padding-inline-end: 1rem; }
 }
 
 /* Print: reports and receipts must come out clean. */

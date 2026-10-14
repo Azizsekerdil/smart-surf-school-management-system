@@ -41,7 +41,7 @@
       </a>
     </div>
 
-    <ul class="max-h-[28rem] overflow-y-auto p-2">
+    <ul class="max-h-112 overflow-y-auto p-2">
       {% for item in conversations %}
         <li class="group relative">
           <a href="{% url 'ai:chat' %}?c={{ item.pk }}"
@@ -61,7 +61,7 @@
           </a>
 
           <form method="post" action="{% url 'ai:conversation_delete' item.pk %}"
-                class="absolute end-1 top-1.5">
+                class="absolute inset-e-1 top-1.5">
             {% csrf_token %}
             <button type="submit"
                     class="btn-icon text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10"
@@ -130,7 +130,7 @@
 
     {# --- thread -------------------------------------------------------- #}
     <div id="chat-thread"
-         class="flex max-h-[60vh] min-h-[22rem] flex-col gap-4 overflow-y-auto p-5"
+         class="flex max-h-[60vh] min-h-88 flex-col gap-4 overflow-y-auto p-5"
          x-data
          x-init="$el.scrollTop = $el.scrollHeight"
          @htmx:after-swap="const placeholder = $el.querySelector('#chat-placeholder'); if (placeholder) { placeholder.remove(); } $el.scrollTop = $el.scrollHeight"
@@ -205,7 +205,7 @@
 
           <label class="flex items-center gap-2 pb-2 text-sm text-slate-700 dark:text-slate-300" for="id_use_rag">
             <input type="checkbox" name="use_rag" id="id_use_rag" checked
-                   class="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500 dark:border-slate-600">
+                   class="h-4 w-4 rounded-sm border-slate-300 text-brand-600 focus:ring-brand-500 dark:border-slate-600">
             <span>{% translate "Use knowledge base" %}</span>
           </label>
         </div>

@@ -151,7 +151,7 @@
         {# --- history ---------------------------------------------------- #}
         <div class="p-5 pb-0">
           <div id="terminal-history"
-               class="terminal flex max-h-[32rem] min-h-[14rem] flex-col gap-3 overflow-y-auto"
+               class="terminal flex max-h-128 min-h-56 flex-col gap-3 overflow-y-auto"
                x-data
                x-init="$el.scrollTop = $el.scrollHeight"
                @htmx:after-swap="const placeholder = $el.querySelector('#terminal-placeholder'); if (placeholder) { placeholder.remove(); } $el.scrollTop = $el.scrollHeight"
