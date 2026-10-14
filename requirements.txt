@@ -18,7 +18,7 @@ whitenoise>=6.7                        # MIT           (static file serving)
 # --- Database ----------------------------------------------------------------
 # SQLite is built into Python (development / test).
 # PostgreSQL is the production target; psycopg 3 ships Windows wheels.
-psycopg[binary]>=3.2,<4.0              # LGPL-3.0 (driver, dynamically linked — no code copied)
+psycopg[binary]>=3.3.4,<4.0              # LGPL-3.0 (driver, dynamically linked — no code copied)
 
 # --- Async / background tasks (optional, degrade gracefully) ------------------
 celery>=5.4,<6.0                       # BSD-3-Clause
