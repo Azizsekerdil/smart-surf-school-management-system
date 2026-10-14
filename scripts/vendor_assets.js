@@ -16,7 +16,8 @@ const VENDOR = path.join(ROOT, 'static', 'vendor');
 /** Files copied verbatim: [source relative to node_modules, destination relative to static/vendor]. */
 const FILES = [
   ['htmx.org/dist/htmx.min.js', 'htmx/htmx.min.js'],
-  ['htmx.org/dist/ext/sse.js', 'htmx/ext/sse.js'],
+  // htmx 2.x: extensions live in separate packages (e.g. htmx-ext-sse); the
+  // legacy dist/ext/ copies are unmaintained 1.x code, and nothing here uses SSE.
   ['htmx.org/LICENSE', 'htmx/LICENSE'],
   ['alpinejs/dist/cdn.min.js', 'alpine/alpine.min.js'],
   // Alpine ships its licence text inside package.json ("license": "MIT");
@@ -76,8 +77,7 @@ function ensureDir(dir) {
  * production deployment at its first step.
  */
 function stripSourceMapRef(text) {
-  return text.replace(/^\s*\/\/[#@]\s*sourceMappingURL=.*$/gm, '').replace(/\s+$/, '
-');
+  return text.replace(/^\s*\/\/[#@]\s*sourceMappingURL=.*$/gm, '').replace(/\s+$/, '\n');
 }
 
 const TEXT_EXTENSIONS = new Set(['.js', '.css', '.mjs']);
